@@ -102,16 +102,16 @@ export const vehicleDatabase: VehicleData[] = [
   { name: 'Kia Bongo 2.5', type: 'carro', consumptionCity: 8.0, consumptionHighway: 10.0 },
   
   // =============================================
-  // CARROS ELÉTRICOS E HÍBRIDOS
+  // CARROS ELÉTRICOS E HÍBRIDOS (consumo em km/kWh)
   // =============================================
-  { name: 'BYD Dolphin Mini (Elétrico)', type: 'carro', consumptionCity: 120.0, consumptionHighway: 140.0 },
-  { name: 'BYD Dolphin (Elétrico)', type: 'carro', consumptionCity: 100.0, consumptionHighway: 120.0 },
-  { name: 'BYD Yuan Plus (Elétrico)', type: 'carro', consumptionCity: 90.0, consumptionHighway: 110.0 },
-  { name: 'Renault Kwid E-Tech (Elétrico)', type: 'carro', consumptionCity: 115.0, consumptionHighway: 130.0 },
-  { name: 'Fiat 500e (Elétrico)', type: 'carro', consumptionCity: 95.0, consumptionHighway: 110.0 },
-  { name: 'GWM Ora 03 (Elétrico)', type: 'carro', consumptionCity: 100.0, consumptionHighway: 115.0 },
-  { name: 'JAC E-JS1 (Elétrico)', type: 'carro', consumptionCity: 110.0, consumptionHighway: 125.0 },
-  { name: 'Caoa Chery iCar (Elétrico)', type: 'carro', consumptionCity: 105.0, consumptionHighway: 120.0 },
+  { name: 'BYD Dolphin Mini (Elétrico)', type: 'carro', consumptionCity: 7.5, consumptionHighway: 8.5 },
+  { name: 'BYD Dolphin (Elétrico)', type: 'carro', consumptionCity: 6.5, consumptionHighway: 7.5 },
+  { name: 'BYD Yuan Plus (Elétrico)', type: 'carro', consumptionCity: 5.5, consumptionHighway: 6.5 },
+  { name: 'Renault Kwid E-Tech (Elétrico)', type: 'carro', consumptionCity: 7.0, consumptionHighway: 8.0 },
+  { name: 'Fiat 500e (Elétrico)', type: 'carro', consumptionCity: 6.0, consumptionHighway: 7.0 },
+  { name: 'GWM Ora 03 (Elétrico)', type: 'carro', consumptionCity: 6.0, consumptionHighway: 7.0 },
+  { name: 'JAC E-JS1 (Elétrico)', type: 'carro', consumptionCity: 6.5, consumptionHighway: 7.5 },
+  { name: 'Caoa Chery iCar (Elétrico)', type: 'carro', consumptionCity: 6.0, consumptionHighway: 7.0 },
   { name: 'Toyota Corolla Hybrid (Híbrido)', type: 'carro', consumptionCity: 16.0, consumptionHighway: 14.5 },
   { name: 'Toyota Corolla Cross Hybrid (Híbrido)', type: 'carro', consumptionCity: 14.5, consumptionHighway: 13.0 },
   { name: 'Honda City Hybrid (Híbrido)', type: 'carro', consumptionCity: 17.0, consumptionHighway: 15.0 },
@@ -171,13 +171,13 @@ export const vehicleDatabase: VehicleData[] = [
   { name: 'Suzuki Burgman 125', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
   
   // =============================================
-  // MOTOS ELÉTRICAS
+  // MOTOS ELÉTRICAS (consumo em km/kWh)
   // =============================================
-  { name: 'Voltz EV1 (Elétrico)', type: 'moto', consumptionCity: 80.0, consumptionHighway: 85.0 },
-  { name: 'Voltz EVS (Elétrico)', type: 'moto', consumptionCity: 75.0, consumptionHighway: 80.0 },
-  { name: 'Shineray SE3 (Elétrico)', type: 'moto', consumptionCity: 70.0, consumptionHighway: 75.0 },
-  { name: 'Super Soco TC Max (Elétrico)', type: 'moto', consumptionCity: 65.0, consumptionHighway: 70.0 },
-  { name: 'NIU NQi GTS (Elétrico)', type: 'moto', consumptionCity: 70.0, consumptionHighway: 75.0 },
+  { name: 'Voltz EV1 (Elétrico)', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'Voltz EVS (Elétrico)', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  { name: 'Shineray SE3 (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
+  { name: 'Super Soco TC Max (Elétrico)', type: 'moto', consumptionCity: 30.0, consumptionHighway: 35.0 },
+  { name: 'NIU NQi GTS (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
 ];
 
 // Custo de manutenção por tipo de veículo (R$/km)
@@ -204,6 +204,10 @@ export const electricWearCostPerKm: Record<VehicleType, number> = {
   moto: 0.01,
 };
 
+// Preços de referência
+export const DEFAULT_FUEL_PRICE = 5.89; // R$/L gasolina
+export const DEFAULT_ELECTRICITY_PRICE = 0.85; // R$/kWh residencial
+
 // Detectar se veículo é elétrico ou híbrido
 export function isElectricVehicle(vehicle: VehicleData): boolean {
   return vehicle.name.includes('(Elétrico)') || vehicle.name.includes('(Híbrido)');
@@ -227,6 +231,21 @@ export function searchVehicles(query: string, type?: VehicleType): VehicleData[]
 // Obter veículos por tipo
 export function getVehiclesByType(type: VehicleType): VehicleData[] {
   return vehicleDatabase.filter(v => v.type === type);
+}
+
+// Obter unidade de consumo baseado no tipo de veículo
+export function getConsumptionUnit(vehicle: VehicleData): string {
+  return isElectricVehicle(vehicle) ? 'km/kWh' : 'km/l';
+}
+
+// Obter label de energia baseado no tipo de veículo
+export function getEnergyLabel(vehicle: VehicleData): string {
+  return isElectricVehicle(vehicle) ? 'Energia' : 'Combustível';
+}
+
+// Obter label de preço baseado no tipo de veículo
+export function getEnergyPriceLabel(vehicle: VehicleData): string {
+  return isElectricVehicle(vehicle) ? 'R$/kWh' : 'R$/L';
 }
 
 // Calcular custo por km

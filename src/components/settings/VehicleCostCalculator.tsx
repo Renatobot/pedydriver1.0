@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,11 @@ import {
   getVehiclesByType, 
   VehicleData, 
   calculateCostPerKm, 
-  CostBreakdown 
+  CostBreakdown,
+  isElectricVehicle,
+  getConsumptionUnit,
+  DEFAULT_FUEL_PRICE,
+  DEFAULT_ELECTRICITY_PRICE
 } from '@/lib/vehicleData';
 
 interface VehicleCostCalculatorProps {
@@ -29,11 +33,22 @@ export function VehicleCostCalculator({
 }: VehicleCostCalculatorProps) {
   const [vehicleType, setVehicleType] = useState<VehicleType>(currentVehicleType);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
-  const [fuelPrice, setFuelPrice] = useState('5.89');
+  const [fuelPrice, setFuelPrice] = useState(String(DEFAULT_FUEL_PRICE));
   const [mileage, setMileage] = useState('');
   const [result, setResult] = useState<CostBreakdown | null>(null);
 
   const vehicles = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
+  
+  const isElectric = selectedVehicle ? isElectricVehicle(selectedVehicle) : false;
+
+  // Atualizar preço padrão quando trocar entre elétrico e combustível
+  useEffect(() => {
+    if (selectedVehicle) {
+      const newIsElectric = isElectricVehicle(selectedVehicle);
+      const defaultPrice = newIsElectric ? DEFAULT_ELECTRICITY_PRICE : DEFAULT_FUEL_PRICE;
+      setFuelPrice(String(defaultPrice));
+    }
+  }, [selectedVehicle]);
 
   const handleVehicleTypeChange = (type: VehicleType) => {
     setVehicleType(type);
@@ -127,18 +142,22 @@ export function VehicleCostCalculator({
               <SelectContent>
                 {vehicles.map((vehicle) => (
                   <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
-                    {vehicle.name} ({vehicle.consumptionCity} km/l cidade)
+                    {vehicle.name} ({vehicle.consumptionCity} {getConsumptionUnit(vehicle)} cidade)
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Fuel Price */}
+          {/* Fuel/Energy Price */}
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="flex items-center gap-2 text-sm sm:text-base">
-              <Fuel className="w-4 h-4" />
-              Preço do Combustível (R$/L)
+              {isElectric ? (
+                <Zap className="w-4 h-4 text-yellow-500" />
+              ) : (
+                <Fuel className="w-4 h-4" />
+              )}
+              {isElectric ? 'Preço da Energia (R$/kWh)' : 'Preço do Combustível (R$/L)'}
             </Label>
             <Input
               type="number"
@@ -149,7 +168,7 @@ export function VehicleCostCalculator({
                 setFuelPrice(e.target.value);
                 setResult(null);
               }}
-              placeholder="5.89"
+              placeholder={isElectric ? String(DEFAULT_ELECTRICITY_PRICE) : String(DEFAULT_FUEL_PRICE)}
               className="font-mono h-11 sm:h-12 text-sm sm:text-base"
             />
           </div>
@@ -195,8 +214,12 @@ export function VehicleCostCalculator({
               <div className="space-y-2">
                 <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
-                    <Fuel className="w-4 h-4 text-orange-500" />
-                    <span className="text-xs sm:text-sm">Combustível</span>
+                    {result.isElectric ? (
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                    ) : (
+                      <Fuel className="w-4 h-4 text-orange-500" />
+                    )}
+                    <span className="text-xs sm:text-sm">{result.isElectric ? 'Energia' : 'Combustível'}</span>
                   </div>
                   <span className="font-mono text-sm sm:text-base font-medium">
                     R$ {result.fuelCost.toFixed(2)}/km
