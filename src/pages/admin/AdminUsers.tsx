@@ -28,8 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, AdminUser } from '@/hooks/useAdmin';
-import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle } from 'lucide-react';
+import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, AdminUser } from '@/hooks/useAdmin';
+import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -39,10 +39,12 @@ export default function AdminUsers() {
   const updateSubscription = useUpdateSubscription();
   const toggleUserBlock = useToggleUserBlock();
   const resetMonthlyLimit = useResetMonthlyLimit();
+  const adminResetPassword = useAdminResetPassword();
   
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [dialogType, setDialogType] = useState<'view' | 'block' | 'unblock' | 'pro' | 'free' | 'reset' | null>(null);
+  const [dialogType, setDialogType] = useState<'view' | 'block' | 'unblock' | 'pro' | 'free' | 'reset' | 'password' | null>(null);
+  const [newPassword, setNewPassword] = useState('');
 
   const filteredUsers = users?.filter(user => 
     user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,6 +80,15 @@ export default function AdminUsers() {
         break;
       case 'reset':
         resetMonthlyLimit.mutate(selectedUser.user_id);
+        break;
+      case 'password':
+        if (newPassword.length >= 6) {
+          adminResetPassword.mutate({ 
+            targetUserId: selectedUser.user_id, 
+            newPassword 
+          });
+          setNewPassword('');
+        }
         break;
     }
     setDialogType(null);
@@ -126,6 +137,12 @@ export default function AdminUsers() {
           title: 'Resetar Limite Mensal',
           description: `Resetar o limite de registros mensais de ${selectedUser?.full_name || selectedUser?.email}?`,
           action: 'Resetar',
+        };
+      case 'password':
+        return {
+          title: 'Resetar Senha',
+          description: `Definir uma nova senha para ${selectedUser?.full_name || selectedUser?.email}`,
+          action: 'Alterar Senha',
         };
       default:
         return { title: '', description: '', action: null };
@@ -278,6 +295,15 @@ export default function AdminUsers() {
                                 <RefreshCw className="w-4 h-4 mr-2" />
                                 Resetar Limite
                               </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setDialogType('password');
+                                }}
+                              >
+                                <KeyRound className="w-4 h-4 mr-2" />
+                                Resetar Senha
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {user.is_blocked ? (
                                 <DropdownMenuItem
@@ -384,6 +410,23 @@ export default function AdminUsers() {
               </div>
             )}
 
+            {dialogType === 'password' && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nova Senha</label>
+                  <Input
+                    type="text"
+                    placeholder="Mínimo 6 caracteres"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  {newPassword.length > 0 && newPassword.length < 6 && (
+                    <p className="text-xs text-destructive">Senha deve ter no mínimo 6 caracteres</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {dialogContent.action && (
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogType(null)}>
@@ -395,7 +438,9 @@ export default function AdminUsers() {
                   disabled={
                     updateSubscription.isPending ||
                     toggleUserBlock.isPending ||
-                    resetMonthlyLimit.isPending
+                    resetMonthlyLimit.isPending ||
+                    adminResetPassword.isPending ||
+                    (dialogType === 'password' && newPassword.length < 6)
                   }
                 >
                   {dialogContent.action}

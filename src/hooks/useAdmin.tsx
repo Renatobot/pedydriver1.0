@@ -326,3 +326,33 @@ export function useGenerateChurnAlerts() {
     },
   });
 }
+
+export function useAdminResetPassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ targetUserId, newPassword }: { targetUserId: string; newPassword: string }) => {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: { targetUserId, newPassword },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
+      toast({
+        title: 'Senha resetada',
+        description: 'A senha do usuário foi alterada com sucesso.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao resetar senha: ' + error.message,
+        variant: 'destructive',
+      });
+      console.error('Error resetting password:', error);
+    },
+  });
+}

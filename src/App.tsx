@@ -13,6 +13,7 @@ import QuickEntry from "./pages/QuickEntry";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
 import Upgrade from "./pages/Upgrade";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -62,6 +63,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/quick" element={<ProtectedRoute><QuickEntry /></ProtectedRoute>} />
       <Route path="/add" element={<ProtectedRoute><Add /></ProtectedRoute>} />
