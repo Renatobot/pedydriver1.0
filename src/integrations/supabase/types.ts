@@ -373,6 +373,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_user_for_reset: {
+        Args: { _target_user_id: string }
+        Returns: Json
+      }
       admin_reset_monthly_limit: {
         Args: { _target_user_id: string }
         Returns: boolean
@@ -448,6 +452,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       mark_alert_as_read: { Args: { _alert_id: string }; Returns: boolean }
       mark_all_alerts_as_read: { Args: never; Returns: boolean }
+      verify_user_for_password_reset: {
+        Args: { _email: string; _full_name: string; _phone: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
