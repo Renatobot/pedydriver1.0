@@ -2,17 +2,17 @@ import { Users, Quote } from 'lucide-react';
 
 const testimonials = [
   {
-    quote: 'Descobri que terça é meu melhor dia. Parei de rodar no domingo e ganhei mais!',
+    quote: 'Descobri que quinta e sexta são meus melhores dias. Parei de rodar domingo e meu lucro/hora subiu 35%!',
     name: 'Carlos',
     city: 'São Paulo',
   },
   {
-    quote: 'Finalmente sei quanto realmente lucro por hora. Mudou minha forma de trabalhar.',
+    quote: 'Em 2 semanas já sabia exatamente meu custo por km. Agora só aceito corrida que vale a pena.',
     name: 'Marcos',
     city: 'Rio de Janeiro',
   },
   {
-    quote: 'Simples de usar, registro tudo em segundos. Recomendo pra todo motorista.',
+    quote: 'Fácil demais. Registro tudo enquanto espero passageiro. Melhor investimento que fiz.',
     name: 'Ana',
     city: 'Belo Horizonte',
   },
@@ -24,9 +24,9 @@ export function SocialProofSection() {
       <div className="max-w-4xl mx-auto space-y-10">
         {/* Counter */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-primary/10 border border-primary/20">
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-primary/15 border border-primary/20">
             <Users className="w-5 h-5 text-primary" />
-            <span className="text-lg font-bold">+500 motoristas já usam</span>
+            <span className="text-lg font-bold">+500 motoristas controlam seus lucros</span>
           </div>
         </div>
         

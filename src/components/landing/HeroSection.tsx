@@ -16,24 +16,24 @@ export function HeroSection() {
         
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
-          PEDY Driver ajuda você a{' '}
-          <span className="text-primary">controlar seus ganhos</span>{' '}
-          como motorista de aplicativo
+          Descubra quanto você{' '}
+          <span className="text-primary">realmente lucra</span>{' '}
+          como motorista
         </h1>
         
         {/* Subtitle */}
         <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Registre entradas e saídas, acompanhe lucros diários, semanais e mensais e saiba exatamente quanto você ganha por hora e por quilômetro.
+          Chega de adivinhar. Registre seus ganhos e gastos em segundos e veja seu lucro real por hora, por km e por plataforma.
         </p>
         
         {/* CTA */}
         <div className="space-y-3 pt-4">
           <Link to="/auth">
             <Button size="lg" className="bg-gradient-profit hover:opacity-90 text-lg px-8 py-6 h-auto touch-feedback">
-              Criar conta grátis no PEDY Driver
+              Começar agora — é grátis
             </Button>
           </Link>
-          <p className="text-sm text-muted-foreground">(Grátis)</p>
+          <p className="text-sm text-muted-foreground">Sem cartão. Cancele quando quiser.</p>
         </div>
       </div>
     </section>

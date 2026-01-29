@@ -17,7 +17,7 @@
     --popover-foreground: 210 40% 98%;
 
     /* Primary - Green for profits/positive */
-    --primary: 160 84% 39%;
+    --primary: 158 84% 42%;
     --primary-foreground: 210 40% 98%;
 
     /* Secondary - Subtle surface */
@@ -50,8 +50,8 @@
     --info: 217 91% 60%;
 
     /* Gradient stops */
-    --gradient-profit-start: 160 84% 39%;
-    --gradient-profit-end: 160 70% 50%;
+    --gradient-profit-start: 155 85% 38%;
+    --gradient-profit-end: 165 75% 48%;
     --gradient-expense-start: 0 84% 60%;
     --gradient-expense-end: 350 80% 55%;
 
@@ -73,7 +73,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 220 18% 14%;
     --popover-foreground: 210 40% 98%;
-    --primary: 160 84% 39%;
+    --primary: 158 84% 42%;
     --primary-foreground: 210 40% 98%;
     --secondary: 220 16% 16%;
     --secondary-foreground: 210 40% 90%;

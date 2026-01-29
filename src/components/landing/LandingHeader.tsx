@@ -16,8 +16,8 @@ export function LandingHeader() {
         
         {/* CTA */}
         <Link to="/auth">
-          <Button variant="outline" size="sm">
-            Entrar
+          <Button size="sm" className="bg-gradient-profit hover:opacity-90">
+            Começar grátis
           </Button>
         </Link>
       </div>

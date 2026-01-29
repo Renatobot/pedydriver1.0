@@ -35,8 +35,8 @@ export function PricingPreview() {
           {/* Free */}
           <Card className="p-6 space-y-5">
             <div>
-              <h3 className="text-lg font-bold">Gratuito</h3>
-              <p className="text-sm text-muted-foreground">Para começar</p>
+              <h3 className="text-lg font-bold">Grátis pra sempre</h3>
+              <p className="text-sm text-muted-foreground">Comece sem pagar nada</p>
             </div>
             
             <ul className="space-y-2.5">
@@ -62,7 +62,7 @@ export function PricingPreview() {
             'p-6 space-y-5 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800 relative overflow-hidden'
           )}>
             <div className="absolute top-0 right-0 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-              POPULAR
+              MAIS POPULAR
             </div>
             
             <div>
@@ -70,12 +70,12 @@ export function PricingPreview() {
                 <h3 className="text-lg font-bold">PRO</h3>
                 <Crown className="w-4 h-4 text-amber-500" />
               </div>
-              <p className="text-sm text-muted-foreground">Para motoristas sérios</p>
+              <p className="text-sm text-muted-foreground">Para quem quer lucrar mais</p>
             </div>
             
             <ul className="space-y-2.5">
               <li className="flex items-center gap-2.5 text-sm">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                   <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 Tudo do plano gratuito
@@ -90,11 +90,14 @@ export function PricingPreview() {
               ))}
             </ul>
             
-            <Link to="/upgrade" className="block">
-              <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
-                Ver planos PRO
-              </Button>
-            </Link>
+            <div className="space-y-2">
+              <Link to="/upgrade" className="block">
+                <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+                  Ver planos PRO
+                </Button>
+              </Link>
+              <p className="text-xs text-center text-muted-foreground">Mais popular entre motoristas full-time</p>
+            </div>
           </Card>
         </div>
       </div>
