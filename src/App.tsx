@@ -8,6 +8,7 @@ import { SyncProvider } from "@/contexts/SyncContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import Dashboard from "./pages/Dashboard";
 import Add from "./pages/Add";
+import QuickEntry from "./pages/QuickEntry";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -56,6 +57,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/quick" element={<ProtectedRoute><QuickEntry /></ProtectedRoute>} />
       <Route path="/add" element={<ProtectedRoute><Add /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
