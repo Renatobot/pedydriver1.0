@@ -45,14 +45,14 @@ export function PlatformComparisonChart({ platformMetrics }: PlatformComparisonC
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border transition-all duration-300">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium text-foreground">
           Lucro por Plataforma
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-48">
+        <div className="h-48 animate-fade-in" key={platformMetrics.length}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -69,7 +69,7 @@ export function PlatformComparisonChart({ platformMetrics }: PlatformComparisonC
                 tickFormatter={(value) => `R$${value}`}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} />
-              <Bar dataKey="profit" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="profit" radius={[4, 4, 0, 0]} animationDuration={800} animationEasing="ease-out">
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
