@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { usePlatforms } from '@/hooks/usePlatforms';
-import { useCreateShift } from '@/hooks/useShifts';
+import { useCreateShiftOffline } from '@/hooks/useOfflineShifts';
 
 const schema = z.object({
   date: z.date(),
@@ -29,7 +29,7 @@ interface ShiftFormProps {
 
 export function ShiftForm({ onSuccess }: ShiftFormProps) {
   const { data: platforms } = usePlatforms();
-  const createShift = useCreateShift();
+  const createShift = useCreateShiftOffline();
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<FormData>({

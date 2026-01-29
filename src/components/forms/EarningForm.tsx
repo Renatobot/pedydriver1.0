@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { usePlatforms } from '@/hooks/usePlatforms';
-import { useCreateEarning } from '@/hooks/useEarnings';
+import { useCreateEarningOffline } from '@/hooks/useOfflineEarnings';
 import { ServiceType, EarningType, PaymentType } from '@/types/database';
 import { SERVICE_TYPE_LABELS, EARNING_TYPE_LABELS, PAYMENT_TYPE_LABELS } from '@/lib/formatters';
 
@@ -36,7 +36,7 @@ interface EarningFormProps {
 
 export function EarningForm({ onSuccess }: EarningFormProps) {
   const { data: platforms } = usePlatforms();
-  const createEarning = useCreateEarning();
+  const createEarning = useCreateEarningOffline();
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<FormData>({

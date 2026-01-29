@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { usePlatforms } from '@/hooks/usePlatforms';
-import { useCreateExpense } from '@/hooks/useExpenses';
+import { useCreateExpenseOffline } from '@/hooks/useOfflineExpenses';
 import { ExpenseCategory } from '@/types/database';
 import { EXPENSE_CATEGORY_LABELS } from '@/lib/formatters';
 
@@ -33,7 +33,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const { data: platforms } = usePlatforms();
-  const createExpense = useCreateExpense();
+  const createExpense = useCreateExpenseOffline();
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<FormData>({
