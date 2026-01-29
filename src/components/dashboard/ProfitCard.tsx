@@ -12,20 +12,20 @@ export function ProfitCard({ value, label = 'Lucro Real' }: ProfitCardProps) {
 
   return (
     <div className={cn(
-      'rounded-2xl p-6 transition-all',
+      'rounded-2xl p-4 sm:p-6 transition-all touch-feedback',
       isPositive ? 'bg-gradient-profit glow-profit' : 'bg-gradient-expense glow-expense'
     )}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-primary-foreground/80 uppercase tracking-wide">
+        <span className="text-xs sm:text-sm font-medium text-primary-foreground/80 uppercase tracking-wide">
           {label}
         </span>
         {isPositive ? (
-          <TrendingUp className="w-5 h-5 text-primary-foreground/80" />
+          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground/80" />
         ) : (
-          <TrendingDown className="w-5 h-5 text-primary-foreground/80" />
+          <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground/80" />
         )}
       </div>
-      <p className="text-3xl font-bold font-mono text-primary-foreground animate-count-up">
+      <p className="text-2xl sm:text-3xl md:text-4xl font-bold font-mono text-primary-foreground animate-count-up">
         {formatCurrency(value)}
       </p>
     </div>

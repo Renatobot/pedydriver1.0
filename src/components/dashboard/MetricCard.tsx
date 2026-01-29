@@ -49,12 +49,12 @@ export function MetricCard({
 
   return (
     <div className={cn(
-      'rounded-xl p-4 bg-card border border-border/50 transition-all',
+      'rounded-xl p-3 sm:p-4 bg-card border border-border/50 transition-all touch-feedback',
       'hover:border-border active:scale-[0.98]',
       className
     )}>
-      <div className="flex items-start justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      <div className="flex items-start justify-between mb-1.5 sm:mb-2">
+        <span className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {label}
         </span>
         {icon && (
@@ -63,11 +63,11 @@ export function MetricCard({
           </span>
         )}
       </div>
-      <p className={cn('text-xl font-bold font-mono animate-count-up', valueColorClass())}>
+      <p className={cn('text-lg sm:text-xl md:text-2xl font-bold font-mono animate-count-up', valueColorClass())}>
         {formattedValue()}
       </p>
       {subtitle && (
-        <p className="text-2xs text-muted-foreground mt-1">{subtitle}</p>
+        <p className="text-2xs sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">{subtitle}</p>
       )}
     </div>
   );

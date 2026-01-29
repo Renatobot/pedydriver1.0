@@ -29,22 +29,22 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="p-4 space-y-6 max-w-lg mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto scroll-momentum">
         {/* Header */}
-        <div className="space-y-1">
-          <p className="text-muted-foreground text-sm">Olá, {firstName}!</p>
-          <h1 className="text-2xl font-bold text-foreground">Seu Resumo</h1>
+        <div className="space-y-0.5 sm:space-y-1">
+          <p className="text-muted-foreground text-xs sm:text-sm">Olá, {firstName}!</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Seu Resumo</h1>
         </div>
 
         {/* Date Range Selector */}
         <DateRangeSelector value={range} onChange={setRange} />
 
         {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-28 w-full rounded-2xl" />
-            <div className="grid grid-cols-2 gap-3">
-              <Skeleton className="h-24 w-full rounded-xl" />
-              <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="space-y-3 sm:space-y-4">
+            <Skeleton className="h-24 sm:h-28 w-full rounded-2xl" />
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <Skeleton className="h-20 sm:h-24 w-full rounded-xl" />
+              <Skeleton className="h-20 sm:h-24 w-full rounded-xl" />
             </div>
           </div>
         ) : (
@@ -53,77 +53,77 @@ export default function Dashboard() {
             <ProfitCard value={metrics.realProfit} />
 
             {/* Main Metrics */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <MetricCard
                 label="Receita Total"
                 value={metrics.totalRevenue}
                 variant="profit"
-                icon={<Banknote className="w-4 h-4" />}
+                icon={<Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
               <MetricCard
                 label="Gastos"
                 value={metrics.totalExpenses}
                 variant="expense"
-                icon={<Wallet className="w-4 h-4" />}
+                icon={<Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
             </div>
 
             {/* Payment Split */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <MetricCard
                 label="Imediato"
                 value={metrics.immediateRevenue}
-                icon={<Banknote className="w-4 h-4" />}
+                icon={<Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 subtitle="Dinheiro/Pix"
               />
               <MetricCard
                 label="Via App"
                 value={metrics.appRevenue}
-                icon={<CreditCard className="w-4 h-4" />}
+                icon={<CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 subtitle="Saldo no app"
               />
             </div>
 
             {/* Performance Metrics */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <MetricCard
                 label="R$/hora"
                 value={metrics.revenuePerHour}
                 variant={metrics.revenuePerHour >= 0 ? 'profit' : 'expense'}
-                icon={<Clock className="w-4 h-4" />}
+                icon={<Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
               <MetricCard
                 label="R$/km"
                 value={metrics.revenuePerKm}
                 variant={metrics.revenuePerKm >= 0 ? 'profit' : 'expense'}
-                icon={<Navigation className="w-4 h-4" />}
+                icon={<Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
               <MetricCard
                 label="Serviços"
                 value={metrics.totalServices}
                 format="number"
-                icon={<Hash className="w-4 h-4" />}
+                icon={<Hash className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
             </div>
 
             {/* Work Stats */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <MetricCard
                 label="Horas"
                 value={metrics.totalHours}
                 format="hours"
-                icon={<Clock className="w-4 h-4" />}
+                icon={<Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
               <MetricCard
                 label="Km"
                 value={metrics.totalKm}
                 format="km"
-                icon={<Navigation className="w-4 h-4" />}
+                icon={<Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
             </div>
 
             {/* Charts Section */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <ProfitEvolutionChart
                 earnings={earnings}
                 expenses={expenses}
@@ -132,7 +132,7 @@ export default function Dashboard() {
                 costPerKm={costPerKm}
               />
               
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <PlatformComparisonChart platformMetrics={platformMetrics} />
                 <ExpenseCategoryChart expenses={expenses} />
               </div>
@@ -140,11 +140,11 @@ export default function Dashboard() {
 
             {/* Platform Comparison */}
             {platformMetrics.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground">
+              <div className="space-y-3 sm:space-y-4">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">
                   Por Plataforma
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {platformMetrics.map((pm, index) => (
                     <PlatformCard key={pm.platform.id} data={pm} rank={index + 1} />
                   ))}

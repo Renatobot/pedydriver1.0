@@ -44,23 +44,23 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="p-4 space-y-6 max-w-lg mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto scroll-momentum">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-          <p className="text-muted-foreground text-sm">Personalize sua experiência</p>
+        <div className="space-y-0.5 sm:space-y-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Configurações</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Personalize sua experiência</p>
         </div>
 
         {/* User Info */}
-        <div className="rounded-xl p-4 bg-card border border-border/50 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
-            <User className="w-6 h-6 text-muted-foreground" />
+        <div className="rounded-xl p-3 sm:p-4 bg-card border border-border/50 flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
           </div>
-          <div className="flex-1">
-            <p className="font-medium text-foreground">
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm sm:text-base text-foreground truncate">
               {user?.user_metadata?.full_name || 'Usuário'}
             </p>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
           </div>
         </div>
 
@@ -70,44 +70,44 @@ export default function Settings() {
             <Skeleton className="h-20 w-full rounded-xl" />
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5 sm:space-y-6">
             {/* Vehicle Type */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
                 <Car className="w-4 h-4" />
                 Tipo de Veículo
               </Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
                   onClick={() => setVehicleType('carro')}
                   className={cn(
-                    'flex items-center justify-center gap-2 p-4 rounded-xl border transition-all touch-target',
+                    'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'carro'
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
                   )}
                 >
                   <Car className="w-5 h-5" />
-                  <span className="font-medium">Carro</span>
+                  <span className="font-medium text-sm sm:text-base">Carro</span>
                 </button>
                 <button
                   onClick={() => setVehicleType('moto')}
                   className={cn(
-                    'flex items-center justify-center gap-2 p-4 rounded-xl border transition-all touch-target',
+                    'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'moto'
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
                   )}
                 >
                   <Bike className="w-5 h-5" />
-                  <span className="font-medium">Moto</span>
+                  <span className="font-medium text-sm sm:text-base">Moto</span>
                 </button>
               </div>
             </div>
 
             {/* Cost per KM */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
                 <Gauge className="w-4 h-4" />
                 Custo por Km (R$)
               </Label>
@@ -117,7 +117,7 @@ export default function Settings() {
                 min="0"
                 value={costPerKm}
                 onChange={(e) => setCostPerKm(e.target.value)}
-                className="touch-target font-mono"
+                className="h-11 sm:h-12 font-mono text-sm sm:text-base"
                 placeholder="0.50"
               />
               <Button
@@ -125,61 +125,61 @@ export default function Settings() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowCalculator(true)}
-                className="w-full text-muted-foreground hover:text-foreground"
+                className="w-full h-10 sm:h-11 text-muted-foreground hover:text-foreground text-xs sm:text-sm touch-feedback"
               >
                 <Calculator className="w-4 h-4 mr-2" />
                 Não sabe? Calcular meu custo
               </Button>
-              <p className="text-2xs text-muted-foreground">
+              <p className="text-2xs sm:text-xs text-muted-foreground">
                 Custo estimado de combustível + desgaste por quilômetro
               </p>
             </div>
 
             {/* Cost Distribution Rule */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
                 <Scale className="w-4 h-4" />
                 Rateio de Custos Gerais
               </Label>
               <Select value={distributionRule} onValueChange={(v) => setDistributionRule(v as CostDistributionRule)}>
-                <SelectTrigger className="touch-target">
+                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="km">Por Km rodados</SelectItem>
-                  <SelectItem value="horas">Por Horas trabalhadas</SelectItem>
-                  <SelectItem value="receita">Por Receita gerada</SelectItem>
+                  <SelectItem value="km" className="py-3">Por Km rodados</SelectItem>
+                  <SelectItem value="horas" className="py-3">Por Horas trabalhadas</SelectItem>
+                  <SelectItem value="receita" className="py-3">Por Receita gerada</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-2xs text-muted-foreground">
+              <p className="text-2xs sm:text-xs text-muted-foreground">
                 Como distribuir gastos gerais entre as plataformas
               </p>
             </div>
 
             {/* Week Starts On */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
                 <Calendar className="w-4 h-4" />
                 Semana Inicia em
               </Label>
               <Select value={weekStartsOn} onValueChange={(v) => setWeekStartsOn(v as 'domingo' | 'segunda')}>
-                <SelectTrigger className="touch-target">
+                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="segunda">Segunda-feira</SelectItem>
-                  <SelectItem value="domingo">Domingo</SelectItem>
+                  <SelectItem value="segunda" className="py-3">Segunda-feira</SelectItem>
+                  <SelectItem value="domingo" className="py-3">Domingo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Notifications */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
                 <Bell className="w-4 h-4" />
                 Lembretes
               </Label>
-              <div className="rounded-xl p-4 bg-muted/30 border border-border/50">
+              <div className="rounded-xl p-3 sm:p-4 bg-muted/30 border border-border/50">
                 <NotificationSettings />
               </div>
             </div>
@@ -187,7 +187,7 @@ export default function Settings() {
             {/* Save Button */}
             <Button
               onClick={handleSave}
-              className="w-full touch-target"
+              className="w-full h-12 sm:h-14 text-sm sm:text-base font-semibold touch-feedback"
               disabled={updateSettings.isPending}
             >
               {updateSettings.isPending ? 'Salvando...' : 'Salvar Configurações'}
@@ -200,7 +200,7 @@ export default function Settings() {
           <Button
             variant="outline"
             onClick={signOut}
-            className="w-full touch-target text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="w-full h-11 sm:h-12 text-sm sm:text-base text-destructive hover:text-destructive hover:bg-destructive/10 touch-feedback"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Sair da Conta
