@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { VehicleType, CostDistributionRule } from '@/types/database';
 import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -170,6 +171,17 @@ export default function Settings() {
                   <SelectItem value="domingo">Domingo</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Notifications */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                Lembretes
+              </Label>
+              <div className="rounded-xl p-4 bg-muted/30 border border-border/50">
+                <NotificationSettings />
+              </div>
             </div>
 
             {/* Save Button */}
