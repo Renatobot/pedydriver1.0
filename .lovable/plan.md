@@ -1,203 +1,179 @@
 
-# Plano: Ajustes de Texto e Cores da Landing Page
+# Plano: Botao de Instalacao PWA
 
 ## Visao Geral
 
-Refinamento completo dos textos para serem mais persuasivos e diretos, e ajuste dos tons de verde para criar mais profundidade visual e melhor legibilidade.
+Adicionar um sistema de instalacao PWA que exibe um banner elegante no Dashboard logo apos o login, com opcao de dispensar e reinstalar pelas Configuracoes.
 
 ---
 
-## Parte 1: Ajustes de Cores
+## Estrategia Escolhida
 
-### Paleta Verde Refinada
+**Mostrar desde o inicio** - O botao aparece assim que o usuario loga, com as seguintes caracteristicas:
 
-Manter o verde como cor primaria, mas adicionar variacoes para criar mais dinamismo:
-
-| Elemento | Cor Atual | Nova Cor | Motivo |
-|----------|-----------|----------|--------|
-| Primary | 160 84% 39% | 158 84% 42% | Verde ligeiramente mais vibrante |
-| Gradient start | 160 84% 39% | 155 85% 38% | Tom mais esmeralda |
-| Gradient end | 160 70% 50% | 165 75% 48% | Transicao mais suave |
-| Primary/10 bg | opacity 10% | opacity 15% | Fundos mais visiveis |
-
-### Ajustes de Contraste
-
-- Aumentar opacidade dos fundos `bg-primary/10` para `bg-primary/15` em icones
-- Melhorar legibilidade do texto `text-muted-foreground` em fundos escuros
-- Adicionar bordas sutis em elementos hover
+- Banner discreto no topo do Dashboard
+- Botao "Instalar App" com icone de download
+- Opcao de fechar/dispensar (salva no localStorage)
+- Opcao nas Configuracoes para quem dispensou
 
 ---
 
-## Parte 2: Ajustes de Texto
-
-### HeroSection.tsx
-
-**Antes:**
-- Titulo: "PEDY Driver ajuda voce a controlar seus ganhos como motorista de aplicativo"
-- Subtitulo: "Registre entradas e saidas, acompanhe lucros diarios..."
-- CTA: "Criar conta gratis no PEDY Driver"
-
-**Depois:**
-- Titulo: "Descubra quanto voce realmente lucra como motorista"
-- Subtitulo: "Chega de adivinhar. Registre seus ganhos e gastos em segundos e veja seu lucro real por hora, por km e por plataforma."
-- CTA: "Comecar agora - e gratis"
-- Microcopy: "Sem cartao. Cancele quando quiser."
-
-**Motivo:** Titulo mais curto e focado no beneficio (lucro real), nao no app.
-
----
-
-### ProblemSection.tsx
-
-**Antes:**
-- Titulo: "Voce trabalha bastante, mas no fim do dia nao sabe se realmente valeu a pena?"
-- Texto: "Com combustivel, taxas e desgaste do veiculo, faturamento nao e lucro."
-
-**Depois:**
-- Titulo: "Voce sabe quanto realmente lucra por hora?"
-- Texto: "Gasolina, manutencao, taxas dos apps... No fim do mes, quanto sobra de verdade no seu bolso?"
-- Adicionar: Texto adicional "A maioria dos motoristas nao sabe responder isso."
-
-**Motivo:** Pergunta mais direta e especifica, cria identificacao imediata.
-
----
-
-### SolutionSection.tsx
-
-**Antes:**
-- Titulo: "Com o PEDY Driver voce tem controle total"
-- Itens genericos
-
-**Depois:**
-- Titulo: "Tenha clareza sobre cada real que voce ganha"
-- Itens mais especificos:
-  1. "Registre ganhos e gastos em 10 segundos"
-  2. "Veja seu lucro liquido do dia, semana e mes"
-  3. "Descubra seu R$/hora real (descontando gastos)"
-  4. "Compare plataformas: Uber, 99, iFood, InDrive"
-  5. "Identifique seus melhores dias e horarios"
-
-**Motivo:** Beneficios mais concretos e mensuraveis.
-
----
-
-### HowItWorksSection.tsx
-
-**Antes:**
-- Passo 1: "Registre" / "Adicione ganhos e gastos rapidamente"
-- Passo 2: "Veja" / "Acompanhe seu lucro real em tempo real"
-- Passo 3: "Decida" / "Saiba onde e quando vale mais a pena rodar"
-
-**Depois:**
-- Passo 1: "Registre" / "Ganhou R$ 50 na Uber? Gastou R$ 30 de gasolina? Registre em segundos."
-- Passo 2: "Acompanhe" / "Veja seu lucro real atualizado: hoje, essa semana, esse mes."
-- Passo 3: "Otimize" / "Descubra que quinta-feira voce lucra 40% mais que domingo."
-
-**Motivo:** Exemplos concretos tornam a proposta mais tangivel.
-
----
-
-### SocialProofSection.tsx
-
-**Antes:**
-- "+500 motoristas ja usam"
-- Depoimentos genericos
-
-**Depois:**
-- "+500 motoristas controlam seus lucros"
-- Depoimentos mais especificos:
-  1. Carlos, SP: "Descobri que quinta e sexta sao meus melhores dias. Parei de rodar domingo e meu lucro/hora subiu 35%!"
-  2. Marcos, RJ: "Em 2 semanas ja sabia exatamente meu custo por km. Agora so aceito corrida que vale a pena."
-  3. Ana, BH: "Facil demais. Registro tudo enquanto espero passageiro. Melhor investimento que fiz."
-
-**Motivo:** Numeros e resultados especificos aumentam credibilidade.
-
----
-
-### TargetAudienceSection.tsx
-
-**Antes:**
-- Titulo: "Para quem e o PEDY Driver?"
-- Tags: Motoristas, Entregadores, plataformas
-- Texto: "Se voce dirige para ganhar dinheiro, isso e pra voce."
-
-**Depois:**
-- Titulo: "Feito para quem vive na rua"
-- Tags: Uber e 99, iFood e Rappi, InDrive e 99Food, Motoristas e entregadores
-- Texto: "Se voce roda para ganhar dinheiro, o PEDY Driver e seu copiloto financeiro."
-
-**Motivo:** Linguagem mais proxima do publico-alvo.
-
----
-
-### PricingPreview.tsx
-
-**Antes:**
-- Titulo gratis: "Gratuito" / "Para comecar"
-- Titulo PRO: "PRO" / "Para motoristas serios"
-
-**Depois:**
-- Titulo gratis: "Gratis pra sempre" / "Comece sem pagar nada"
-- Titulo PRO: "PRO" / "Para quem quer lucrar mais"
-- Adicionar ao PRO: "Mais popular entre motoristas full-time"
-
-**Motivo:** Enfatizar que gratis e permanente, PRO focado em resultado.
-
----
-
-### FinalCTA.tsx
-
-**Antes:**
-- Titulo: "Comece agora mesmo"
-- Texto: "Descubra quanto voce realmente ganha. E gratis e leva menos de 1 minuto."
-- CTA: "Comecar gratis agora"
-
-**Depois:**
-- Titulo: "Pronto pra descobrir seu lucro real?"
-- Texto: "Crie sua conta em 30 segundos. E gratis, sem cartao, e voce pode cancelar quando quiser."
-- CTA: "Criar minha conta gratis"
-- Microcopy: "Junte-se a +500 motoristas"
-
-**Motivo:** Titulo como pergunta cria engajamento, CTA em primeira pessoa aumenta conversao.
-
----
-
-## Arquivos a Modificar
+## Arquitetura
 
 ```text
-src/index.css                              # Ajuste de variaveis de cor
-src/components/landing/HeroSection.tsx     # Textos do hero
-src/components/landing/ProblemSection.tsx  # Textos do problema
-src/components/landing/SolutionSection.tsx # Lista de solucoes
-src/components/landing/HowItWorksSection.tsx # Passos com exemplos
-src/components/landing/SocialProofSection.tsx # Depoimentos melhorados
-src/components/landing/TargetAudienceSection.tsx # Publico-alvo
-src/components/landing/PricingPreview.tsx  # Textos dos planos
-src/components/landing/FinalCTA.tsx        # CTA final
-src/components/landing/LandingHeader.tsx   # CTA do header
++-----------------------------------+
+|  [X]  Instale o PEDY Driver      |
+|       para acesso rapido!        |
+|       [Instalar App]             |
++-----------------------------------+
+|                                  |
+|  Dashboard Content...             |
+|                                  |
++-----------------------------------+
 ```
 
 ---
 
-## Resumo das Mudancas
+## Implementacao
 
-### Cores
-- Verde primario: de 39% para 42% luminosidade (mais vibrante)
-- Gradientes: transicao mais suave entre tons
-- Fundos: de 10% para 15% opacidade (mais visivel)
+### 1. Criar Hook usePWAInstall
 
-### Textos
-- Titulos: mais curtos e focados em beneficios
-- Descricoes: exemplos concretos com numeros
-- CTAs: primeira pessoa ("Criar minha conta")
-- Depoimentos: resultados especificos com metricas
-- Microcopy: reforcar "gratis" e "sem compromisso"
+Arquivo: `src/hooks/usePWAInstall.tsx`
+
+Responsabilidades:
+- Detectar se o app ja esta instalado
+- Capturar o evento `beforeinstallprompt`
+- Gerenciar estado de "dispensado" no localStorage
+- Expor funcao `installApp()` para disparar a instalacao
+
+```typescript
+// Estrutura do hook
+interface UsePWAInstall {
+  canInstall: boolean;        // Navegador suporta e nao esta instalado
+  isInstalled: boolean;       // Ja esta instalado como PWA
+  isDismissed: boolean;       // Usuario dispensou o banner
+  installApp: () => void;     // Dispara o prompt de instalacao
+  dismissBanner: () => void;  // Esconde o banner
+  resetDismiss: () => void;   // Reseta para mostrar novamente
+}
+```
+
+### 2. Criar Componente PWAInstallBanner
+
+Arquivo: `src/components/pwa/PWAInstallBanner.tsx`
+
+Design do banner:
+- Fundo com gradiente verde sutil (mesma cor do app)
+- Icone de smartphone/download
+- Texto: "Instale o PEDY Driver para acesso rapido!"
+- Botao primario: "Instalar"
+- Botao de fechar (X)
+- Animacao de entrada suave
+
+### 3. Adicionar ao Dashboard
+
+No arquivo `src/pages/Dashboard.tsx`:
+- Importar o componente PWAInstallBanner
+- Posicionar logo abaixo do header, antes do EntryLimitBanner
+- Banner so aparece se:
+  - `canInstall` for true
+  - `isDismissed` for false
+
+### 4. Adicionar as Configuracoes
+
+No arquivo `src/pages/Settings.tsx`:
+- Nova secao "Instalar App" (apenas se nao instalado)
+- Se dispensou, mostrar botao para reinstalar o prompt
+- Se ja instalado, mostrar mensagem "App instalado"
 
 ---
 
-## Resultado Esperado
+## Detalhes Tecnicos
 
-- Pagina mais persuasiva com foco em resultados tangiveis
-- Cores mais vibrantes mas ainda profissionais
-- Taxa de conversao maior com CTAs mais diretos
-- Maior identificacao do publico-alvo com exemplos reais
+### Deteccao de Instalacao PWA
+
+```typescript
+// Detectar se ja esta instalado
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+  || (window.navigator as any).standalone === true;
+
+// Capturar evento de instalacao
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  setCanInstall(true);
+});
+```
+
+### LocalStorage Keys
+
+```typescript
+const PWA_DISMISSED_KEY = 'pedy_pwa_dismissed';
+const PWA_DISMISSED_AT_KEY = 'pedy_pwa_dismissed_at';
+```
+
+---
+
+## Fluxo do Usuario
+
+```text
+1. Usuario faz login
+   |
+2. Dashboard carrega
+   |
+3. Banner aparece no topo (se nao instalado e nao dispensado)
+   |
+   +-- Usuario clica "Instalar"
+   |   |
+   |   +-- Prompt nativo do navegador aparece
+   |       |
+   |       +-- Aceita: App instalado, banner desaparece
+   |       +-- Recusa: Banner continua visivel
+   |
+   +-- Usuario clica "X" para fechar
+       |
+       +-- Banner desaparece
+       +-- Salva no localStorage
+       +-- Opcao disponivel em Configuracoes
+```
+
+---
+
+## Arquivos a Criar/Modificar
+
+| Arquivo | Acao | Descricao |
+|---------|------|-----------|
+| `src/hooks/usePWAInstall.tsx` | Criar | Hook para logica de instalacao PWA |
+| `src/components/pwa/PWAInstallBanner.tsx` | Criar | Componente do banner |
+| `src/pages/Dashboard.tsx` | Modificar | Adicionar banner |
+| `src/pages/Settings.tsx` | Modificar | Adicionar opcao de instalacao |
+
+---
+
+## Design do Banner
+
+```text
++--------------------------------------------------+
+| [Smartphone] Instale o PEDY Driver          [X]  |
+|              para acesso rapido!                 |
+|              [Instalar App]                      |
++--------------------------------------------------+
+
+Cores:
+- Fundo: bg-primary/10 com borda bg-primary/30
+- Icone: text-primary
+- Botao: bg-primary (verde esmeralda)
+- Texto: text-foreground
+```
+
+---
+
+## Consideracoes
+
+1. **iOS Safari**: O evento `beforeinstallprompt` nao e suportado. Mostrar instrucoes manuais (Compartilhar > Adicionar a Tela Inicial)
+
+2. **Ja Instalado**: Nao mostrar o banner se detectar que esta rodando como PWA
+
+3. **Dispensar Temporario**: Considerar mostrar novamente apos 7 dias (opcional)
+
+4. **Analytics**: Podemos rastrear quantos usuarios instalam vs dispensam (implementacao futura)
