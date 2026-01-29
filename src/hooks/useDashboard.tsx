@@ -8,7 +8,7 @@ import { DashboardMetrics, PlatformMetrics, Platform } from '@/types/database';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export type DateRange = 'week' | 'month';
+export type DateRange = 'day' | 'week' | 'month';
 
 export function useDashboard(range: DateRange = 'week') {
   const { data: settings } = useUserSettings();
@@ -18,7 +18,13 @@ export function useDashboard(range: DateRange = 'week') {
   
   const dateRange = useMemo(() => {
     const now = new Date();
-    if (range === 'week') {
+    if (range === 'day') {
+      const today = format(now, 'yyyy-MM-dd');
+      return {
+        start: today,
+        end: today
+      };
+    } else if (range === 'week') {
       return {
         start: format(startOfWeek(now, { weekStartsOn }), 'yyyy-MM-dd'),
         end: format(endOfWeek(now, { weekStartsOn }), 'yyyy-MM-dd')
