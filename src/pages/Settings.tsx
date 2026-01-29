@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,15 @@ import { useState, useEffect } from 'react';
 import { VehicleType, CostDistributionRule } from '@/types/database';
 import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
+import { PremiumBadge } from '@/components/subscription/PremiumBadge';
+import { Link } from 'react-router-dom';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { data: settings, isLoading } = useUserSettings();
   const updateSettings = useUpdateUserSettings();
+  const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
 
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
@@ -57,10 +61,67 @@ export default function Settings() {
             <User className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm sm:text-base text-foreground truncate">
-              {user?.user_metadata?.full_name || 'Usuário'}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-sm sm:text-base text-foreground truncate">
+                {user?.user_metadata?.full_name || 'Usuário'}
+              </p>
+              {isPro && <PremiumBadge size="sm" variant="pill" />}
+            </div>
             <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
+          </div>
+        </div>
+
+        {/* Subscription Card */}
+        <div className={cn(
+          "rounded-xl p-4 sm:p-5 border",
+          isPro 
+            ? "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800"
+            : "bg-card border-border/50"
+        )}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className={cn(
+                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+                isPro 
+                  ? "bg-gradient-to-br from-amber-400 to-orange-500"
+                  : "bg-secondary"
+              )}>
+                <Crown className={cn(
+                  "w-5 h-5 sm:w-6 sm:h-6",
+                  isPro ? "text-white" : "text-muted-foreground"
+                )} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-sm sm:text-base">
+                    {isPro ? 'Plano PRO' : 'Plano Gratuito'}
+                  </h3>
+                </div>
+                {isPro ? (
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Acesso completo a todas as funcionalidades
+                  </p>
+                ) : (
+                  <div className="space-y-1 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {monthlyEntryCount}/{limits.maxEntriesPerMonth} registros este mês
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {userPlatformCount}/{limits.maxPlatforms} plataformas
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {!isPro && (
+              <Button asChild size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white flex-shrink-0">
+                <Link to="/upgrade">
+                  Upgrade
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

@@ -206,6 +206,45 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           cost_distribution_rule: Database["public"]["Enums"]["cost_distribution_rule"]
@@ -260,6 +299,8 @@ export type Database = {
         | "outros"
       payment_type: "imediato" | "app"
       service_type: "corrida" | "entrega" | "outro"
+      subscription_plan: "free" | "pro"
+      subscription_status: "active" | "cancelled" | "expired" | "trialing"
       vehicle_type: "carro" | "moto"
     }
     CompositeTypes: {
@@ -402,6 +443,8 @@ export const Constants = {
       ],
       payment_type: ["imediato", "app"],
       service_type: ["corrida", "entrega", "outro"],
+      subscription_plan: ["free", "pro"],
+      subscription_status: ["active", "cancelled", "expired", "trialing"],
       vehicle_type: ["carro", "moto"],
     },
   },

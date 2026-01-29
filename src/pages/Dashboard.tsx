@@ -11,9 +11,11 @@ import { ExpenseCategoryChart } from '@/components/dashboard/ExpenseCategoryChar
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
+import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
 
 export default function Dashboard() {
-  const [range, setRange] = useState<DateRange>('week');
+  const [range, setRange] = useState<DateRange>('day');
   const { 
     metrics, 
     platformMetrics, 
@@ -35,6 +37,9 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-xs sm:text-sm">Olá, {firstName}!</p>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Seu Resumo</h1>
         </div>
+
+        {/* Entry Limit Banner */}
+        <EntryLimitBanner />
 
         {/* Date Range Selector */}
         <DateRangeSelector value={range} onChange={setRange} />
@@ -122,21 +127,23 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Charts Section */}
-            <div className="space-y-3 sm:space-y-4">
-              <ProfitEvolutionChart
-                earnings={earnings}
-                expenses={expenses}
-                range={range}
-                weekStartsOn={weekStartsOn as 0 | 1}
-                costPerKm={costPerKm}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <PlatformComparisonChart platformMetrics={platformMetrics} />
-                <ExpenseCategoryChart expenses={expenses} />
+            {/* Charts Section - PRO Feature */}
+            <FeatureGate feature="advancedCharts" showTeaser>
+              <div className="space-y-3 sm:space-y-4">
+                <ProfitEvolutionChart
+                  earnings={earnings}
+                  expenses={expenses}
+                  range={range}
+                  weekStartsOn={weekStartsOn as 0 | 1}
+                  costPerKm={costPerKm}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <PlatformComparisonChart platformMetrics={platformMetrics} />
+                  <ExpenseCategoryChart expenses={expenses} />
+                </div>
               </div>
-            </div>
+            </FeatureGate>
 
             {/* Platform Comparison */}
             {platformMetrics.length > 0 && (
