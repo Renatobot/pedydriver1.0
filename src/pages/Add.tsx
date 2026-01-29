@@ -5,6 +5,8 @@ import { EarningForm } from '@/components/forms/EarningForm';
 import { ExpenseForm } from '@/components/forms/ExpenseForm';
 import { ShiftForm } from '@/components/forms/ShiftForm';
 import { cn } from '@/lib/utils';
+import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
+import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
 
 type FormType = 'earning' | 'expense' | 'shift';
 
@@ -16,6 +18,7 @@ const tabs: { id: FormType; label: string; icon: React.ComponentType<{ className
 
 export default function Add() {
   const [activeTab, setActiveTab] = useState<FormType>('earning');
+  const { isPro } = useSubscriptionContext();
 
   return (
     <AppLayout>
@@ -25,6 +28,9 @@ export default function Add() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lançar</h1>
           <p className="text-muted-foreground text-xs sm:text-sm">Registre seus ganhos, gastos e turnos</p>
         </div>
+
+        {/* Entry Limit Banner */}
+        {!isPro && <EntryLimitBanner showAlways />}
 
         {/* Tab Selector */}
         <div className="flex items-center gap-1 sm:gap-2 p-1 rounded-xl bg-secondary">

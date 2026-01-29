@@ -57,6 +57,7 @@ export function useCreateShiftOffline() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyEntryCount'] });
       toast({
         title: isOnline ? 'Turno registrado!' : 'Turno salvo offline!',
         description: isOnline 
