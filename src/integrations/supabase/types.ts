@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       earnings: {
         Row: {
           amount: number
@@ -146,6 +173,9 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_blocked: boolean
+          last_login_at: string | null
+          phone: string | null
           updated_at: string
           user_id: string
         }
@@ -153,6 +183,9 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_blocked?: boolean
+          last_login_at?: string | null
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -160,6 +193,9 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_blocked?: boolean
+          last_login_at?: string | null
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -245,6 +281,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           cost_distribution_rule: Database["public"]["Enums"]["cost_distribution_rule"]
@@ -283,9 +340,62 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_reset_monthly_limit: {
+        Args: { _target_user_id: string }
+        Returns: boolean
+      }
+      admin_toggle_user_block: {
+        Args: { _is_blocked: boolean; _target_user_id: string }
+        Returns: boolean
+      }
+      admin_update_subscription: {
+        Args: {
+          _expires_at?: string
+          _plan: string
+          _status: string
+          _target_user_id: string
+        }
+        Returns: boolean
+      }
+      get_admin_logs: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          admin_email: string
+          created_at: string
+          details: Json
+          id: string
+          target_user_email: string
+        }[]
+      }
+      get_admin_metrics: { Args: never; Returns: Json }
+      get_admin_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          is_blocked: boolean
+          last_login_at: string
+          phone: string
+          plan: string
+          plan_expires_at: string
+          plan_started_at: string
+          plan_status: string
+          user_id: string
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       cost_distribution_rule: "km" | "horas" | "receita"
       earning_type: "corrida_entrega" | "gorjeta" | "bonus" | "ajuste"
       expense_category:
@@ -429,6 +539,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       cost_distribution_rule: ["km", "horas", "receita"],
       earning_type: ["corrida_entrega", "gorjeta", "bonus", "ajuste"],
       expense_category: [
