@@ -3,59 +3,181 @@ import { VehicleType } from '@/types/database';
 export interface VehicleData {
   name: string;
   type: VehicleType;
-  consumptionCity: number; // km/l
-  consumptionHighway: number; // km/l
+  consumptionCity: number; // km/l ou km/kWh para elétricos
+  consumptionHighway: number; // km/l ou km/kWh para elétricos
 }
 
 // Base de dados de veículos populares no Brasil para motoristas de aplicativo
 export const vehicleDatabase: VehicleData[] = [
-  // Carros
+  // =============================================
+  // CARROS A COMBUSTÃO - Populares para App
+  // =============================================
+  
+  // Chevrolet
   { name: 'Onix 1.0', type: 'carro', consumptionCity: 12.5, consumptionHighway: 14.0 },
   { name: 'Onix 1.0 Turbo', type: 'carro', consumptionCity: 12.0, consumptionHighway: 14.5 },
+  { name: 'Onix Plus 1.0 Turbo', type: 'carro', consumptionCity: 11.5, consumptionHighway: 14.0 },
+  { name: 'Prisma 1.4', type: 'carro', consumptionCity: 10.5, consumptionHighway: 13.0 },
+  { name: 'Cobalt 1.4', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
+  { name: 'Cobalt 1.8', type: 'carro', consumptionCity: 9.5, consumptionHighway: 12.0 },
+  { name: 'Spin 1.8', type: 'carro', consumptionCity: 9.5, consumptionHighway: 11.5 },
+  { name: 'Tracker 1.0 Turbo', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.0 },
+  
+  // Hyundai
   { name: 'HB20 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
   { name: 'HB20 1.0 Turbo', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'HB20S 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
+  { name: 'HB20S 1.0 Turbo', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'Creta 1.0 Turbo', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  
+  // Renault
   { name: 'Kwid 1.0', type: 'carro', consumptionCity: 13.0, consumptionHighway: 14.5 },
+  { name: 'Sandero 1.0', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'Sandero 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.0 },
+  { name: 'Logan 1.0', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'Logan 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.0 },
+  { name: 'Stepway 1.0 Turbo', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'Duster 1.3 Turbo', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.0 },
+  
+  // Fiat
   { name: 'Mobi 1.0', type: 'carro', consumptionCity: 13.5, consumptionHighway: 14.5 },
-  { name: 'Gol 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
-  { name: 'Gol 1.6', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
   { name: 'Argo 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
   { name: 'Argo 1.3', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
-  { name: 'Sandero 1.0', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'Cronos 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
   { name: 'Cronos 1.3', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
+  { name: 'Pulse 1.0 Turbo', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'Fastback 1.0 Turbo', type: 'carro', consumptionCity: 11.0, consumptionHighway: 12.5 },
+  { name: 'Strada 1.3', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  { name: 'Fiorino 1.4', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.0 },
+  { name: 'Doblo 1.4', type: 'carro', consumptionCity: 9.0, consumptionHighway: 11.0 },
+  { name: 'Doblo 1.8', type: 'carro', consumptionCity: 8.5, consumptionHighway: 10.5 },
+  
+  // Volkswagen
+  { name: 'Gol 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
+  { name: 'Gol 1.6', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  { name: 'Voyage 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
+  { name: 'Voyage 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.5 },
   { name: 'Polo 1.0', type: 'carro', consumptionCity: 12.5, consumptionHighway: 14.0 },
   { name: 'Polo 1.0 TSI', type: 'carro', consumptionCity: 12.0, consumptionHighway: 14.5 },
   { name: 'Virtus 1.0 TSI', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.5 },
+  { name: 'Nivus 1.0 TSI', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
+  { name: 'T-Cross 1.0 TSI', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
+  { name: 'Taos 1.4 TSI', type: 'carro', consumptionCity: 9.5, consumptionHighway: 11.5 },
+  
+  // Ford
   { name: 'Ka 1.0', type: 'carro', consumptionCity: 12.5, consumptionHighway: 14.0 },
   { name: 'Ka 1.5', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
-  { name: 'Prisma 1.4', type: 'carro', consumptionCity: 10.5, consumptionHighway: 13.0 },
+  { name: 'Ka Sedan 1.0', type: 'carro', consumptionCity: 12.5, consumptionHighway: 14.0 },
+  { name: 'Ka Sedan 1.5', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  
+  // Toyota
   { name: 'Etios 1.3', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.5 },
   { name: 'Etios 1.5', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  { name: 'Etios Sedan 1.5', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
   { name: 'Yaris 1.3', type: 'carro', consumptionCity: 12.0, consumptionHighway: 14.0 },
   { name: 'Yaris 1.5', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
+  { name: 'Yaris Sedan 1.5', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
   { name: 'Corolla 2.0', type: 'carro', consumptionCity: 9.5, consumptionHighway: 12.0 },
-  { name: 'Civic 2.0', type: 'carro', consumptionCity: 9.5, consumptionHighway: 12.0 },
-  { name: 'Spin 1.8', type: 'carro', consumptionCity: 9.5, consumptionHighway: 11.5 },
-  { name: 'Cobalt 1.4', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
-  { name: 'Logan 1.0', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.0 },
-  { name: 'Voyage 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 13.5 },
-  { name: 'Voyage 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.5 },
   
-  // Motos
+  // Honda
+  { name: 'City 1.5', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.5 },
+  { name: 'Civic 2.0', type: 'carro', consumptionCity: 9.5, consumptionHighway: 12.0 },
+  { name: 'HR-V 1.5', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  { name: 'Fit 1.5', type: 'carro', consumptionCity: 11.5, consumptionHighway: 13.5 },
+  { name: 'WR-V 1.5', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  
+  // Nissan
+  { name: 'Versa 1.6', type: 'carro', consumptionCity: 11.0, consumptionHighway: 13.0 },
+  { name: 'Kicks 1.6', type: 'carro', consumptionCity: 10.5, consumptionHighway: 12.5 },
+  { name: 'March 1.0', type: 'carro', consumptionCity: 12.5, consumptionHighway: 14.0 },
+  { name: 'March 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.0 },
+  
+  // Peugeot/Citroën
+  { name: 'Peugeot 208 1.0', type: 'carro', consumptionCity: 12.0, consumptionHighway: 14.0 },
+  { name: 'Peugeot 208 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.5 },
+  { name: 'Citroën C3 1.0', type: 'carro', consumptionCity: 12.5, consumptionHighway: 14.0 },
+  { name: 'Citroën C3 1.6', type: 'carro', consumptionCity: 10.0, consumptionHighway: 12.0 },
+  
+  // Kia
+  { name: 'Kia Bongo 2.5', type: 'carro', consumptionCity: 8.0, consumptionHighway: 10.0 },
+  
+  // =============================================
+  // CARROS ELÉTRICOS E HÍBRIDOS
+  // =============================================
+  { name: 'BYD Dolphin Mini (Elétrico)', type: 'carro', consumptionCity: 120.0, consumptionHighway: 140.0 },
+  { name: 'BYD Dolphin (Elétrico)', type: 'carro', consumptionCity: 100.0, consumptionHighway: 120.0 },
+  { name: 'BYD Yuan Plus (Elétrico)', type: 'carro', consumptionCity: 90.0, consumptionHighway: 110.0 },
+  { name: 'Renault Kwid E-Tech (Elétrico)', type: 'carro', consumptionCity: 115.0, consumptionHighway: 130.0 },
+  { name: 'Fiat 500e (Elétrico)', type: 'carro', consumptionCity: 95.0, consumptionHighway: 110.0 },
+  { name: 'GWM Ora 03 (Elétrico)', type: 'carro', consumptionCity: 100.0, consumptionHighway: 115.0 },
+  { name: 'JAC E-JS1 (Elétrico)', type: 'carro', consumptionCity: 110.0, consumptionHighway: 125.0 },
+  { name: 'Caoa Chery iCar (Elétrico)', type: 'carro', consumptionCity: 105.0, consumptionHighway: 120.0 },
+  { name: 'Toyota Corolla Hybrid (Híbrido)', type: 'carro', consumptionCity: 16.0, consumptionHighway: 14.5 },
+  { name: 'Toyota Corolla Cross Hybrid (Híbrido)', type: 'carro', consumptionCity: 14.5, consumptionHighway: 13.0 },
+  { name: 'Honda City Hybrid (Híbrido)', type: 'carro', consumptionCity: 17.0, consumptionHighway: 15.0 },
+  
+  // =============================================
+  // MOTOS A COMBUSTÃO - Honda
+  // =============================================
+  { name: 'CG 125 Fan', type: 'moto', consumptionCity: 48.0, consumptionHighway: 53.0 },
   { name: 'CG 160 Start', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
   { name: 'CG 160 Fan', type: 'moto', consumptionCity: 43.0, consumptionHighway: 48.0 },
   { name: 'CG 160 Titan', type: 'moto', consumptionCity: 42.0, consumptionHighway: 47.0 },
-  { name: 'Factor 150', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
-  { name: 'Fazer 250', type: 'moto', consumptionCity: 32.0, consumptionHighway: 38.0 },
   { name: 'Bros 160', type: 'moto', consumptionCity: 38.0, consumptionHighway: 42.0 },
   { name: 'Pop 110', type: 'moto', consumptionCity: 50.0, consumptionHighway: 55.0 },
   { name: 'Biz 125', type: 'moto', consumptionCity: 48.0, consumptionHighway: 52.0 },
+  { name: 'Elite 125', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
   { name: 'PCX 160', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
-  { name: 'NMax 160', type: 'moto', consumptionCity: 38.0, consumptionHighway: 42.0 },
+  { name: 'ADV 160', type: 'moto', consumptionCity: 38.0, consumptionHighway: 42.0 },
+  { name: 'SH 160i', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
   { name: 'XRE 190', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
   { name: 'XRE 300', type: 'moto', consumptionCity: 28.0, consumptionHighway: 35.0 },
   { name: 'CB 250 Twister', type: 'moto', consumptionCity: 30.0, consumptionHighway: 35.0 },
+  { name: 'CB 300R Twister', type: 'moto', consumptionCity: 28.0, consumptionHighway: 33.0 },
+  
+  // =============================================
+  // MOTOS A COMBUSTÃO - Yamaha
+  // =============================================
+  { name: 'Factor 125', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'Factor 150', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  { name: 'Fazer 150', type: 'moto', consumptionCity: 42.0, consumptionHighway: 47.0 },
+  { name: 'Fazer 250', type: 'moto', consumptionCity: 32.0, consumptionHighway: 38.0 },
+  { name: 'YBR 150', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  { name: 'Neo 125', type: 'moto', consumptionCity: 42.0, consumptionHighway: 47.0 },
+  { name: 'Fluo 125', type: 'moto', consumptionCity: 44.0, consumptionHighway: 48.0 },
+  { name: 'NMax 160', type: 'moto', consumptionCity: 38.0, consumptionHighway: 42.0 },
   { name: 'Crosser 150', type: 'moto', consumptionCity: 38.0, consumptionHighway: 43.0 },
   { name: 'Lander 250', type: 'moto', consumptionCity: 28.0, consumptionHighway: 33.0 },
+  
+  // =============================================
+  // MOTOS A COMBUSTÃO - Shineray
+  // =============================================
+  { name: 'Shineray Phoenix 50', type: 'moto', consumptionCity: 55.0, consumptionHighway: 60.0 },
+  { name: 'Shineray Jet 125', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'Shineray Worker 150', type: 'moto', consumptionCity: 42.0, consumptionHighway: 47.0 },
+  { name: 'Shineray SHI 175', type: 'moto', consumptionCity: 38.0, consumptionHighway: 43.0 },
+  { name: 'Shineray XY 150-5', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  { name: 'Shineray XY 200-5', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
+  
+  // =============================================
+  // MOTOS A COMBUSTÃO - Outras Marcas
+  // =============================================
+  { name: 'Dafra Apache 150', type: 'moto', consumptionCity: 38.0, consumptionHighway: 43.0 },
+  { name: 'Dafra NH 190', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
+  { name: 'Haojue DK 160', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  { name: 'Haojue DR 160', type: 'moto', consumptionCity: 38.0, consumptionHighway: 43.0 },
+  { name: 'Bajaj Dominar 250', type: 'moto', consumptionCity: 30.0, consumptionHighway: 35.0 },
+  { name: 'Suzuki Intruder 125', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'Suzuki Burgman 125', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  
+  // =============================================
+  // MOTOS ELÉTRICAS
+  // =============================================
+  { name: 'Voltz EV1 (Elétrico)', type: 'moto', consumptionCity: 80.0, consumptionHighway: 85.0 },
+  { name: 'Voltz EVS (Elétrico)', type: 'moto', consumptionCity: 75.0, consumptionHighway: 80.0 },
+  { name: 'Shineray SE3 (Elétrico)', type: 'moto', consumptionCity: 70.0, consumptionHighway: 75.0 },
+  { name: 'Super Soco TC Max (Elétrico)', type: 'moto', consumptionCity: 65.0, consumptionHighway: 70.0 },
+  { name: 'NIU NQi GTS (Elétrico)', type: 'moto', consumptionCity: 70.0, consumptionHighway: 75.0 },
 ];
 
 // Custo de manutenção por tipo de veículo (R$/km)
@@ -64,11 +186,28 @@ export const maintenanceCostPerKm: Record<VehicleType, number> = {
   moto: 0.04,
 };
 
+// Custo de manutenção reduzido para veículos elétricos (R$/km)
+export const electricMaintenanceCostPerKm: Record<VehicleType, number> = {
+  carro: 0.03,
+  moto: 0.02,
+};
+
 // Custo base de desgaste por tipo (R$/km)
 export const wearCostPerKm: Record<VehicleType, number> = {
   carro: 0.05,
   moto: 0.02,
 };
+
+// Custo de desgaste reduzido para veículos elétricos (R$/km)
+export const electricWearCostPerKm: Record<VehicleType, number> = {
+  carro: 0.02,
+  moto: 0.01,
+};
+
+// Detectar se veículo é elétrico ou híbrido
+export function isElectricVehicle(vehicle: VehicleData): boolean {
+  return vehicle.name.includes('(Elétrico)') || vehicle.name.includes('(Híbrido)');
+}
 
 // Buscar veículos por nome (fuzzy search simples)
 export function searchVehicles(query: string, type?: VehicleType): VehicleData[] {
@@ -96,6 +235,7 @@ export interface CostBreakdown {
   maintenanceCost: number;
   wearCost: number;
   totalCost: number;
+  isElectric: boolean;
 }
 
 export function calculateCostPerKm(
@@ -104,19 +244,25 @@ export function calculateCostPerKm(
   mileage?: number,
   useHighwayConsumption: boolean = false
 ): CostBreakdown {
+  const isElectric = isElectricVehicle(vehicle);
+  
   // Usar consumo médio entre cidade e estrada (mais realista para app drivers)
   const consumption = useHighwayConsumption 
     ? vehicle.consumptionHighway 
     : (vehicle.consumptionCity + vehicle.consumptionHighway) / 2;
   
-  // Custo de combustível = preço do litro / consumo (km/l)
+  // Custo de combustível/energia = preço por unidade / consumo
   const fuelCost = fuelPrice / consumption;
   
-  // Custo de manutenção base
-  let maintenanceCost = maintenanceCostPerKm[vehicle.type];
+  // Custo de manutenção base (menor para elétricos)
+  let maintenanceCost = isElectric 
+    ? electricMaintenanceCostPerKm[vehicle.type]
+    : maintenanceCostPerKm[vehicle.type];
   
-  // Custo de desgaste base
-  let wearCost = wearCostPerKm[vehicle.type];
+  // Custo de desgaste base (menor para elétricos)
+  let wearCost = isElectric
+    ? electricWearCostPerKm[vehicle.type]
+    : wearCostPerKm[vehicle.type];
   
   // Ajuste por quilometragem (veículos com mais de 100k km têm +20% de custo)
   if (mileage && mileage > 100000) {
@@ -137,5 +283,6 @@ export function calculateCostPerKm(
     maintenanceCost: Math.round(maintenanceCost * 100) / 100,
     wearCost: Math.round(wearCost * 100) / 100,
     totalCost: Math.round(totalCost * 100) / 100,
+    isElectric,
   };
 }
