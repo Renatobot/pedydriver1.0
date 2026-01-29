@@ -1,20 +1,20 @@
-import { PenLine, Eye, CheckCircle } from 'lucide-react';
+import { PenLine, Eye, TrendingUp } from 'lucide-react';
 
 const steps = [
   {
     icon: PenLine,
     title: 'Registre',
-    description: 'Adicione ganhos e gastos rapidamente',
+    description: 'Ganhou R$ 50 na Uber? Gastou R$ 30 de gasolina? Registre em segundos.',
   },
   {
     icon: Eye,
-    title: 'Veja',
-    description: 'Acompanhe seu lucro real em tempo real',
+    title: 'Acompanhe',
+    description: 'Veja seu lucro real atualizado: hoje, essa semana, esse mês.',
   },
   {
-    icon: CheckCircle,
-    title: 'Decida',
-    description: 'Saiba onde e quando vale mais a pena rodar',
+    icon: TrendingUp,
+    title: 'Otimize',
+    description: 'Descubra que quinta-feira você lucra 40% mais que domingo.',
   },
 ];
 
@@ -38,12 +38,12 @@ export function HowItWorksSection() {
                 {index + 1}
               </div>
               
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 mt-2">
+              <div className="w-14 h-14 rounded-xl bg-primary/15 flex items-center justify-center mb-4 mt-2">
                 <Icon className="w-7 h-7 text-primary" />
               </div>
               
               <h3 className="text-xl font-bold mb-2">{title}</h3>
-              <p className="text-muted-foreground">{description}</p>
+              <p className="text-muted-foreground text-sm">{description}</p>
             </div>
           ))}
         </div>

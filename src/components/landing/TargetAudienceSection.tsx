@@ -1,16 +1,17 @@
-import { Car, Bike, Smartphone } from 'lucide-react';
+import { Car, Bike, Package, Smartphone } from 'lucide-react';
 
 const audiences = [
-  { icon: Car, text: 'Motoristas de aplicativo' },
-  { icon: Bike, text: 'Entregadores' },
-  { icon: Smartphone, text: 'Uber, 99, iFood, InDrive e similares' },
+  { icon: Car, text: 'Uber e 99' },
+  { icon: Package, text: 'iFood e Rappi' },
+  { icon: Smartphone, text: 'InDrive e 99Food' },
+  { icon: Bike, text: 'Motoristas e entregadores' },
 ];
 
 export function TargetAudienceSection() {
   return (
     <section className="px-4 py-16 sm:py-20 bg-secondary/30">
       <div className="max-w-3xl mx-auto space-y-8 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold">Para quem é o PEDY Driver?</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold">Feito para quem vive na rua</h2>
         
         <div className="flex flex-wrap justify-center gap-4">
           {audiences.map(({ icon: Icon, text }) => (
@@ -25,7 +26,7 @@ export function TargetAudienceSection() {
         </div>
         
         <p className="text-lg text-muted-foreground">
-          Se você dirige para ganhar dinheiro, <span className="text-primary font-medium">isso é pra você</span>.
+          Se você roda para ganhar dinheiro, o <span className="text-primary font-medium">PEDY Driver é seu copiloto financeiro</span>.
         </p>
       </div>
     </section>
