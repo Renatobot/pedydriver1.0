@@ -1,14 +1,27 @@
 import { ReactNode } from 'react';
 import { BottomNav } from './BottomNav';
+import { EntryLimitIndicator } from '@/components/subscription/EntryLimitBanner';
+import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { isPro } = useSubscriptionContext();
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="pb-20 safe-top">
+      {/* Global Entry Limit Indicator */}
+      {!isPro && (
+        <div className="fixed top-0 left-0 right-0 z-40 px-3 py-2 bg-background/80 backdrop-blur-sm border-b border-border/50 safe-top">
+          <div className="max-w-lg mx-auto">
+            <EntryLimitIndicator />
+          </div>
+        </div>
+      )}
+      
+      <main className={`pb-20 ${isPro ? 'safe-top' : 'pt-12'}`}>
         {children}
       </main>
       <BottomNav />

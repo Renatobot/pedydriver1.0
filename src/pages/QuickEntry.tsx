@@ -12,17 +12,24 @@ import { formatCurrency } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
+import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
+import { EntryLimitBlocker } from '@/components/subscription/EntryLimitBlocker';
 
 export default function QuickEntry() {
   const { data: platforms } = usePlatforms();
   const createEarning = useCreateEarningOffline();
   const createShift = useCreateShiftOffline();
+  const { canAddEntry, isPro } = useSubscriptionContext();
 
   const [value, setValue] = useState('');
   const [km, setKm] = useState('');
   const [minutes, setMinutes] = useState('');
   const [platformId, setPlatformId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showBlocker, setShowBlocker] = useState(!canAddEntry);
+
+  const isBlocked = !canAddEntry && !isPro;
 
   const metrics = useMemo(() => {
     const valueNum = parseFloat(value) || 0;
@@ -40,6 +47,11 @@ export default function QuickEntry() {
   }, [value, km, minutes]);
 
   const handleSave = async () => {
+    if (isBlocked) {
+      setShowBlocker(true);
+      return;
+    }
+
     const valueNum = parseFloat(value);
     const kmNum = parseFloat(km) || 0;
     const minutesNum = parseFloat(minutes) || 0;
@@ -103,6 +115,9 @@ export default function QuickEntry() {
           </div>
         </div>
 
+        {/* Entry Limit Banner */}
+        {!isPro && <EntryLimitBanner showAlways />}
+
         {/* Quick Metrics Display */}
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <div className={cn(
@@ -143,96 +158,102 @@ export default function QuickEntry() {
         </div>
 
         {/* Input Form */}
-        <div className="bg-card rounded-2xl p-3 sm:p-4 border border-border/50 space-y-3 sm:space-y-4">
-          {/* Platform */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm text-muted-foreground">Plataforma</Label>
-            <Select value={platformId} onValueChange={setPlatformId}>
-              <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {platforms?.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="py-3">
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Value - Main input */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm text-muted-foreground">Valor da Corrida</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
-              <Input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className="pl-10 sm:pl-12 h-14 sm:h-16 text-xl sm:text-2xl font-mono font-bold text-center"
-              />
+        <div className="bg-card rounded-2xl p-3 sm:p-4 border border-border/50 space-y-3 sm:space-y-4 relative">
+          {isBlocked && showBlocker && (
+            <EntryLimitBlocker onContinueViewing={() => setShowBlocker(false)} />
+          )}
+          
+          <div className={cn(isBlocked && 'opacity-50 pointer-events-none')}>
+            {/* Platform */}
+            <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+              <Label className="text-xs sm:text-sm text-muted-foreground">Plataforma</Label>
+              <Select value={platformId} onValueChange={setPlatformId}>
+                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {platforms?.map((p) => (
+                    <SelectItem key={p.id} value={p.id} className="py-3">
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          {/* KM and Time - Side by side */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm text-muted-foreground">Km Rodados</Label>
+            {/* Value - Main input */}
+            <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
+              <Label className="text-xs sm:text-sm text-muted-foreground">Valor da Corrida</Label>
               <div className="relative">
-                <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                 <Input
                   type="number"
                   inputMode="decimal"
-                  step="0.1"
+                  step="0.01"
                   min="0"
-                  placeholder="0"
-                  value={km}
-                  onChange={(e) => setKm(e.target.value)}
-                  className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
+                  placeholder="0,00"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  className="pl-10 sm:pl-12 h-14 sm:h-16 text-xl sm:text-2xl font-mono font-bold text-center"
                 />
               </div>
             </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm text-muted-foreground">Tempo (min)</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  step="1"
-                  min="0"
-                  placeholder="0"
-                  value={minutes}
-                  onChange={(e) => setMinutes(e.target.value)}
-                  className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Save Button */}
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !value || !platformId}
-            className="w-full h-12 sm:h-14 text-sm sm:text-base font-semibold bg-gradient-profit hover:opacity-90 transition-opacity touch-feedback"
-          >
-            {isSaving ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                Salvando...
+            {/* KM and Time - Side by side */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm text-muted-foreground">Km Rodados</Label>
+                <div className="relative">
+                  <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    min="0"
+                    placeholder="0"
+                    value={km}
+                    onChange={(e) => setKm(e.target.value)}
+                    className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
+                  />
+                </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                Registrar Corrida
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label className="text-xs sm:text-sm text-muted-foreground">Tempo (min)</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    placeholder="0"
+                    value={minutes}
+                    onChange={(e) => setMinutes(e.target.value)}
+                    className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
+                  />
+                </div>
               </div>
-            )}
-          </Button>
+            </div>
+
+            {/* Save Button */}
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || !value || !platformId || isBlocked}
+              className="w-full h-12 sm:h-14 text-sm sm:text-base font-semibold bg-gradient-profit hover:opacity-90 transition-opacity touch-feedback"
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  Salvando...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Registrar Corrida
+                </div>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Tips */}

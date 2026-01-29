@@ -62,6 +62,7 @@ export function useCreateEarningOffline() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['earnings'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyEntryCount'] });
       toast({
         title: isOnline ? 'Ganho registrado!' : 'Ganho salvo offline!',
         description: isOnline 

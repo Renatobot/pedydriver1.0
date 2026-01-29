@@ -59,6 +59,7 @@ export function useCreateExpenseOffline() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyEntryCount'] });
       toast({
         title: isOnline ? 'Gasto registrado!' : 'Gasto salvo offline!',
         description: isOnline 
