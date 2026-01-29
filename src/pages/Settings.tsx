@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { VehicleType, CostDistributionRule } from '@/types/database';
+import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -20,6 +21,7 @@ export default function Settings() {
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
   const [distributionRule, setDistributionRule] = useState<CostDistributionRule>('km');
   const [weekStartsOn, setWeekStartsOn] = useState<'domingo' | 'segunda'>('segunda');
+  const [showCalculator, setShowCalculator] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -117,6 +119,16 @@ export default function Settings() {
                 className="touch-target font-mono"
                 placeholder="0.50"
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCalculator(true)}
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                Não sabe? Calcular meu custo
+              </Button>
               <p className="text-2xs text-muted-foreground">
                 Custo estimado de combustível + desgaste por quilômetro
               </p>
@@ -183,6 +195,14 @@ export default function Settings() {
           </Button>
         </div>
       </div>
+
+      {/* Vehicle Cost Calculator Modal */}
+      <VehicleCostCalculator
+        open={showCalculator}
+        onOpenChange={setShowCalculator}
+        currentVehicleType={vehicleType}
+        onApplyCost={(cost) => setCostPerKm(cost.toFixed(2))}
+      />
     </AppLayout>
   );
 }
