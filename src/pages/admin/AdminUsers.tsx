@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, AdminUser } from '@/hooks/useAdmin';
-import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck } from 'lucide-react';
+import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -193,7 +193,15 @@ export default function AdminUsers() {
                         <TableCell>
                           <div className="text-sm">{user.email || '-'}</div>
                           {user.phone && (
-                            <div className="text-xs text-muted-foreground">{user.phone}</div>
+                            <a 
+                              href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-700 hover:underline"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              {user.phone}
+                            </a>
                           )}
                         </TableCell>
                         <TableCell className="text-sm">
@@ -327,8 +335,20 @@ export default function AdminUsers() {
                     <p className="font-medium">{selectedUser.email || '-'}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Telefone:</span>
-                    <p className="font-medium">{selectedUser.phone || '-'}</p>
+                    <span className="text-muted-foreground">WhatsApp:</span>
+                    {selectedUser.phone ? (
+                      <a 
+                        href={`https://wa.me/${selectedUser.phone.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 font-medium text-green-600 hover:text-green-700 hover:underline"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        {selectedUser.phone}
+                      </a>
+                    ) : (
+                      <p className="font-medium">-</p>
+                    )}
                   </div>
                   <div>
                     <span className="text-muted-foreground">Cadastro:</span>
