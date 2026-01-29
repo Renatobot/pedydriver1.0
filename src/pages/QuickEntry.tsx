@@ -91,32 +91,32 @@ export default function QuickEntry() {
 
   return (
     <AppLayout>
-      <div className="p-4 space-y-6 max-w-lg mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto scroll-momentum">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-profit flex items-center justify-center">
-            <Zap className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-profit flex items-center justify-center flex-shrink-0">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Entrada Rápida</h1>
-            <p className="text-muted-foreground text-sm">Registre e analise instantaneamente</p>
+            <h1 className="text-lg sm:text-xl font-bold text-foreground">Entrada Rápida</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Registre e analise instantaneamente</p>
           </div>
         </div>
 
         {/* Quick Metrics Display */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <div className={cn(
-            "p-4 rounded-2xl border transition-all duration-300",
+            "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
             metrics.hasData 
               ? "bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/30" 
               : "bg-card border-border/50"
           )}>
-            <div className="flex items-center gap-2 mb-1">
-              <Navigation className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">R$/km</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+              <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+              <span className="text-2xs sm:text-xs text-muted-foreground">R$/km</span>
             </div>
             <p className={cn(
-              "text-2xl font-bold font-mono transition-all duration-300",
+              "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
               metrics.revenuePerKm > 0 ? "text-emerald-500" : "text-muted-foreground"
             )}>
               {metrics.revenuePerKm > 0 ? formatCurrency(metrics.revenuePerKm) : '—'}
@@ -124,17 +124,17 @@ export default function QuickEntry() {
           </div>
           
           <div className={cn(
-            "p-4 rounded-2xl border transition-all duration-300",
+            "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
             metrics.hasData 
               ? "bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/30" 
               : "bg-card border-border/50"
           )}>
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">R$/hora</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+              <span className="text-2xs sm:text-xs text-muted-foreground">R$/hora</span>
             </div>
             <p className={cn(
-              "text-2xl font-bold font-mono transition-all duration-300",
+              "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
               metrics.revenuePerHour > 0 ? "text-blue-500" : "text-muted-foreground"
             )}>
               {metrics.revenuePerHour > 0 ? formatCurrency(metrics.revenuePerHour) : '—'}
@@ -143,17 +143,17 @@ export default function QuickEntry() {
         </div>
 
         {/* Input Form */}
-        <div className="bg-card rounded-2xl p-4 border border-border/50 space-y-4">
+        <div className="bg-card rounded-2xl p-3 sm:p-4 border border-border/50 space-y-3 sm:space-y-4">
           {/* Platform */}
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Plataforma</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm text-muted-foreground">Plataforma</Label>
             <Select value={platformId} onValueChange={setPlatformId}>
-              <SelectTrigger className="touch-target">
+              <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
                 {platforms?.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
+                  <SelectItem key={p.id} value={p.id} className="py-3">
                     {p.name}
                   </SelectItem>
                 ))}
@@ -162,10 +162,10 @@ export default function QuickEntry() {
           </div>
 
           {/* Value - Main input */}
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Valor da Corrida</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm text-muted-foreground">Valor da Corrida</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500" />
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
               <Input
                 type="number"
                 inputMode="decimal"
@@ -174,15 +174,15 @@ export default function QuickEntry() {
                 placeholder="0,00"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="pl-10 h-14 text-2xl font-mono font-bold text-center touch-target"
+                className="pl-10 sm:pl-12 h-14 sm:h-16 text-xl sm:text-2xl font-mono font-bold text-center"
               />
             </div>
           </div>
 
           {/* KM and Time - Side by side */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Km Rodados</Label>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm text-muted-foreground">Km Rodados</Label>
               <div className="relative">
                 <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -193,12 +193,12 @@ export default function QuickEntry() {
                   placeholder="0"
                   value={km}
                   onChange={(e) => setKm(e.target.value)}
-                  className="pl-9 touch-target font-mono"
+                  className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Tempo (min)</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-xs sm:text-sm text-muted-foreground">Tempo (min)</Label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -209,7 +209,7 @@ export default function QuickEntry() {
                   placeholder="0"
                   value={minutes}
                   onChange={(e) => setMinutes(e.target.value)}
-                  className="pl-9 touch-target font-mono"
+                  className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -219,7 +219,7 @@ export default function QuickEntry() {
           <Button
             onClick={handleSave}
             disabled={isSaving || !value || !platformId}
-            className="w-full h-12 text-base font-semibold bg-gradient-profit hover:opacity-90 transition-opacity touch-target"
+            className="w-full h-12 sm:h-14 text-sm sm:text-base font-semibold bg-gradient-profit hover:opacity-90 transition-opacity touch-feedback"
           >
             {isSaving ? (
               <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export default function QuickEntry() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                 Registrar Corrida
               </div>
             )}
@@ -236,7 +236,7 @@ export default function QuickEntry() {
         </div>
 
         {/* Tips */}
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-center text-2xs sm:text-xs text-muted-foreground">
           <p>💡 Preencha km e tempo para calcular suas métricas</p>
         </div>
       </div>

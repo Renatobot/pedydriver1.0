@@ -55,16 +55,16 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
       {/* Date */}
-      <div className="space-y-2">
-        <Label>Data</Label>
+      <div className="space-y-1.5 sm:space-y-2">
+        <Label className="text-sm sm:text-base">Data</Label>
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               className={cn(
-                'w-full justify-start text-left font-normal touch-target',
+                'w-full justify-start text-left font-normal h-11 sm:h-12 text-sm sm:text-base',
                 !date && 'text-muted-foreground'
               )}
             >
@@ -88,29 +88,29 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
       </div>
 
       {/* Platform */}
-      <div className="space-y-2">
-        <Label>Plataforma</Label>
+      <div className="space-y-1.5 sm:space-y-2">
+        <Label className="text-sm sm:text-base">Plataforma</Label>
         <Select onValueChange={(v) => setValue('platform_id', v)}>
-          <SelectTrigger className="touch-target">
+          <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
             {platforms?.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
+              <SelectItem key={p.id} value={p.id} className="py-3">
                 {p.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         {errors.platform_id && (
-          <p className="text-xs text-destructive">{errors.platform_id.message}</p>
+          <p className="text-2xs sm:text-xs text-destructive">{errors.platform_id.message}</p>
         )}
       </div>
 
       {/* Hours & KM */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Horas</Label>
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <div className="space-y-1.5 sm:space-y-2">
+          <Label className="text-sm sm:text-base">Horas</Label>
           <div className="relative">
             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -118,13 +118,13 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
               step="0.5"
               min="0"
               placeholder="0"
-              className="pl-9 touch-target font-mono"
+              className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
               {...register('hours_worked', { valueAsNumber: true })}
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label>Km Rodados</Label>
+        <div className="space-y-1.5 sm:space-y-2">
+          <Label className="text-sm sm:text-base">Km Rodados</Label>
           <div className="relative">
             <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -132,7 +132,7 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
               step="0.1"
               min="0"
               placeholder="0"
-              className="pl-9 touch-target font-mono"
+              className="pl-9 h-11 sm:h-12 font-mono text-sm sm:text-base"
               {...register('km_driven', { valueAsNumber: true })}
             />
           </div>
@@ -141,7 +141,7 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
 
       <Button 
         type="submit" 
-        className="w-full touch-target" 
+        className="w-full h-11 sm:h-12 text-sm sm:text-base touch-feedback" 
         disabled={createShift.isPending}
       >
         {createShift.isPending ? 'Salvando...' : 'Registrar Turno'}

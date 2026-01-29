@@ -19,38 +19,38 @@ export default function Add() {
 
   return (
     <AppLayout>
-      <div className="p-4 space-y-6 max-w-lg mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto scroll-momentum">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">Lançar</h1>
-          <p className="text-muted-foreground text-sm">Registre seus ganhos, gastos e turnos</p>
+        <div className="space-y-0.5 sm:space-y-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lançar</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Registre seus ganhos, gastos e turnos</p>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-secondary">
+        <div className="flex items-center gap-1 sm:gap-2 p-1 rounded-xl bg-secondary">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
               className={cn(
-                'flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all touch-target',
+                'flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[44px] sm:min-h-[48px]',
                 activeTab === id
                   ? id === 'earning'
                     ? 'bg-gradient-profit text-primary-foreground shadow-sm'
                     : id === 'expense'
                     ? 'bg-gradient-expense text-destructive-foreground shadow-sm'
                     : 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground active:text-foreground'
               )}
             >
               <Icon className="w-4 h-4" />
-              {label}
+              <span className="hidden xs:inline">{label}</span>
             </button>
           ))}
         </div>
 
         {/* Form Container */}
-        <div className="bg-card rounded-2xl p-4 border border-border/50 animate-fade-in">
+        <div className="bg-card rounded-2xl p-3 sm:p-4 border border-border/50 animate-fade-in">
           {activeTab === 'earning' && <EarningForm />}
           {activeTab === 'expense' && <ExpenseForm />}
           {activeTab === 'shift' && <ShiftForm />}

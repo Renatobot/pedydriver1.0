@@ -65,54 +65,54 @@ export function VehicleCostCalculator({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-y-auto scroll-momentum mx-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Calculadora de Custo por Km
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Informe seu veículo para calcular o custo estimado por quilômetro
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 pt-2">
+        <div className="space-y-4 sm:space-y-5 pt-2">
           {/* Vehicle Type Selection */}
-          <div className="space-y-3">
-            <Label>Tipo de Veículo</Label>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2 sm:space-y-3">
+            <Label className="text-sm sm:text-base">Tipo de Veículo</Label>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => handleVehicleTypeChange('carro')}
                 className={cn(
-                  'flex items-center justify-center gap-2 p-3 rounded-xl border transition-all',
+                  'flex items-center justify-center gap-2 p-3 rounded-xl border transition-all touch-feedback min-h-[48px]',
                   vehicleType === 'carro'
                     ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
                 )}
               >
                 <Car className="w-5 h-5" />
-                <span className="font-medium">Carro</span>
+                <span className="font-medium text-sm sm:text-base">Carro</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleVehicleTypeChange('moto')}
                 className={cn(
-                  'flex items-center justify-center gap-2 p-3 rounded-xl border transition-all',
+                  'flex items-center justify-center gap-2 p-3 rounded-xl border transition-all touch-feedback min-h-[48px]',
                   vehicleType === 'moto'
                     ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
                 )}
               >
                 <Bike className="w-5 h-5" />
-                <span className="font-medium">Moto</span>
+                <span className="font-medium text-sm sm:text-base">Moto</span>
               </button>
             </div>
           </div>
 
           {/* Vehicle Model Selection */}
-          <div className="space-y-2">
-            <Label>Modelo do Veículo</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-sm sm:text-base">Modelo do Veículo</Label>
             <Select 
               value={selectedVehicle?.name || ''} 
               onValueChange={(name) => {
@@ -121,12 +121,12 @@ export function VehicleCostCalculator({
                 setResult(null);
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
                 <SelectValue placeholder="Selecione o modelo..." />
               </SelectTrigger>
               <SelectContent>
                 {vehicles.map((vehicle) => (
-                  <SelectItem key={vehicle.name} value={vehicle.name}>
+                  <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
                     {vehicle.name} ({vehicle.consumptionCity} km/l cidade)
                   </SelectItem>
                 ))}
@@ -135,8 +135,8 @@ export function VehicleCostCalculator({
           </div>
 
           {/* Fuel Price */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="flex items-center gap-2 text-sm sm:text-base">
               <Fuel className="w-4 h-4" />
               Preço do Combustível (R$/L)
             </Label>
@@ -150,13 +150,13 @@ export function VehicleCostCalculator({
                 setResult(null);
               }}
               placeholder="5.89"
-              className="font-mono"
+              className="font-mono h-11 sm:h-12 text-sm sm:text-base"
             />
           </div>
 
           {/* Mileage (Optional) */}
-          <div className="space-y-2">
-            <Label>Quilometragem Atual (opcional)</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-sm sm:text-base">Quilometragem Atual (opcional)</Label>
             <Input
               type="number"
               min="0"
@@ -166,9 +166,9 @@ export function VehicleCostCalculator({
                 setResult(null);
               }}
               placeholder="Ex: 50000"
-              className="font-mono"
+              className="font-mono h-11 sm:h-12 text-sm sm:text-base"
             />
-            <p className="text-2xs text-muted-foreground">
+            <p className="text-2xs sm:text-xs text-muted-foreground">
               Veículos com mais de 100.000 km têm custo de manutenção maior
             </p>
           </div>
@@ -177,7 +177,7 @@ export function VehicleCostCalculator({
           <Button 
             onClick={handleCalculate}
             disabled={!selectedVehicle || !fuelPrice}
-            className="w-full"
+            className="w-full h-11 sm:h-12 text-sm sm:text-base touch-feedback"
           >
             <Calculator className="w-4 h-4 mr-2" />
             Calcular Custo
@@ -188,37 +188,37 @@ export function VehicleCostCalculator({
             <div className="space-y-3 pt-2">
               <div className="h-px bg-border" />
               
-              <div className="text-sm font-medium text-muted-foreground">
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground">
                 Detalhamento do Custo:
               </div>
               
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
                     <Fuel className="w-4 h-4 text-orange-500" />
-                    <span className="text-sm">Combustível</span>
+                    <span className="text-xs sm:text-sm">Combustível</span>
                   </div>
-                  <span className="font-mono font-medium">
+                  <span className="font-mono text-sm sm:text-base font-medium">
                     R$ {result.fuelCost.toFixed(2)}/km
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
                     <Wrench className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm">Manutenção</span>
+                    <span className="text-xs sm:text-sm">Manutenção</span>
                   </div>
-                  <span className="font-mono font-medium">
+                  <span className="font-mono text-sm sm:text-base font-medium">
                     R$ {result.maintenanceCost.toFixed(2)}/km
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
                     <TrendingDown className="w-4 h-4 text-red-500" />
-                    <span className="text-sm">Desgaste</span>
+                    <span className="text-xs sm:text-sm">Desgaste</span>
                   </div>
-                  <span className="font-mono font-medium">
+                  <span className="font-mono text-sm sm:text-base font-medium">
                     R$ {result.wearCost.toFixed(2)}/km
                   </span>
                 </div>
@@ -226,16 +226,16 @@ export function VehicleCostCalculator({
               
               <div className="h-px bg-border" />
               
-              <div className="flex items-center justify-between p-4 rounded-xl bg-primary/10 border border-primary/20">
-                <span className="font-semibold text-primary">TOTAL</span>
-                <span className="font-mono text-xl font-bold text-primary">
+              <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-primary/10 border border-primary/20">
+                <span className="font-semibold text-sm sm:text-base text-primary">TOTAL</span>
+                <span className="font-mono text-lg sm:text-xl font-bold text-primary">
                   R$ {result.totalCost.toFixed(2)}/km
                 </span>
               </div>
 
               <Button 
                 onClick={handleApply}
-                className="w-full"
+                className="w-full h-11 sm:h-12 text-sm sm:text-base touch-feedback"
                 variant="default"
               >
                 <Check className="w-4 h-4 mr-2" />

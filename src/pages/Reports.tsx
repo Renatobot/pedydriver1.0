@@ -55,75 +55,75 @@ export default function Reports() {
 
   return (
     <AppLayout>
-      <div className="p-4 space-y-6 max-w-lg mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto scroll-momentum">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-muted-foreground text-sm">Análise detalhada dos seus resultados</p>
+        <div className="space-y-0.5 sm:space-y-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Relatórios</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Análise detalhada dos seus resultados</p>
         </div>
 
         {/* Date Range Selector */}
         <DateRangeSelector value={range} onChange={setRange} />
 
         {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-32 w-full rounded-xl" />
-            <Skeleton className="h-32 w-full rounded-xl" />
+          <div className="space-y-3 sm:space-y-4">
+            <Skeleton className="h-28 sm:h-32 w-full rounded-xl" />
+            <Skeleton className="h-28 sm:h-32 w-full rounded-xl" />
           </div>
         ) : (
           <>
             {/* Best & Worst Platform */}
             {platformMetrics.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl p-4 bg-card border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-profit" />
-                    <span className="text-xs font-medium text-muted-foreground uppercase">Melhor</span>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="rounded-xl p-3 sm:p-4 bg-card border border-border/50 touch-feedback">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-profit" />
+                    <span className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase">Melhor</span>
                   </div>
                   {bestPlatform ? (
                     <>
-                      <p className="font-semibold text-foreground">{bestPlatform.platform.name}</p>
-                      <p className="text-lg font-bold font-mono text-profit">
+                      <p className="font-semibold text-sm sm:text-base text-foreground truncate">{bestPlatform.platform.name}</p>
+                      <p className="text-base sm:text-lg font-bold font-mono text-profit">
                         {formatCurrency(bestPlatform.profit)}
                       </p>
-                      <p className="text-2xs text-muted-foreground">
+                      <p className="text-2xs sm:text-xs text-muted-foreground">
                         {formatCurrency(bestPlatform.revenuePerHour)}/hora
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Sem dados</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Sem dados</p>
                   )}
                 </div>
 
-                <div className="rounded-xl p-4 bg-card border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingDown className="w-4 h-4 text-expense" />
-                    <span className="text-xs font-medium text-muted-foreground uppercase">Pior</span>
+                <div className="rounded-xl p-3 sm:p-4 bg-card border border-border/50 touch-feedback">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                    <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-expense" />
+                    <span className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase">Pior</span>
                   </div>
                   {worstPlatform && platformMetrics.length > 1 ? (
                     <>
-                      <p className="font-semibold text-foreground">{worstPlatform.platform.name}</p>
+                      <p className="font-semibold text-sm sm:text-base text-foreground truncate">{worstPlatform.platform.name}</p>
                       <p className={cn(
-                        'text-lg font-bold font-mono',
+                        'text-base sm:text-lg font-bold font-mono',
                         worstPlatform.profit >= 0 ? 'text-foreground' : 'text-expense'
                       )}>
                         {formatCurrency(worstPlatform.profit)}
                       </p>
-                      <p className="text-2xs text-muted-foreground">
+                      <p className="text-2xs sm:text-xs text-muted-foreground">
                         {formatCurrency(worstPlatform.revenuePerHour)}/hora
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground">Sem dados</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Sem dados</p>
                   )}
                 </div>
               </div>
             )}
 
             {/* Best Times Analysis - NEW */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Clock className="w-5 h-5 text-primary" />
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 Melhores Dias para Trabalhar
               </h2>
               <BestTimesAnalysis 
@@ -133,12 +133,12 @@ export default function Reports() {
             </div>
 
             {/* Expenses by Category */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Gastos por Categoria</h2>
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-base sm:text-lg font-semibold text-foreground">Gastos por Categoria</h2>
               
               {sortedExpenses.length === 0 ? (
-                <div className="rounded-xl p-6 bg-card border border-border/50 text-center">
-                  <p className="text-muted-foreground">Nenhum gasto registrado</p>
+                <div className="rounded-xl p-5 sm:p-6 bg-card border border-border/50 text-center">
+                  <p className="text-muted-foreground text-sm">Nenhum gasto registrado</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -150,17 +150,17 @@ export default function Reports() {
                     return (
                       <div 
                         key={category} 
-                        className="rounded-xl p-4 bg-card border border-border/50 flex items-center gap-4"
+                        className="rounded-xl p-3 sm:p-4 bg-card border border-border/50 flex items-center gap-3 sm:gap-4 touch-feedback"
                       >
-                        <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-muted-foreground" />
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-foreground">
+                            <span className="font-medium text-sm sm:text-base text-foreground truncate">
                               {EXPENSE_CATEGORY_LABELS[category]}
                             </span>
-                            <span className="font-mono font-semibold text-expense">
+                            <span className="font-mono text-sm sm:text-base font-semibold text-expense flex-shrink-0 ml-2">
                               {formatCurrency(amount)}
                             </span>
                           </div>
@@ -180,39 +180,41 @@ export default function Reports() {
 
             {/* Platform Rankings */}
             {platformMetrics.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground">Ranking de Plataformas</h2>
+              <div className="space-y-3 sm:space-y-4">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground">Ranking de Plataformas</h2>
                 
                 <div className="rounded-xl overflow-hidden border border-border/50">
-                  <table className="w-full">
-                    <thead className="bg-secondary">
-                      <tr>
-                        <th className="text-left text-xs font-medium text-muted-foreground p-3">#</th>
-                        <th className="text-left text-xs font-medium text-muted-foreground p-3">Plataforma</th>
-                        <th className="text-right text-xs font-medium text-muted-foreground p-3">R$/h</th>
-                        <th className="text-right text-xs font-medium text-muted-foreground p-3">Lucro</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-card">
-                      {platformMetrics.map((pm, index) => (
-                        <tr key={pm.platform.id} className="border-t border-border/50">
-                          <td className="p-3 text-sm font-bold text-muted-foreground">{index + 1}</td>
-                          <td className="p-3">
-                            <span className="font-medium text-foreground">{pm.platform.name}</span>
-                          </td>
-                          <td className="p-3 text-right font-mono text-sm text-foreground">
-                            {formatCurrency(pm.revenuePerHour)}
-                          </td>
-                          <td className={cn(
-                            'p-3 text-right font-mono text-sm font-semibold',
-                            pm.profit >= 0 ? 'text-profit' : 'text-expense'
-                          )}>
-                            {formatCurrency(pm.profit)}
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[320px]">
+                      <thead className="bg-secondary">
+                        <tr>
+                          <th className="text-left text-2xs sm:text-xs font-medium text-muted-foreground p-2.5 sm:p-3">#</th>
+                          <th className="text-left text-2xs sm:text-xs font-medium text-muted-foreground p-2.5 sm:p-3">Plataforma</th>
+                          <th className="text-right text-2xs sm:text-xs font-medium text-muted-foreground p-2.5 sm:p-3">R$/h</th>
+                          <th className="text-right text-2xs sm:text-xs font-medium text-muted-foreground p-2.5 sm:p-3">Lucro</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="bg-card">
+                        {platformMetrics.map((pm, index) => (
+                          <tr key={pm.platform.id} className="border-t border-border/50">
+                            <td className="p-2.5 sm:p-3 text-xs sm:text-sm font-bold text-muted-foreground">{index + 1}</td>
+                            <td className="p-2.5 sm:p-3">
+                              <span className="font-medium text-sm sm:text-base text-foreground">{pm.platform.name}</span>
+                            </td>
+                            <td className="p-2.5 sm:p-3 text-right font-mono text-xs sm:text-sm text-foreground">
+                              {formatCurrency(pm.revenuePerHour)}
+                            </td>
+                            <td className={cn(
+                              'p-2.5 sm:p-3 text-right font-mono text-xs sm:text-sm font-semibold',
+                              pm.profit >= 0 ? 'text-profit' : 'text-expense'
+                            )}>
+                              {formatCurrency(pm.profit)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
