@@ -1,186 +1,203 @@
 
-# Plano: Animacoes de Fade-in no Scroll
+# Plano: Ajustes de Texto e Cores da Landing Page
 
 ## Visao Geral
 
-Adicionar animacoes suaves de fade-in nas secoes da landing page quando elas aparecem na tela durante o scroll. Isso cria uma experiencia mais dinamica e profissional.
+Refinamento completo dos textos para serem mais persuasivos e diretos, e ajuste dos tons de verde para criar mais profundidade visual e melhor legibilidade.
 
 ---
 
-## Abordagem Tecnica
+## Parte 1: Ajustes de Cores
 
-### Hook useScrollReveal
+### Paleta Verde Refinada
 
-Criar um hook React customizado que usa a **Intersection Observer API** para detectar quando elementos entram na viewport e aplicar classes de animacao.
+Manter o verde como cor primaria, mas adicionar variacoes para criar mais dinamismo:
 
-**Vantagens desta abordagem:**
-- Performance nativa (sem bibliotecas externas)
-- Funciona bem em mobile
-- Animacao acontece apenas uma vez (nao repete ao voltar)
-- Configuravel (threshold, delay)
+| Elemento | Cor Atual | Nova Cor | Motivo |
+|----------|-----------|----------|--------|
+| Primary | 160 84% 39% | 158 84% 42% | Verde ligeiramente mais vibrante |
+| Gradient start | 160 84% 39% | 155 85% 38% | Tom mais esmeralda |
+| Gradient end | 160 70% 50% | 165 75% 48% | Transicao mais suave |
+| Primary/10 bg | opacity 10% | opacity 15% | Fundos mais visiveis |
+
+### Ajustes de Contraste
+
+- Aumentar opacidade dos fundos `bg-primary/10` para `bg-primary/15` em icones
+- Melhorar legibilidade do texto `text-muted-foreground` em fundos escuros
+- Adicionar bordas sutis em elementos hover
 
 ---
 
-## Arquivos a Criar
+## Parte 2: Ajustes de Texto
 
-### 1. src/hooks/useScrollReveal.tsx
+### HeroSection.tsx
 
-Hook que retorna uma ref para anexar ao elemento e controla a visibilidade.
+**Antes:**
+- Titulo: "PEDY Driver ajuda voce a controlar seus ganhos como motorista de aplicativo"
+- Subtitulo: "Registre entradas e saidas, acompanhe lucros diarios..."
+- CTA: "Criar conta gratis no PEDY Driver"
 
-```text
-Funcionalidade:
-- Usa IntersectionObserver para detectar entrada na viewport
-- Threshold de 15% (elemento 15% visivel dispara animacao)
-- Retorna { ref, isVisible } para controle do componente
-```
+**Depois:**
+- Titulo: "Descubra quanto voce realmente lucra como motorista"
+- Subtitulo: "Chega de adivinhar. Registre seus ganhos e gastos em segundos e veja seu lucro real por hora, por km e por plataforma."
+- CTA: "Comecar agora - e gratis"
+- Microcopy: "Sem cartao. Cancele quando quiser."
+
+**Motivo:** Titulo mais curto e focado no beneficio (lucro real), nao no app.
+
+---
+
+### ProblemSection.tsx
+
+**Antes:**
+- Titulo: "Voce trabalha bastante, mas no fim do dia nao sabe se realmente valeu a pena?"
+- Texto: "Com combustivel, taxas e desgaste do veiculo, faturamento nao e lucro."
+
+**Depois:**
+- Titulo: "Voce sabe quanto realmente lucra por hora?"
+- Texto: "Gasolina, manutencao, taxas dos apps... No fim do mes, quanto sobra de verdade no seu bolso?"
+- Adicionar: Texto adicional "A maioria dos motoristas nao sabe responder isso."
+
+**Motivo:** Pergunta mais direta e especifica, cria identificacao imediata.
+
+---
+
+### SolutionSection.tsx
+
+**Antes:**
+- Titulo: "Com o PEDY Driver voce tem controle total"
+- Itens genericos
+
+**Depois:**
+- Titulo: "Tenha clareza sobre cada real que voce ganha"
+- Itens mais especificos:
+  1. "Registre ganhos e gastos em 10 segundos"
+  2. "Veja seu lucro liquido do dia, semana e mes"
+  3. "Descubra seu R$/hora real (descontando gastos)"
+  4. "Compare plataformas: Uber, 99, iFood, InDrive"
+  5. "Identifique seus melhores dias e horarios"
+
+**Motivo:** Beneficios mais concretos e mensuraveis.
+
+---
+
+### HowItWorksSection.tsx
+
+**Antes:**
+- Passo 1: "Registre" / "Adicione ganhos e gastos rapidamente"
+- Passo 2: "Veja" / "Acompanhe seu lucro real em tempo real"
+- Passo 3: "Decida" / "Saiba onde e quando vale mais a pena rodar"
+
+**Depois:**
+- Passo 1: "Registre" / "Ganhou R$ 50 na Uber? Gastou R$ 30 de gasolina? Registre em segundos."
+- Passo 2: "Acompanhe" / "Veja seu lucro real atualizado: hoje, essa semana, esse mes."
+- Passo 3: "Otimize" / "Descubra que quinta-feira voce lucra 40% mais que domingo."
+
+**Motivo:** Exemplos concretos tornam a proposta mais tangivel.
+
+---
+
+### SocialProofSection.tsx
+
+**Antes:**
+- "+500 motoristas ja usam"
+- Depoimentos genericos
+
+**Depois:**
+- "+500 motoristas controlam seus lucros"
+- Depoimentos mais especificos:
+  1. Carlos, SP: "Descobri que quinta e sexta sao meus melhores dias. Parei de rodar domingo e meu lucro/hora subiu 35%!"
+  2. Marcos, RJ: "Em 2 semanas ja sabia exatamente meu custo por km. Agora so aceito corrida que vale a pena."
+  3. Ana, BH: "Facil demais. Registro tudo enquanto espero passageiro. Melhor investimento que fiz."
+
+**Motivo:** Numeros e resultados especificos aumentam credibilidade.
+
+---
+
+### TargetAudienceSection.tsx
+
+**Antes:**
+- Titulo: "Para quem e o PEDY Driver?"
+- Tags: Motoristas, Entregadores, plataformas
+- Texto: "Se voce dirige para ganhar dinheiro, isso e pra voce."
+
+**Depois:**
+- Titulo: "Feito para quem vive na rua"
+- Tags: Uber e 99, iFood e Rappi, InDrive e 99Food, Motoristas e entregadores
+- Texto: "Se voce roda para ganhar dinheiro, o PEDY Driver e seu copiloto financeiro."
+
+**Motivo:** Linguagem mais proxima do publico-alvo.
+
+---
+
+### PricingPreview.tsx
+
+**Antes:**
+- Titulo gratis: "Gratuito" / "Para comecar"
+- Titulo PRO: "PRO" / "Para motoristas serios"
+
+**Depois:**
+- Titulo gratis: "Gratis pra sempre" / "Comece sem pagar nada"
+- Titulo PRO: "PRO" / "Para quem quer lucrar mais"
+- Adicionar ao PRO: "Mais popular entre motoristas full-time"
+
+**Motivo:** Enfatizar que gratis e permanente, PRO focado em resultado.
+
+---
+
+### FinalCTA.tsx
+
+**Antes:**
+- Titulo: "Comece agora mesmo"
+- Texto: "Descubra quanto voce realmente ganha. E gratis e leva menos de 1 minuto."
+- CTA: "Comecar gratis agora"
+
+**Depois:**
+- Titulo: "Pronto pra descobrir seu lucro real?"
+- Texto: "Crie sua conta em 30 segundos. E gratis, sem cartao, e voce pode cancelar quando quiser."
+- CTA: "Criar minha conta gratis"
+- Microcopy: "Junte-se a +500 motoristas"
+
+**Motivo:** Titulo como pergunta cria engajamento, CTA em primeira pessoa aumenta conversao.
 
 ---
 
 ## Arquivos a Modificar
 
-### 2. src/index.css
-
-Adicionar classes CSS para animacoes de scroll.
-
 ```text
-Novas classes:
-- .scroll-reveal: Estado inicial (invisivel, deslocado)
-- .scroll-reveal.visible: Estado final (visivel, posicionado)
-- Variacoes: scroll-reveal-left, scroll-reveal-right, scroll-reveal-scale
-```
-
-### 3. src/pages/Landing.tsx
-
-Envolver cada secao com o hook de animacao.
-
-```text
-Estrutura:
-- Importar useScrollReveal
-- Criar refs para cada secao
-- Aplicar classes condicionais baseadas em isVisible
-```
-
-### 4-11. Componentes de secao (opcional - abordagem alternativa)
-
-Se preferir, posso modificar cada componente individualmente para ter sua propria animacao interna. Isso da mais controle sobre delays e estilos especificos.
-
-Componentes afetados:
-- ProblemSection.tsx
-- SolutionSection.tsx
-- HowItWorksSection.tsx
-- AppShowcaseSection.tsx
-- SocialProofSection.tsx
-- TargetAudienceSection.tsx
-- PricingPreview.tsx
-- FinalCTA.tsx
-
----
-
-## Implementacao Detalhada
-
-### CSS das Animacoes
-
-```css
-/* Estado inicial - invisivel */
-.scroll-reveal {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-
-/* Estado final - visivel */
-.scroll-reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Delay escalonado para elementos filhos */
-.scroll-reveal-delay-1 { transition-delay: 0.1s; }
-.scroll-reveal-delay-2 { transition-delay: 0.2s; }
-.scroll-reveal-delay-3 { transition-delay: 0.3s; }
-```
-
-### Hook useScrollReveal
-
-```typescript
-export function useScrollReveal(options?: { threshold?: number }) {
-  const ref = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect(); // Anima apenas uma vez
-        }
-      },
-      { threshold: options?.threshold ?? 0.15 }
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, isVisible };
-}
-```
-
-### Landing.tsx Atualizado
-
-```typescript
-export default function Landing() {
-  const section1 = useScrollReveal();
-  const section2 = useScrollReveal();
-  // ... etc
-
-  return (
-    <div className="min-h-screen bg-background">
-      <LandingHeader />
-      <main>
-        <HeroSection /> {/* Hero nao anima - ja visivel */}
-        <div ref={section1.ref} className={cn("scroll-reveal", section1.isVisible && "visible")}>
-          <ProblemSection />
-        </div>
-        {/* ... outras secoes */}
-      </main>
-      <TrustFooter />
-    </div>
-  );
-}
+src/index.css                              # Ajuste de variaveis de cor
+src/components/landing/HeroSection.tsx     # Textos do hero
+src/components/landing/ProblemSection.tsx  # Textos do problema
+src/components/landing/SolutionSection.tsx # Lista de solucoes
+src/components/landing/HowItWorksSection.tsx # Passos com exemplos
+src/components/landing/SocialProofSection.tsx # Depoimentos melhorados
+src/components/landing/TargetAudienceSection.tsx # Publico-alvo
+src/components/landing/PricingPreview.tsx  # Textos dos planos
+src/components/landing/FinalCTA.tsx        # CTA final
+src/components/landing/LandingHeader.tsx   # CTA do header
 ```
 
 ---
 
-## Comportamento Esperado
+## Resumo das Mudancas
 
-| Secao | Efeito | Delay |
-|-------|--------|-------|
-| HeroSection | Sem animacao (ja visivel no carregamento) | - |
-| ProblemSection | Fade-in de baixo para cima | 0ms |
-| SolutionSection | Fade-in de baixo para cima | 0ms |
-| HowItWorksSection | Fade-in + cards com delay escalonado | 100-300ms |
-| AppShowcaseSection | Fade-in suave | 0ms |
-| SocialProofSection | Fade-in + contador anima separado | 0ms |
-| TargetAudienceSection | Fade-in de baixo para cima | 0ms |
-| PricingPreview | Fade-in + cards lado a lado | 0-200ms |
-| FinalCTA | Fade-in com escala sutil | 0ms |
+### Cores
+- Verde primario: de 39% para 42% luminosidade (mais vibrante)
+- Gradientes: transicao mais suave entre tons
+- Fundos: de 10% para 15% opacidade (mais visivel)
 
----
-
-## Resumo de Alteracoes
-
-```text
-CRIAR:
-  src/hooks/useScrollReveal.tsx     # Hook de Intersection Observer
-
-MODIFICAR:
-  src/index.css                     # Classes CSS de animacao
-  src/pages/Landing.tsx             # Aplicar hook nas secoes
-```
+### Textos
+- Titulos: mais curtos e focados em beneficios
+- Descricoes: exemplos concretos com numeros
+- CTAs: primeira pessoa ("Criar minha conta")
+- Depoimentos: resultados especificos com metricas
+- Microcopy: reforcar "gratis" e "sem compromisso"
 
 ---
 
-## Alternativa Considerada
+## Resultado Esperado
 
-**Framer Motion** - Biblioteca poderosa mas adiciona ~30kb ao bundle. Como as animacoes sao simples (fade-in), CSS + Intersection Observer e mais leve e performatico.
+- Pagina mais persuasiva com foco em resultados tangiveis
+- Cores mais vibrantes mas ainda profissionais
+- Taxa de conversao maior com CTAs mais diretos
+- Maior identificacao do publico-alvo com exemplos reais
