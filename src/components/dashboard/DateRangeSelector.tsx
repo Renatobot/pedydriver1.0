@@ -10,6 +10,17 @@ export function DateRangeSelector({ value, onChange }: DateRangeSelectorProps) {
   return (
     <div className="flex items-center gap-2 p-1 rounded-xl bg-secondary">
       <button
+        onClick={() => onChange('day')}
+        className={cn(
+          'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all',
+          value === 'day' 
+            ? 'bg-card text-foreground shadow-sm' 
+            : 'text-muted-foreground hover:text-foreground'
+        )}
+      >
+        Hoje
+      </button>
+      <button
         onClick={() => onChange('week')}
         className={cn(
           'flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all',

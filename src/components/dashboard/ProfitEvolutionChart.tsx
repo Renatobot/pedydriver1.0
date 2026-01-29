@@ -76,6 +76,11 @@ export function ProfitEvolutionChart({
     return null;
   };
 
+  // Don't show evolution chart for daily view (single data point doesn't show evolution)
+  if (range === 'day') {
+    return null;
+  }
+
   return (
     <Card className="bg-card border-border transition-all duration-300">
       <CardHeader className="pb-2">
