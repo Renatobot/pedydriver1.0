@@ -42,7 +42,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">DriverPay Admin</span>
+            <span className="font-bold text-lg">PEDY Driver Admin</span>
           </div>
         </div>
 
