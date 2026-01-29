@@ -7,6 +7,7 @@ import { AppShowcaseSection } from '@/components/landing/AppShowcaseSection';
 import { SocialProofSection } from '@/components/landing/SocialProofSection';
 import { TargetAudienceSection } from '@/components/landing/TargetAudienceSection';
 import { PricingPreview } from '@/components/landing/PricingPreview';
+import { FAQSection } from '@/components/landing/FAQSection';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { TrustFooter } from '@/components/landing/TrustFooter';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
@@ -20,6 +21,7 @@ export default function Landing() {
   const socialProofSection = useScrollReveal();
   const targetAudienceSection = useScrollReveal();
   const pricingSection = useScrollReveal();
+  const faqSection = useScrollReveal();
   const finalCtaSection = useScrollReveal();
 
   return (
@@ -55,6 +57,10 @@ export default function Landing() {
         
         <div ref={pricingSection.ref} className={cn("scroll-reveal", pricingSection.isVisible && "visible")}>
           <PricingPreview />
+        </div>
+        
+        <div ref={faqSection.ref} className={cn("scroll-reveal", faqSection.isVisible && "visible")}>
+          <FAQSection />
         </div>
         
         <div ref={finalCtaSection.ref} className={cn("scroll-reveal-scale", finalCtaSection.isVisible && "visible")}>
