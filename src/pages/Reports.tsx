@@ -1,15 +1,18 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Fuel, Wrench, UtensilsCrossed } from 'lucide-react';
+import { TrendingUp, TrendingDown, Fuel, Wrench, UtensilsCrossed, Clock } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
 import { useExpenses } from '@/hooks/useExpenses';
+import { useEarnings } from '@/hooks/useEarnings';
+import { useShifts } from '@/hooks/useShifts';
 import { formatCurrency } from '@/lib/formatters';
 import { EXPENSE_CATEGORY_LABELS } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, subMonths } from 'date-fns';
 import { useUserSettings } from '@/hooks/useUserSettings';
+import { BestTimesAnalysis } from '@/components/reports/BestTimesAnalysis';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   combustivel: Fuel,
@@ -27,8 +30,16 @@ export default function Reports() {
     ? { start: format(startOfWeek(now, { weekStartsOn }), 'yyyy-MM-dd'), end: format(endOfWeek(now, { weekStartsOn }), 'yyyy-MM-dd') }
     : { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') };
 
+  // Get last 3 months of data for best times analysis
+  const analysisDateRange = {
+    start: format(subMonths(now, 3), 'yyyy-MM-dd'),
+    end: format(now, 'yyyy-MM-dd'),
+  };
+
   const { platformMetrics, isLoading } = useDashboard(range);
   const { data: expenses } = useExpenses(dateRange.start, dateRange.end);
+  const { data: allEarnings } = useEarnings(analysisDateRange.start, analysisDateRange.end);
+  const { data: allShifts } = useShifts(analysisDateRange.start, analysisDateRange.end);
 
   // Calculate expense by category
   const expensesByCategory = expenses?.reduce((acc, expense) => {
@@ -108,6 +119,18 @@ export default function Reports() {
                 </div>
               </div>
             )}
+
+            {/* Best Times Analysis - NEW */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Melhores Dias para Trabalhar
+              </h2>
+              <BestTimesAnalysis 
+                earnings={allEarnings || []} 
+                shifts={allShifts || []} 
+              />
+            </div>
 
             {/* Expenses by Category */}
             <div className="space-y-4">
