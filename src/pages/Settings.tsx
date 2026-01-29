@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,14 @@ import { NotificationSettings } from '@/components/settings/NotificationSettings
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { PremiumBadge } from '@/components/subscription/PremiumBadge';
 import { Link } from 'react-router-dom';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { data: settings, isLoading } = useUserSettings();
   const updateSettings = useUpdateUserSettings();
   const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
+  const { canInstall, isInstalled, isDismissed, isIOS, installApp, resetDismiss } = usePWAInstall();
 
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
@@ -244,6 +246,59 @@ export default function Settings() {
                 <NotificationSettings />
               </div>
             </div>
+
+            {/* PWA Install Section */}
+            {!isInstalled && (
+              <div className="space-y-2 sm:space-y-3">
+                <Label className="flex items-center gap-2 text-sm sm:text-base">
+                  <Smartphone className="w-4 h-4" />
+                  Instalar App
+                </Label>
+                <div className="rounded-xl p-3 sm:p-4 bg-muted/30 border border-border/50 space-y-3">
+                  {isIOS ? (
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Para instalar no iPhone/iPad: toque em <strong>Compartilhar</strong> e depois em <strong>"Adicionar à Tela Inicial"</strong>
+                    </p>
+                  ) : canInstall && !isDismissed ? (
+                    <Button
+                      onClick={installApp}
+                      className="w-full h-10 sm:h-11 text-xs sm:text-sm"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Instalar PEDY Driver
+                    </Button>
+                  ) : isDismissed ? (
+                    <Button
+                      onClick={resetDismiss}
+                      variant="outline"
+                      className="w-full h-10 sm:h-11 text-xs sm:text-sm"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Mostrar opção de instalação
+                    </Button>
+                  ) : (
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      A instalação não está disponível neste navegador. Tente usar o Chrome ou Edge.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isInstalled && (
+              <div className="space-y-2 sm:space-y-3">
+                <Label className="flex items-center gap-2 text-sm sm:text-base">
+                  <Smartphone className="w-4 h-4" />
+                  App Instalado
+                </Label>
+                <div className="rounded-xl p-3 sm:p-4 bg-primary/10 border border-primary/30 flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                  <p className="text-xs sm:text-sm text-foreground">
+                    O PEDY Driver está instalado no seu dispositivo!
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Save Button */}
             <Button
