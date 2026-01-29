@@ -55,12 +55,15 @@ export function ProfitEvolutionChart({
     });
   }, [earnings, expenses, range, weekStartsOn]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      const dataPoint = payload[0]?.payload;
+      const dateStr = dataPoint?.date;
+      
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="text-sm font-medium text-foreground mb-2">
-            {format(parseISO(label), "dd 'de' MMMM", { locale: ptBR })}
+            {dateStr ? format(parseISO(dateStr), "dd 'de' MMMM", { locale: ptBR }) : ''}
           </p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
