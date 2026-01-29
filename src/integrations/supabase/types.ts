@@ -431,6 +431,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_email_by_phone: { Args: { _phone: string }; Returns: string }
       get_unread_alerts_count: { Args: never; Returns: number }
       has_role: {
         Args: {
