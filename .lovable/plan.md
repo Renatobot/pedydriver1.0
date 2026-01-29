@@ -1,211 +1,186 @@
 
+# Plano: Animacoes de Fade-in no Scroll
 
-# Plano: Corrigir Unidades para Veículos Elétricos
+## Visao Geral
 
-## Problema Identificado
-
-A interface está usando **km/l** (quilômetros por litro) para veículos elétricos, mas eles consomem **kWh** (quilowatt-hora) e não litros de combustível.
-
-### Pontos a Corrigir
-
-| Local | Problema | Correção |
-|-------|----------|----------|
-| Lista de veículos | "120 km/l cidade" | "8.3 km/kWh cidade" |
-| Campo de preço | "Preço do Combustível (R$/L)" | "Preço da Energia (R$/kWh)" |
-| Resultado | "Combustível" | "Energia" |
-| Ícone | Fuel (bomba) | Zap (raio) para elétricos |
+Adicionar animacoes suaves de fade-in nas secoes da landing page quando elas aparecem na tela durante o scroll. Isso cria uma experiencia mais dinamica e profissional.
 
 ---
 
-## Dados Corrigidos para Elétricos
+## Abordagem Tecnica
 
-Os valores atuais estão invertidos. Para elétricos, o consumo é medido em **km/kWh** (quantos km roda por kWh):
+### Hook useScrollReveal
 
-| Modelo | Atual (errado) | Correto |
-|--------|----------------|---------|
-| BYD Dolphin Mini | 120 km/l | ~8.0 km/kWh |
-| BYD Dolphin | 100 km/l | ~6.5 km/kWh |
-| Voltz EV1 | 80 km/l | ~50 km/kWh |
+Criar um hook React customizado que usa a **Intersection Observer API** para detectar quando elementos entram na viewport e aplicar classes de animacao.
 
-Os valores precisam ser ajustados para refletir dados reais de consumo.
+**Vantagens desta abordagem:**
+- Performance nativa (sem bibliotecas externas)
+- Funciona bem em mobile
+- Animacao acontece apenas uma vez (nao repete ao voltar)
+- Configuravel (threshold, delay)
+
+---
+
+## Arquivos a Criar
+
+### 1. src/hooks/useScrollReveal.tsx
+
+Hook que retorna uma ref para anexar ao elemento e controla a visibilidade.
+
+```text
+Funcionalidade:
+- Usa IntersectionObserver para detectar entrada na viewport
+- Threshold de 15% (elemento 15% visivel dispara animacao)
+- Retorna { ref, isVisible } para controle do componente
+```
 
 ---
 
 ## Arquivos a Modificar
 
-### 1. src/lib/vehicleData.ts
+### 2. src/index.css
 
-**Alterar interface para indicar unidade:**
+Adicionar classes CSS para animacoes de scroll.
 
-```typescript
-export interface VehicleData {
-  name: string;
-  type: VehicleType;
-  consumptionCity: number;
-  consumptionHighway: number;
-  isElectric?: boolean; // Nova flag explícita
-}
+```text
+Novas classes:
+- .scroll-reveal: Estado inicial (invisivel, deslocado)
+- .scroll-reveal.visible: Estado final (visivel, posicionado)
+- Variacoes: scroll-reveal-left, scroll-reveal-right, scroll-reveal-scale
 ```
 
-**Corrigir valores de consumo dos elétricos:**
+### 3. src/pages/Landing.tsx
 
-Valores reais aproximados:
-- BYD Dolphin Mini: 7.5 km/kWh
-- BYD Dolphin: 6.5 km/kWh  
-- BYD Yuan Plus: 5.5 km/kWh
-- Voltz EV1: 50 km/kWh (motos elétricas são muito eficientes)
-- etc.
+Envolver cada secao com o hook de animacao.
 
-### 2. src/lib/vehicleData.ts - Função helper
-
-Adicionar funções auxiliares:
-
-```typescript
-export function getConsumptionUnit(vehicle: VehicleData): string {
-  return isElectricVehicle(vehicle) ? 'km/kWh' : 'km/l';
-}
-
-export function getEnergyLabel(vehicle: VehicleData): string {
-  return isElectricVehicle(vehicle) ? 'Energia' : 'Combustível';
-}
-
-export function getEnergyPriceLabel(vehicle: VehicleData): string {
-  return isElectricVehicle(vehicle) ? 'R$/kWh' : 'R$/L';
-}
+```text
+Estrutura:
+- Importar useScrollReveal
+- Criar refs para cada secao
+- Aplicar classes condicionais baseadas em isVisible
 ```
 
-### 3. src/components/settings/VehicleCostCalculator.tsx
+### 4-11. Componentes de secao (opcional - abordagem alternativa)
 
-**Na listagem de veículos (linha 130):**
+Se preferir, posso modificar cada componente individualmente para ter sua propria animacao interna. Isso da mais controle sobre delays e estilos especificos.
 
-De:
-```tsx
-{vehicle.name} ({vehicle.consumptionCity} km/l cidade)
-```
-
-Para:
-```tsx
-{vehicle.name} ({vehicle.consumptionCity} {getConsumptionUnit(vehicle)} cidade)
-```
-
-**No campo de preço (linhas 139-155):**
-
-Tornar dinâmico baseado no veículo selecionado:
-- Label: "Preço do Combustível (R$/L)" ou "Preço da Energia (R$/kWh)"
-- Placeholder: "5.89" ou "0.85" (preço médio kWh residencial)
-- Ícone: Fuel ou Zap
-
-**No resultado (linha 196-204):**
-
-- Label: "Combustível" ou "Energia"
-- Ícone: orange Fuel ou yellow Zap
+Componentes afetados:
+- ProblemSection.tsx
+- SolutionSection.tsx
+- HowItWorksSection.tsx
+- AppShowcaseSection.tsx
+- SocialProofSection.tsx
+- TargetAudienceSection.tsx
+- PricingPreview.tsx
+- FinalCTA.tsx
 
 ---
 
-## Preços de Referência
+## Implementacao Detalhada
 
-Adicionar constantes com preços médios:
+### CSS das Animacoes
 
-```typescript
-export const DEFAULT_FUEL_PRICE = 5.89; // R$/L gasolina
-export const DEFAULT_ELECTRICITY_PRICE = 0.85; // R$/kWh residencial
+```css
+/* Estado inicial - invisivel */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Estado final - visivel */
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Delay escalonado para elementos filhos */
+.scroll-reveal-delay-1 { transition-delay: 0.1s; }
+.scroll-reveal-delay-2 { transition-delay: 0.2s; }
+.scroll-reveal-delay-3 { transition-delay: 0.3s; }
 ```
 
----
-
-## Implementação
-
-### Ordem de Execução
-
-1. Atualizar valores de consumo dos elétricos em `vehicleData.ts`
-2. Adicionar funções helper para labels dinâmicos
-3. Modificar `VehicleCostCalculator.tsx` para usar labels dinâmicos
-4. Adicionar lógica para trocar preço default quando selecionar elétrico
-
-### Mudanças Detalhadas
-
-**vehicleData.ts - Elétricos corrigidos:**
+### Hook useScrollReveal
 
 ```typescript
-// CARROS ELÉTRICOS (km/kWh)
-{ name: 'BYD Dolphin Mini (Elétrico)', type: 'carro', consumptionCity: 7.5, consumptionHighway: 8.5 },
-{ name: 'BYD Dolphin (Elétrico)', type: 'carro', consumptionCity: 6.5, consumptionHighway: 7.5 },
-{ name: 'BYD Yuan Plus (Elétrico)', type: 'carro', consumptionCity: 5.5, consumptionHighway: 6.5 },
-{ name: 'Renault Kwid E-Tech (Elétrico)', type: 'carro', consumptionCity: 7.0, consumptionHighway: 8.0 },
-{ name: 'Fiat 500e (Elétrico)', type: 'carro', consumptionCity: 6.0, consumptionHighway: 7.0 },
-{ name: 'GWM Ora 03 (Elétrico)', type: 'carro', consumptionCity: 6.0, consumptionHighway: 7.0 },
-{ name: 'JAC E-JS1 (Elétrico)', type: 'carro', consumptionCity: 6.5, consumptionHighway: 7.5 },
-{ name: 'Caoa Chery iCar (Elétrico)', type: 'carro', consumptionCity: 6.0, consumptionHighway: 7.0 },
+export function useScrollReveal(options?: { threshold?: number }) {
+  const ref = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-// MOTOS ELÉTRICAS (km/kWh) - muito mais eficientes
-{ name: 'Voltz EV1 (Elétrico)', type: 'moto', consumptionCity: 45.0, consumptionHighway: 50.0 },
-{ name: 'Voltz EVS (Elétrico)', type: 'moto', consumptionCity: 40.0, consumptionHighway: 45.0 },
-{ name: 'Shineray SE3 (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
-{ name: 'Super Soco TC Max (Elétrico)', type: 'moto', consumptionCity: 30.0, consumptionHighway: 35.0 },
-{ name: 'NIU NQi GTS (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect(); // Anima apenas uma vez
+        }
+      },
+      { threshold: options?.threshold ?? 0.15 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, isVisible };
+}
 ```
 
-**VehicleCostCalculator.tsx - UI dinâmica:**
+### Landing.tsx Atualizado
 
-```tsx
-// Importar funções helper
-import { 
-  getVehiclesByType, 
-  VehicleData, 
-  calculateCostPerKm, 
-  CostBreakdown,
-  isElectricVehicle,
-  getConsumptionUnit,
-  DEFAULT_FUEL_PRICE,
-  DEFAULT_ELECTRICITY_PRICE
-} from '@/lib/vehicleData';
+```typescript
+export default function Landing() {
+  const section1 = useScrollReveal();
+  const section2 = useScrollReveal();
+  // ... etc
 
-// No Select de veículos
-<SelectItem key={vehicle.name} value={vehicle.name}>
-  {vehicle.name} ({vehicle.consumptionCity} {getConsumptionUnit(vehicle)} cidade)
-</SelectItem>
-
-// No campo de preço
-<Label>
-  {selectedVehicle && isElectricVehicle(selectedVehicle) ? (
-    <>
-      <Zap className="w-4 h-4" />
-      Preço da Energia (R$/kWh)
-    </>
-  ) : (
-    <>
-      <Fuel className="w-4 h-4" />
-      Preço do Combustível (R$/L)
-    </>
-  )}
-</Label>
-
-// No resultado
-<div className="flex items-center gap-2">
-  {result.isElectric ? (
-    <Zap className="w-4 h-4 text-yellow-500" />
-  ) : (
-    <Fuel className="w-4 h-4 text-orange-500" />
-  )}
-  <span>{result.isElectric ? 'Energia' : 'Combustível'}</span>
-</div>
+  return (
+    <div className="min-h-screen bg-background">
+      <LandingHeader />
+      <main>
+        <HeroSection /> {/* Hero nao anima - ja visivel */}
+        <div ref={section1.ref} className={cn("scroll-reveal", section1.isVisible && "visible")}>
+          <ProblemSection />
+        </div>
+        {/* ... outras secoes */}
+      </main>
+      <TrustFooter />
+    </div>
+  );
+}
 ```
 
 ---
 
-## Resultado Esperado
+## Comportamento Esperado
 
-**Antes (veículo elétrico):**
-```
-BYD Dolphin (120 km/l cidade)
-Preço do Combustível (R$/L): 5.89
-→ Combustível: R$ 0.05/km
+| Secao | Efeito | Delay |
+|-------|--------|-------|
+| HeroSection | Sem animacao (ja visivel no carregamento) | - |
+| ProblemSection | Fade-in de baixo para cima | 0ms |
+| SolutionSection | Fade-in de baixo para cima | 0ms |
+| HowItWorksSection | Fade-in + cards com delay escalonado | 100-300ms |
+| AppShowcaseSection | Fade-in suave | 0ms |
+| SocialProofSection | Fade-in + contador anima separado | 0ms |
+| TargetAudienceSection | Fade-in de baixo para cima | 0ms |
+| PricingPreview | Fade-in + cards lado a lado | 0-200ms |
+| FinalCTA | Fade-in com escala sutil | 0ms |
+
+---
+
+## Resumo de Alteracoes
+
+```text
+CRIAR:
+  src/hooks/useScrollReveal.tsx     # Hook de Intersection Observer
+
+MODIFICAR:
+  src/index.css                     # Classes CSS de animacao
+  src/pages/Landing.tsx             # Aplicar hook nas secoes
 ```
 
-**Depois (veículo elétrico):**
-```
-BYD Dolphin (6.5 km/kWh cidade)
-Preço da Energia (R$/kWh): 0.85
-→ Energia: R$ 0.13/km
-```
+---
 
+## Alternativa Considerada
+
+**Framer Motion** - Biblioteca poderosa mas adiciona ~30kb ao bundle. Como as animacoes sao simples (fade-in), CSS + Intersection Observer e mais leve e performatico.
