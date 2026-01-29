@@ -5,13 +5,24 @@ import { ProfitCard } from '@/components/dashboard/ProfitCard';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { PlatformCard } from '@/components/dashboard/PlatformCard';
 import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
+import { ProfitEvolutionChart } from '@/components/dashboard/ProfitEvolutionChart';
+import { PlatformComparisonChart } from '@/components/dashboard/PlatformComparisonChart';
+import { ExpenseCategoryChart } from '@/components/dashboard/ExpenseCategoryChart';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
   const [range, setRange] = useState<DateRange>('week');
-  const { metrics, platformMetrics, isLoading } = useDashboard(range);
+  const { 
+    metrics, 
+    platformMetrics, 
+    earnings, 
+    expenses, 
+    isLoading,
+    weekStartsOn,
+    costPerKm,
+  } = useDashboard(range);
   const { user } = useAuth();
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Motorista';
@@ -104,11 +115,27 @@ export default function Dashboard() {
                 icon={<Clock className="w-4 h-4" />}
               />
               <MetricCard
-                label="Km Rodados"
+                label="Km"
                 value={metrics.totalKm}
                 format="km"
                 icon={<Navigation className="w-4 h-4" />}
               />
+            </div>
+
+            {/* Charts Section */}
+            <div className="space-y-4">
+              <ProfitEvolutionChart
+                earnings={earnings}
+                expenses={expenses}
+                range={range}
+                weekStartsOn={weekStartsOn as 0 | 1}
+                costPerKm={costPerKm}
+              />
+              
+              <div className="grid grid-cols-1 gap-4">
+                <PlatformComparisonChart platformMetrics={platformMetrics} />
+                <ExpenseCategoryChart expenses={expenses} />
+              </div>
             </div>
 
             {/* Platform Comparison */}

@@ -161,7 +161,12 @@ export function useDashboard(range: DateRange = 'week') {
   return {
     metrics,
     platformMetrics,
+    earnings: earnings || [],
+    expenses: expenses || [],
+    shifts: shifts || [],
     isLoading: earningsLoading || expensesLoading || shiftsLoading,
-    dateRange
+    dateRange,
+    weekStartsOn,
+    costPerKm,
   };
 }
