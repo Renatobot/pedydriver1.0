@@ -39,7 +39,7 @@ export interface AdminLog {
 
 export interface AdminAlert {
   id: string;
-  event_type: 'new_user_free' | 'new_user_pro' | 'payment_failure' | 'plan_activation_error';
+  event_type: 'new_user_free' | 'new_user_pro' | 'payment_failure' | 'plan_activation_error' | 'churn_inactive_pro' | 'churn_expiring_pro' | 'churn_payment_failed';
   user_id: string | null;
   user_name: string | null;
   user_email: string | null;
@@ -288,6 +288,41 @@ export function useMarkAllAlertsAsRead() {
         title: 'Sucesso',
         description: 'Todos os alertas foram marcados como lidos.',
       });
+    },
+  });
+}
+
+export function useGenerateChurnAlerts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('generate_churn_alerts');
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['adminAlerts'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadAlertsCount'] });
+      if (count > 0) {
+        toast({
+          title: 'Alertas gerados',
+          description: `${count} novo(s) alerta(s) de churn detectado(s).`,
+        });
+      } else {
+        toast({
+          title: 'Verificação concluída',
+          description: 'Nenhum novo alerta de churn detectado.',
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao verificar alertas de churn.',
+        variant: 'destructive',
+      });
+      console.error('Error generating churn alerts:', error);
     },
   });
 }
