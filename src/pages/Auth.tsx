@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Car, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Car, Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const loginSchema = z.object({
@@ -19,13 +20,26 @@ const signupSchema = loginSchema.extend({
   fullName: z.string().min(2, 'Nome muito curto').max(100),
 });
 
+const phoneSchema = z.object({
+  phone: z.string().min(10, 'Telefone inválido').max(15).regex(/^\+?[0-9]+$/, 'Apenas números'),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, 'Código deve ter 6 dígitos'),
+});
+
 type LoginData = z.infer<typeof loginSchema>;
 type SignupData = z.infer<typeof signupSchema>;
+type PhoneData = z.infer<typeof phoneSchema>;
+type OtpData = z.infer<typeof otpSchema>;
 
 export default function Auth() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'phone'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -35,6 +49,14 @@ export default function Auth() {
 
   const signupForm = useForm<SignupData>({
     resolver: zodResolver(signupSchema),
+  });
+
+  const phoneForm = useForm<PhoneData>({
+    resolver: zodResolver(phoneSchema),
+  });
+
+  const otpForm = useForm<OtpData>({
+    resolver: zodResolver(otpSchema),
   });
 
   const handleLogin = async (data: LoginData) => {
@@ -65,6 +87,67 @@ export default function Auth() {
     }
   };
 
+  const handlePhoneSubmit = async (data: PhoneData) => {
+    setError(null);
+    setIsLoading(true);
+    
+    // Format phone number with country code if not present
+    let formattedPhone = data.phone;
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+55' + formattedPhone; // Default to Brazil
+    }
+    
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+      });
+      
+      if (error) {
+        if (error.message.includes('not enabled')) {
+          setError('Login por telefone não está habilitado. Contate o suporte.');
+        } else {
+          setError(error.message);
+        }
+      } else {
+        setPhoneNumber(formattedPhone);
+        setOtpSent(true);
+      }
+    } catch (err) {
+      setError('Erro ao enviar código. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpVerify = async (data: OtpData) => {
+    setError(null);
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: phoneNumber,
+        token: data.otp,
+        type: 'sms',
+      });
+      
+      if (error) {
+        setError('Código inválido ou expirado');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      setError('Erro ao verificar código. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPhoneFlow = () => {
+    setOtpSent(false);
+    setPhoneNumber('');
+    otpForm.reset();
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 safe-top safe-bottom">
       {/* Logo */}
@@ -77,11 +160,11 @@ export default function Auth() {
       </div>
 
       {/* Toggle */}
-      <div className="flex items-center gap-1 sm:gap-2 p-1 rounded-xl bg-secondary mb-4 sm:mb-6 w-full max-w-xs sm:max-w-sm">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary mb-4 sm:mb-6 w-full max-w-xs sm:max-w-sm">
         <button
-          onClick={() => setMode('login')}
+          onClick={() => { setMode('login'); setError(null); resetPhoneFlow(); }}
           className={cn(
-            'flex-1 py-2.5 sm:py-3 px-4 rounded-lg text-sm sm:text-base font-medium transition-all touch-feedback min-h-[44px]',
+            'flex-1 py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[40px]',
             mode === 'login'
               ? 'bg-card text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground active:text-foreground'
@@ -90,15 +173,26 @@ export default function Auth() {
           Entrar
         </button>
         <button
-          onClick={() => setMode('signup')}
+          onClick={() => { setMode('signup'); setError(null); resetPhoneFlow(); }}
           className={cn(
-            'flex-1 py-2.5 sm:py-3 px-4 rounded-lg text-sm sm:text-base font-medium transition-all touch-feedback min-h-[44px]',
+            'flex-1 py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[40px]',
             mode === 'signup'
               ? 'bg-card text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground active:text-foreground'
           )}
         >
           Criar Conta
+        </button>
+        <button
+          onClick={() => { setMode('phone'); setError(null); resetPhoneFlow(); }}
+          className={cn(
+            'flex-1 py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[40px]',
+            mode === 'phone'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground active:text-foreground'
+          )}
+        >
+          Telefone
         </button>
       </div>
 
@@ -110,7 +204,7 @@ export default function Auth() {
           </div>
         )}
 
-        {mode === 'login' ? (
+        {mode === 'login' && (
           <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-3 sm:space-y-4">
             <div className="space-y-1.5 sm:space-y-2">
               <Label className="text-sm sm:text-base">Email</Label>
@@ -159,7 +253,9 @@ export default function Auth() {
               {loginForm.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-        ) : (
+        )}
+
+        {mode === 'signup' && (
           <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-3 sm:space-y-4">
             <div className="space-y-1.5 sm:space-y-2">
               <Label className="text-sm sm:text-base">Nome</Label>
@@ -223,6 +319,75 @@ export default function Auth() {
             >
               {signupForm.formState.isSubmitting ? 'Criando conta...' : 'Criar Conta'}
             </Button>
+          </form>
+        )}
+
+        {mode === 'phone' && !otpSent && (
+          <form onSubmit={phoneForm.handleSubmit(handlePhoneSubmit)} className="space-y-3 sm:space-y-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-sm sm:text-base">Telefone (WhatsApp)</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                <Input
+                  type="tel"
+                  placeholder="11999999999"
+                  className="pl-9 sm:pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                  {...phoneForm.register('phone')}
+                />
+              </div>
+              <p className="text-2xs sm:text-xs text-muted-foreground">Digite apenas os números (DDD + número)</p>
+              {phoneForm.formState.errors.phone && (
+                <p className="text-2xs sm:text-xs text-destructive">{phoneForm.formState.errors.phone.message}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-11 sm:h-12 text-sm sm:text-base bg-gradient-profit hover:opacity-90 touch-feedback"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Enviando...' : 'Enviar Código SMS'}
+            </Button>
+          </form>
+        )}
+
+        {mode === 'phone' && otpSent && (
+          <form onSubmit={otpForm.handleSubmit(handleOtpVerify)} className="space-y-3 sm:space-y-4">
+            <div className="text-center mb-4">
+              <p className="text-sm text-muted-foreground">
+                Código enviado para <strong>{phoneNumber}</strong>
+              </p>
+            </div>
+
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-sm sm:text-base">Código de Verificação</Label>
+              <Input
+                type="text"
+                placeholder="000000"
+                maxLength={6}
+                className="h-11 sm:h-12 text-sm sm:text-base text-center tracking-widest font-mono"
+                {...otpForm.register('otp')}
+              />
+              {otpForm.formState.errors.otp && (
+                <p className="text-2xs sm:text-xs text-destructive text-center">{otpForm.formState.errors.otp.message}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-11 sm:h-12 text-sm sm:text-base bg-gradient-profit hover:opacity-90 touch-feedback"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Verificando...' : 'Verificar Código'}
+            </Button>
+
+            <button
+              type="button"
+              onClick={resetPhoneFlow}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Usar outro número
+            </button>
           </form>
         )}
       </div>
