@@ -1,7 +1,8 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAdminMetrics } from '@/hooks/useAdmin';
-import { Users, UserCheck, Crown, UserPlus, TrendingUp, UserX, AlertTriangle, Ban } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAdminMetrics, useGenerateChurnAlerts } from '@/hooks/useAdmin';
+import { Users, UserCheck, Crown, UserPlus, TrendingUp, UserX, AlertTriangle, Ban, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MetricCardProps {
@@ -37,17 +38,34 @@ function MetricCard({ title, value, icon, description, isLoading }: MetricCardPr
 
 export default function AdminDashboard() {
   const { data: metrics, isLoading } = useAdminMetrics();
+  const generateChurnAlerts = useGenerateChurnAlerts();
 
   const conversionRate = metrics 
     ? ((metrics.pro_users / (metrics.total_users || 1)) * 100).toFixed(1)
     : '0.0';
 
+  const handleCheckChurn = () => {
+    generateChurnAlerts.mutate();
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral do sistema DriverPay</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Visão geral do sistema DriverPay</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCheckChurn}
+            disabled={generateChurnAlerts.isPending}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${generateChurnAlerts.isPending ? 'animate-spin' : ''}`} />
+            Verificar Churn
+          </Button>
         </div>
 
         {/* Main Metrics */}

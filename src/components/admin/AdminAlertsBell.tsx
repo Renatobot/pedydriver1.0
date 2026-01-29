@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, UserPlus, Crown, AlertTriangle, Check, CheckCheck } from 'lucide-react';
+import { Bell, UserPlus, Crown, AlertTriangle, Check, CheckCheck, Clock, UserX, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -13,26 +13,48 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
-const EVENT_CONFIG: Record<AdminAlert['event_type'], { label: string; icon: React.ReactNode; color: string }> = {
+const EVENT_CONFIG: Record<AdminAlert['event_type'], { label: string; icon: React.ReactNode; color: string; category: 'user' | 'churn' | 'error' }> = {
   new_user_free: {
     label: 'Novo Usuário',
     icon: <UserPlus className="w-4 h-4" />,
     color: 'text-blue-500',
+    category: 'user',
   },
   new_user_pro: {
     label: 'Novo PRO',
     icon: <Crown className="w-4 h-4" />,
     color: 'text-yellow-500',
+    category: 'user',
   },
   payment_failure: {
     label: 'Falha Pagamento',
     icon: <AlertTriangle className="w-4 h-4" />,
     color: 'text-red-500',
+    category: 'error',
   },
   plan_activation_error: {
     label: 'Erro Ativação',
     icon: <AlertTriangle className="w-4 h-4" />,
     color: 'text-orange-500',
+    category: 'error',
+  },
+  churn_inactive_pro: {
+    label: 'PRO Inativo',
+    icon: <UserX className="w-4 h-4" />,
+    color: 'text-amber-500',
+    category: 'churn',
+  },
+  churn_expiring_pro: {
+    label: 'PRO Expirando',
+    icon: <Clock className="w-4 h-4" />,
+    color: 'text-orange-500',
+    category: 'churn',
+  },
+  churn_payment_failed: {
+    label: 'Falha Renovação',
+    icon: <CreditCard className="w-4 h-4" />,
+    color: 'text-red-500',
+    category: 'churn',
   },
 };
 
@@ -92,13 +114,21 @@ export function AdminAlertsBell() {
           ) : (
             <div className="divide-y divide-border">
               {alerts.map((alert) => {
-                const config = EVENT_CONFIG[alert.event_type];
+                const config = EVENT_CONFIG[alert.event_type] || {
+                  label: 'Alerta',
+                  icon: <AlertTriangle className="w-4 h-4" />,
+                  color: 'text-muted-foreground',
+                  category: 'error',
+                };
+                const isChurn = config.category === 'churn';
+                
                 return (
                   <div
                     key={alert.id}
                     className={cn(
                       'p-3 hover:bg-accent/50 transition-colors',
-                      !alert.is_read && 'bg-primary/5'
+                      !alert.is_read && 'bg-primary/5',
+                      isChurn && !alert.is_read && 'bg-amber-500/10'
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -106,18 +136,32 @@ export function AdminAlertsBell() {
                         {config.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge 
+                            variant={isChurn ? "outline" : "secondary"} 
+                            className={cn(
+                              "text-xs",
+                              isChurn && "border-amber-500 text-amber-600"
+                            )}
+                          >
                             {config.label}
                           </Badge>
+                          {isChurn && (
+                            <Badge variant="destructive" className="text-xs">
+                              Churn
+                            </Badge>
+                          )}
                           {!alert.is_read && (
                             <span className="w-2 h-2 rounded-full bg-primary" />
                           )}
                         </div>
-                        <p className="text-sm mt-1 truncate">
+                        <p className="text-sm mt-1 font-medium">
                           {alert.user_name || alert.user_email || 'Usuário'}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          {alert.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(alert.created_at), {
                             addSuffix: true,
                             locale: ptBR,

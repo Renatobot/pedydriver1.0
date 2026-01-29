@@ -390,6 +390,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_payment_failure_alert: {
+        Args: { _error_type?: string; _user_id: string }
+        Returns: boolean
+      }
+      generate_churn_alerts: { Args: never; Returns: number }
       get_admin_alerts: {
         Args: { _limit?: number }
         Returns: {
