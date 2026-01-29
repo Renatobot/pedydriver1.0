@@ -74,14 +74,14 @@ export function ProfitEvolutionChart({
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border transition-all duration-300">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium text-foreground">
           Evolução {range === 'week' ? 'Semanal' : 'Mensal'}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-48">
+        <div className="h-48 animate-fade-in" key={range}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
@@ -116,6 +116,8 @@ export function ProfitEvolutionChart({
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorRevenue)"
+                animationDuration={800}
+                animationEasing="ease-out"
               />
               <Area
                 type="monotone"
@@ -125,6 +127,8 @@ export function ProfitEvolutionChart({
                 strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorProfit)"
+                animationDuration={800}
+                animationEasing="ease-out"
               />
             </AreaChart>
           </ResponsiveContainer>

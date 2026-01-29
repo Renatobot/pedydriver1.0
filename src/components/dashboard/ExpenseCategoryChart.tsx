@@ -84,17 +84,19 @@ export function ExpenseCategoryChart({ expenses }: ExpenseCategoryChartProps) {
   };
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border transition-all duration-300">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-medium text-foreground">
           Gastos por Categoria
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-52">
+        <div className="h-52 animate-fade-in" key={expenses.length}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
+                animationDuration={800}
+                animationEasing="ease-out"
                 data={chartData}
                 cx="50%"
                 cy="45%"
