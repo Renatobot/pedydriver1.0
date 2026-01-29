@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
-
+import { PWAInstallBanner } from '@/components/pwa/PWAInstallBanner';
 export default function Dashboard() {
   const [range, setRange] = useState<DateRange>('day');
   const { 
@@ -37,6 +37,9 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-xs sm:text-sm">Olá, {firstName}!</p>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Seu Resumo</h1>
         </div>
+
+        {/* PWA Install Banner */}
+        <PWAInstallBanner />
 
         {/* Entry Limit Banner */}
         <EntryLimitBanner />
