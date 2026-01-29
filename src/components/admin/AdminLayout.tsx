@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
+import { AdminAlertsBell } from './AdminAlertsBell';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -19,7 +20,7 @@ const navItems = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { data: isAdmin, isLoading } = useIsAdmin();
 
   if (isLoading) {
@@ -85,11 +86,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6">
+          <div className="text-sm text-muted-foreground">
+            Olá, {user?.email}
+          </div>
+          <div className="flex items-center gap-2">
+            <AdminAlertsBell />
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto">
+          <div className="p-6">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

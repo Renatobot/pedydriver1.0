@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alerts: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          is_read: boolean
+          message: string
+          user_email: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          is_read?: boolean
+          message: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          user_email?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       admin_logs: {
         Row: {
           action: string
@@ -357,6 +390,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_admin_alerts: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          event_type: string
+          id: string
+          is_read: boolean
+          message: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_admin_logs: {
         Args: { _limit?: number }
         Returns: {
@@ -385,6 +431,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_unread_alerts_count: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -393,6 +440,8 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      mark_alert_as_read: { Args: { _alert_id: string }; Returns: boolean }
+      mark_all_alerts_as_read: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

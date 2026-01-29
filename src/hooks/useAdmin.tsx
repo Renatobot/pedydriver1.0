@@ -37,6 +37,17 @@ export interface AdminLog {
   created_at: string;
 }
 
+export interface AdminAlert {
+  id: string;
+  event_type: 'new_user_free' | 'new_user_pro' | 'payment_failure' | 'plan_activation_error';
+  user_id: string | null;
+  user_name: string | null;
+  user_email: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export function useIsAdmin() {
   const { user } = useAuth();
 
@@ -209,6 +220,74 @@ export function useResetMonthlyLimit() {
         variant: 'destructive',
       });
       console.error('Error resetting monthly limit:', error);
+    },
+  });
+}
+
+export function useAdminAlerts(limit: number = 50) {
+  const { data: isAdmin } = useIsAdmin();
+
+  return useQuery({
+    queryKey: ['adminAlerts', limit],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_admin_alerts', { _limit: limit });
+      if (error) throw error;
+      return data as AdminAlert[];
+    },
+    enabled: isAdmin === true,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+}
+
+export function useUnreadAlertsCount() {
+  const { data: isAdmin } = useIsAdmin();
+
+  return useQuery({
+    queryKey: ['unreadAlertsCount'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_unread_alerts_count');
+      if (error) throw error;
+      return data as number;
+    },
+    enabled: isAdmin === true,
+    refetchInterval: 15000, // Refresh every 15 seconds
+  });
+}
+
+export function useMarkAlertAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (alertId: string) => {
+      const { data, error } = await supabase.rpc('mark_alert_as_read', {
+        _alert_id: alertId,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminAlerts'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadAlertsCount'] });
+    },
+  });
+}
+
+export function useMarkAllAlertsAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('mark_all_alerts_as_read');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminAlerts'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadAlertsCount'] });
+      toast({
+        title: 'Sucesso',
+        description: 'Todos os alertas foram marcados como lidos.',
+      });
     },
   });
 }
