@@ -1,7 +1,7 @@
 {
-  "name": "DriverPay - Controle Financeiro",
-  "short_name": "DriverPay",
-  "description": "Controle financeiro para motoristas e entregadores de aplicativos",
+  "name": "PEDY Driver - Controle Financeiro",
+  "short_name": "PEDY Driver",
+  "description": "Controle seus ganhos como motorista de aplicativo",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f1419",

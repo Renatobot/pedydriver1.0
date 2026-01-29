@@ -15,6 +15,7 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import Upgrade from "./pages/Upgrade";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -62,6 +63,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/landing" element={<Landing />} />
       <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

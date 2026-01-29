@@ -130,8 +130,8 @@ export default function Auth() {
         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-profit flex items-center justify-center mx-auto mb-3 sm:mb-4 glow-profit">
           <Car className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">DriverPay</h1>
-        <p className="text-muted-foreground text-sm sm:text-base mt-1">Controle financeiro para motoristas</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">PEDY Driver</h1>
+        <p className="text-muted-foreground text-sm sm:text-base mt-1">Controle seus ganhos como motorista de aplicativo</p>
       </div>
 
       {/* Toggle */}

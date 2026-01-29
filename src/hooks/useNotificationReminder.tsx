@@ -53,7 +53,7 @@ export function useNotificationReminder() {
 
   const sendReminderNow = useCallback(() => {
     sendNotification('🚗 Hora de registrar!', {
-      body: 'Não esqueça de registrar seus ganhos de hoje no DriverPay.',
+      body: 'Não esqueça de registrar seus ganhos de hoje no PEDY Driver.',
       tag: 'daily-reminder',
     });
   }, [sendNotification]);
