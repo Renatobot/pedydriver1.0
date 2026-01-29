@@ -19,6 +19,7 @@ const loginSchema = z.object({
 
 const signupSchema = loginSchema.extend({
   fullName: z.string().min(2, 'Nome muito curto').max(100),
+  phone: z.string().min(10, 'Telefone inválido').max(15).regex(/^[0-9]+$/, 'Apenas números'),
 });
 
 const phoneSchema = z.object({
@@ -76,7 +77,9 @@ export default function Auth() {
 
   const handleSignup = async (data: SignupData) => {
     setError(null);
-    const { error } = await signUp(data.email, data.password, data.fullName);
+    // Format phone with country code
+    const formattedPhone = data.phone.startsWith('+') ? data.phone : '+55' + data.phone;
+    const { error } = await signUp(data.email, data.password, data.fullName, formattedPhone);
     if (error) {
       if (error.message.includes('already registered')) {
         setError('Este email já está cadastrado');
@@ -325,6 +328,23 @@ export default function Auth() {
               </div>
               {signupForm.formState.errors.fullName && (
                 <p className="text-2xs sm:text-xs text-destructive">{signupForm.formState.errors.fullName.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="text-sm sm:text-base">WhatsApp</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                <Input
+                  type="tel"
+                  placeholder="11999999999"
+                  className="pl-9 sm:pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                  {...signupForm.register('phone')}
+                />
+              </div>
+              <p className="text-2xs sm:text-xs text-muted-foreground">DDD + número (sem espaços)</p>
+              {signupForm.formState.errors.phone && (
+                <p className="text-2xs sm:text-xs text-destructive">{signupForm.formState.errors.phone.message}</p>
               )}
             </div>
 
