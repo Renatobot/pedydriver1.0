@@ -1,4 +1,6 @@
 import { Users, Quote } from 'lucide-react';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useCountUp } from '@/hooks/useCountUp';
 
 const testimonials = [
   {
@@ -19,14 +21,19 @@ const testimonials = [
 ];
 
 export function SocialProofSection() {
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.3 });
+  const count = useCountUp({ end: 500, duration: 2500, enabled: isVisible });
+
   return (
     <section className="px-4 py-16 sm:py-20">
       <div className="max-w-4xl mx-auto space-y-10">
         {/* Counter */}
-        <div className="text-center">
+        <div className="text-center" ref={ref}>
           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-primary/15 border border-primary/20">
             <Users className="w-5 h-5 text-primary" />
-            <span className="text-lg font-bold">+500 motoristas controlam seus lucros</span>
+            <span className="text-lg font-bold">
+              <span className="tabular-nums">+{count}</span> motoristas controlam seus lucros
+            </span>
           </div>
         </div>
         
