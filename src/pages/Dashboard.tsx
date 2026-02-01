@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Navigation, Banknote, Wallet, CreditCard, Hash } from 'lucide-react';
+import { Clock, Navigation, Banknote, Wallet, CreditCard, Hash, Play } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfitCard } from '@/components/dashboard/ProfitCard';
 import { MetricCard } from '@/components/dashboard/MetricCard';
@@ -14,8 +14,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
 import { PWAInstallBanner } from '@/components/pwa/PWAInstallBanner';
+import { ActiveShiftBanner } from '@/components/shifts/ActiveShiftBanner';
+import { StartShiftModal } from '@/components/shifts/StartShiftModal';
+import { useActiveShift } from '@/hooks/useActiveShift';
+import { Button } from '@/components/ui/button';
 export default function Dashboard() {
   const [range, setRange] = useState<DateRange>('day');
+  const [showStartShiftModal, setShowStartShiftModal] = useState(false);
   const { 
     metrics, 
     platformMetrics, 
@@ -26,6 +31,7 @@ export default function Dashboard() {
     costPerKm,
   } = useDashboard(range);
   const { user } = useAuth();
+  const { hasActiveShift } = useActiveShift();
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Motorista';
 
@@ -37,6 +43,20 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-xs sm:text-sm">Olá, {firstName}!</p>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Seu Resumo</h1>
         </div>
+
+        {/* Active Shift Banner or Start Shift Button */}
+        {hasActiveShift ? (
+          <ActiveShiftBanner />
+        ) : (
+          <Button
+            onClick={() => setShowStartShiftModal(true)}
+            variant="outline"
+            className="w-full h-12 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+          >
+            <Play className="w-4 h-4 mr-2" />
+            Iniciar Turno
+          </Button>
+        )}
 
         {/* PWA Install Banner */}
         <PWAInstallBanner />
@@ -92,17 +112,19 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Performance Metrics */}
+            {/* Performance Metrics - Bruto vs Líquido */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <MetricCard
                 label="R$/hora"
                 value={metrics.revenuePerHour}
+                secondaryValue={metrics.grossRevenuePerHour}
                 variant={metrics.revenuePerHour >= 0 ? 'profit' : 'expense'}
                 icon={<Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
               <MetricCard
                 label="R$/km"
                 value={metrics.revenuePerKm}
+                secondaryValue={metrics.grossRevenuePerKm}
                 variant={metrics.revenuePerKm >= 0 ? 'profit' : 'expense'}
                 icon={<Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
               />
@@ -164,6 +186,12 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Start Shift Modal */}
+      <StartShiftModal 
+        open={showStartShiftModal} 
+        onOpenChange={setShowStartShiftModal} 
+      />
     </AppLayout>
   );
 }

@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_shifts: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          platform_id: string | null
+          start_km: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          platform_id?: string | null
+          start_km?: number
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          platform_id?: string | null
+          start_km?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_shifts_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_alerts: {
         Row: {
           created_at: string

@@ -44,7 +44,10 @@ export function useDashboard(range: DateRange = 'week') {
   const costPerKm = settings?.cost_per_km || 0.5;
   const distributionRule = settings?.cost_distribution_rule || 'km';
 
-  const metrics = useMemo((): DashboardMetrics => {
+  const metrics = useMemo((): DashboardMetrics & { 
+    grossRevenuePerHour: number; 
+    grossRevenuePerKm: number; 
+  } => {
     if (!earnings || !expenses || !shifts) {
       return {
         totalRevenue: 0,
@@ -56,7 +59,9 @@ export function useDashboard(range: DateRange = 'week') {
         revenuePerHour: 0,
         revenuePerKm: 0,
         totalHours: 0,
-        totalKm: 0
+        totalKm: 0,
+        grossRevenuePerHour: 0,
+        grossRevenuePerKm: 0
       };
     }
 
@@ -70,8 +75,14 @@ export function useDashboard(range: DateRange = 'week') {
     
     const kmCost = totalKm * costPerKm;
     const realProfit = totalRevenue - totalExpenses - kmCost;
+    
+    // Métricas líquidas (baseadas no lucro real)
     const revenuePerHour = totalHours > 0 ? realProfit / totalHours : 0;
     const revenuePerKm = totalKm > 0 ? realProfit / totalKm : 0;
+    
+    // Métricas brutas (baseadas na receita bruta)
+    const grossRevenuePerHour = totalHours > 0 ? totalRevenue / totalHours : 0;
+    const grossRevenuePerKm = totalKm > 0 ? totalRevenue / totalKm : 0;
 
     return {
       totalRevenue,
@@ -83,7 +94,9 @@ export function useDashboard(range: DateRange = 'week') {
       revenuePerHour,
       revenuePerKm,
       totalHours,
-      totalKm
+      totalKm,
+      grossRevenuePerHour,
+      grossRevenuePerKm
     };
   }, [earnings, expenses, shifts, costPerKm]);
 
