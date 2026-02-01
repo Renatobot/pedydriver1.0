@@ -9,6 +9,8 @@ interface MetricCardProps {
   variant?: 'default' | 'profit' | 'expense' | 'accent';
   icon?: ReactNode;
   subtitle?: string;
+  secondaryValue?: number;
+  secondaryLabel?: string;
   className?: string;
 }
 
@@ -19,20 +21,25 @@ export function MetricCard({
   variant = 'default',
   icon,
   subtitle,
+  secondaryValue,
+  secondaryLabel,
   className 
 }: MetricCardProps) {
-  const formattedValue = () => {
+  const formatValue = (val: number) => {
     switch (format) {
       case 'currency':
-        return formatCurrency(value);
+        return formatCurrency(val);
       case 'hours':
-        return `${formatNumber(value)}h`;
+        return `${formatNumber(val)}h`;
       case 'km':
-        return `${formatNumber(value)} km`;
+        return `${formatNumber(val)} km`;
       default:
-        return formatNumber(value, 0);
+        return formatNumber(val, 0);
     }
   };
+
+  const formattedValue = () => formatValue(value);
+  const formattedSecondary = () => secondaryValue !== undefined ? formatValue(secondaryValue) : null;
 
   const valueColorClass = () => {
     switch (variant) {
@@ -63,10 +70,23 @@ export function MetricCard({
           </span>
         )}
       </div>
-      <p className={cn('text-lg sm:text-xl md:text-2xl font-bold font-mono animate-count-up', valueColorClass())}>
-        {formattedValue()}
-      </p>
-      {subtitle && (
+      <div className="flex items-baseline gap-1.5 sm:gap-2">
+        <p className={cn('text-lg sm:text-xl md:text-2xl font-bold font-mono animate-count-up', valueColorClass())}>
+          {formattedValue()}
+        </p>
+        {secondaryValue !== undefined && (
+          <span className="text-2xs sm:text-xs text-muted-foreground font-mono">
+            {secondaryLabel || 'bruto'}
+          </span>
+        )}
+      </div>
+      {secondaryValue !== undefined && (
+        <p className="text-2xs sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+          <span className="font-mono">{formattedSecondary()}</span>
+          <span>bruto</span>
+        </p>
+      )}
+      {subtitle && !secondaryValue && (
         <p className="text-2xs sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">{subtitle}</p>
       )}
     </div>

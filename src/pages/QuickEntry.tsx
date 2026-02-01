@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { DollarSign, Navigation, Clock, TrendingUp, Zap } from 'lucide-react';
+import { DollarSign, Navigation, Clock, TrendingUp, Zap, TrendingDown } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePlatforms } from '@/hooks/usePlatforms';
 import { useCreateEarningOffline } from '@/hooks/useOfflineEarnings';
 import { useCreateShiftOffline } from '@/hooks/useOfflineShifts';
+import { useUserSettings } from '@/hooks/useUserSettings';
 import { formatCurrency } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -18,9 +19,12 @@ import { EntryLimitBlocker } from '@/components/subscription/EntryLimitBlocker';
 
 export default function QuickEntry() {
   const { data: platforms } = usePlatforms();
+  const { data: userSettings } = useUserSettings();
   const createEarning = useCreateEarningOffline();
   const createShift = useCreateShiftOffline();
   const { canAddEntry, isPro } = useSubscriptionContext();
+
+  const costPerKm = userSettings?.cost_per_km || 0.5;
 
   const [value, setValue] = useState('');
   const [km, setKm] = useState('');
@@ -36,15 +40,25 @@ export default function QuickEntry() {
     const kmNum = parseFloat(km) || 0;
     const minutesNum = parseFloat(minutes) || 0;
 
-    const revenuePerKm = kmNum > 0 ? valueNum / kmNum : 0;
-    const revenuePerHour = minutesNum > 0 ? (valueNum / minutesNum) * 60 : 0;
+    // Métricas brutas (receita / trabalho)
+    const grossRevenuePerKm = kmNum > 0 ? valueNum / kmNum : 0;
+    const grossRevenuePerHour = minutesNum > 0 ? (valueNum / minutesNum) * 60 : 0;
+
+    // Métricas líquidas (lucro / trabalho) - desconta custo por km
+    const kmCost = kmNum * costPerKm;
+    const netProfit = valueNum - kmCost;
+    const netRevenuePerKm = kmNum > 0 ? netProfit / kmNum : 0;
+    const netRevenuePerHour = minutesNum > 0 ? (netProfit / minutesNum) * 60 : 0;
 
     return {
-      revenuePerKm,
-      revenuePerHour,
+      grossRevenuePerKm,
+      grossRevenuePerHour,
+      netRevenuePerKm,
+      netRevenuePerHour,
+      kmCost,
       hasData: valueNum > 0,
     };
-  }, [value, km, minutes]);
+  }, [value, km, minutes, costPerKm]);
 
   const handleSave = async () => {
     if (isBlocked) {
@@ -118,43 +132,92 @@ export default function QuickEntry() {
         {/* Entry Limit Banner */}
         {!isPro && <EntryLimitBanner showAlways />}
 
-        {/* Quick Metrics Display */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <div className={cn(
-            "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
-            metrics.hasData 
-              ? "bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/30" 
-              : "bg-card border-border/50"
-          )}>
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-              <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
-              <span className="text-2xs sm:text-xs text-muted-foreground">R$/km</span>
-            </div>
-            <p className={cn(
-              "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
-              metrics.revenuePerKm > 0 ? "text-emerald-500" : "text-muted-foreground"
+        {/* Quick Metrics Display - Bruto vs Líquido */}
+        <div className="space-y-2">
+          {/* Métricas Brutas */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className={cn(
+              "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
+              metrics.hasData 
+                ? "bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/30" 
+                : "bg-card border-border/50"
             )}>
-              {metrics.revenuePerKm > 0 ? formatCurrency(metrics.revenuePerKm) : '—'}
-            </p>
-          </div>
-          
-          <div className={cn(
-            "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
-            metrics.hasData 
-              ? "bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/30" 
-              : "bg-card border-border/50"
-          )}>
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
-              <span className="text-2xs sm:text-xs text-muted-foreground">R$/hora</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                <Navigation className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="text-2xs sm:text-xs text-muted-foreground">R$/km bruto</span>
+              </div>
+              <p className={cn(
+                "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
+                metrics.grossRevenuePerKm > 0 ? "text-blue-500" : "text-muted-foreground"
+              )}>
+                {metrics.grossRevenuePerKm > 0 ? formatCurrency(metrics.grossRevenuePerKm) : '—'}
+              </p>
             </div>
-            <p className={cn(
-              "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
-              metrics.revenuePerHour > 0 ? "text-blue-500" : "text-muted-foreground"
+            
+            <div className={cn(
+              "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
+              metrics.hasData 
+                ? "bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/30" 
+                : "bg-card border-border/50"
             )}>
-              {metrics.revenuePerHour > 0 ? formatCurrency(metrics.revenuePerHour) : '—'}
-            </p>
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="text-2xs sm:text-xs text-muted-foreground">R$/hora bruto</span>
+              </div>
+              <p className={cn(
+                "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
+                metrics.grossRevenuePerHour > 0 ? "text-blue-500" : "text-muted-foreground"
+              )}>
+                {metrics.grossRevenuePerHour > 0 ? formatCurrency(metrics.grossRevenuePerHour) : '—'}
+              </p>
+            </div>
           </div>
+
+          {/* Métricas Líquidas */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <div className={cn(
+              "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
+              metrics.hasData 
+                ? "bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/30" 
+                : "bg-card border-border/50"
+            )}>
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="text-2xs sm:text-xs text-muted-foreground">R$/km líquido</span>
+              </div>
+              <p className={cn(
+                "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
+                metrics.netRevenuePerKm > 0 ? "text-emerald-500" : metrics.netRevenuePerKm < 0 ? "text-destructive" : "text-muted-foreground"
+              )}>
+                {metrics.netRevenuePerKm !== 0 ? formatCurrency(metrics.netRevenuePerKm) : '—'}
+              </p>
+            </div>
+            
+            <div className={cn(
+              "p-3 sm:p-4 rounded-2xl border transition-all duration-300 touch-feedback",
+              metrics.hasData 
+                ? "bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/30" 
+                : "bg-card border-border/50"
+            )}>
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+                <span className="text-2xs sm:text-xs text-muted-foreground">R$/hora líquido</span>
+              </div>
+              <p className={cn(
+                "text-xl sm:text-2xl font-bold font-mono transition-all duration-300",
+                metrics.netRevenuePerHour > 0 ? "text-emerald-500" : metrics.netRevenuePerHour < 0 ? "text-destructive" : "text-muted-foreground"
+              )}>
+                {metrics.netRevenuePerHour !== 0 ? formatCurrency(metrics.netRevenuePerHour) : '—'}
+              </p>
+            </div>
+          </div>
+
+          {/* Custo por Km info */}
+          {metrics.kmCost > 0 && (
+            <p className="text-center text-2xs sm:text-xs text-muted-foreground">
+              💡 Custo estimado: {formatCurrency(metrics.kmCost)} ({formatCurrency(costPerKm)}/km)
+            </p>
+          )}
         </div>
 
         {/* Input Form */}
