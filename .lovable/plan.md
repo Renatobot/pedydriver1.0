@@ -1,179 +1,112 @@
 
-# Plano: Botao de Instalacao PWA
+# Plano: Controle de Turno por Odômetro e Métricas Bruto vs Líquido
 
-## Visao Geral
+## Visão Geral
 
-Adicionar um sistema de instalacao PWA que exibe um banner elegante no Dashboard logo apos o login, com opcao de dispensar e reinstalar pelas Configuracoes.
+Implementar duas funcionalidades importantes:
 
----
-
-## Estrategia Escolhida
-
-**Mostrar desde o inicio** - O botao aparece assim que o usuario loga, com as seguintes caracteristicas:
-
-- Banner discreto no topo do Dashboard
-- Botao "Instalar App" com icone de download
-- Opcao de fechar/dispensar (salva no localStorage)
-- Opcao nas Configuracoes para quem dispensou
+1. **Iniciar/Finalizar Turno por Odômetro**: Registrar a quilometragem no início e fim do turno
+2. **Métricas Bruto vs Líquido**: Exibir R$/km e R$/hora baseado tanto na receita bruta quanto no lucro líquido
 
 ---
 
-## Arquitetura
+## Feature 1: Controle de Turno por Odômetro
+
+### Nova Tabela no Banco
+
+```sql
+CREATE TABLE active_shifts (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL,
+  platform_id UUID,
+  started_at TIMESTAMPTZ DEFAULT now(),
+  start_km NUMERIC NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+-- Com índice único por usuário e RLS policies
+```
+
+### Novos Componentes
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/hooks/useActiveShift.tsx` | Hook para gerenciar turno ativo |
+| `src/components/shifts/ActiveShiftBanner.tsx` | Banner mostrando turno em andamento |
+| `src/components/shifts/StartShiftModal.tsx` | Modal para iniciar turno |
+| `src/components/shifts/EndShiftModal.tsx` | Modal para finalizar turno |
+
+### Fluxo do Usuário
 
 ```text
-+-----------------------------------+
-|  [X]  Instale o PEDY Driver      |
-|       para acesso rapido!        |
-|       [Instalar App]             |
-+-----------------------------------+
-|                                  |
-|  Dashboard Content...             |
-|                                  |
-+-----------------------------------+
+1. Usuário clica "Iniciar Turno" no Dashboard
+   ↓
+2. Informa plataforma + km atual do odômetro
+   ↓
+3. Banner aparece: "Turno ativo desde XX:XX"
+   ↓
+4. Ao finalizar, informa km final
+   ↓
+5. Sistema calcula: km_final - km_inicial = km rodados
+   Sistema calcula: now() - started_at = horas trabalhadas
+   ↓
+6. Cria registro na tabela shifts automaticamente
 ```
 
 ---
 
-## Implementacao
+## Feature 2: Métricas Bruto vs Líquido
 
-### 1. Criar Hook usePWAInstall
-
-Arquivo: `src/hooks/usePWAInstall.tsx`
-
-Responsabilidades:
-- Detectar se o app ja esta instalado
-- Capturar o evento `beforeinstallprompt`
-- Gerenciar estado de "dispensado" no localStorage
-- Expor funcao `installApp()` para disparar a instalacao
+### Fórmulas
 
 ```typescript
-// Estrutura do hook
-interface UsePWAInstall {
-  canInstall: boolean;        // Navegador suporta e nao esta instalado
-  isInstalled: boolean;       // Ja esta instalado como PWA
-  isDismissed: boolean;       // Usuario dispensou o banner
-  installApp: () => void;     // Dispara o prompt de instalacao
-  dismissBanner: () => void;  // Esconde o banner
-  resetDismiss: () => void;   // Reseta para mostrar novamente
-}
+// Bruto (receita / trabalho)
+brutoPorKm = totalRevenue / totalKm
+brutoPorHora = totalRevenue / totalHours
+
+// Líquido (lucro / trabalho)
+liquidoPorKm = realProfit / totalKm
+liquidoPorHora = realProfit / totalHours
 ```
 
-### 2. Criar Componente PWAInstallBanner
+### Alterações no Dashboard
 
-Arquivo: `src/components/pwa/PWAInstallBanner.tsx`
+- Atualizar `useDashboard.tsx` para retornar métricas brutas e líquidas
+- Atualizar `MetricCard.tsx` para suportar valor secundário (bruto como principal, líquido como subtítulo)
+- Cards de R$/hora e R$/km mostrarão ambos valores
 
-Design do banner:
-- Fundo com gradiente verde sutil (mesma cor do app)
-- Icone de smartphone/download
-- Texto: "Instale o PEDY Driver para acesso rapido!"
-- Botao primario: "Instalar"
-- Botao de fechar (X)
-- Animacao de entrada suave
+### Alterações no QuickEntry
 
-### 3. Adicionar ao Dashboard
-
-No arquivo `src/pages/Dashboard.tsx`:
-- Importar o componente PWAInstallBanner
-- Posicionar logo abaixo do header, antes do EntryLimitBanner
-- Banner so aparece se:
-  - `canInstall` for true
-  - `isDismissed` for false
-
-### 4. Adicionar as Configuracoes
-
-No arquivo `src/pages/Settings.tsx`:
-- Nova secao "Instalar App" (apenas se nao instalado)
-- Se dispensou, mostrar botao para reinstalar o prompt
-- Se ja instalado, mostrar mensagem "App instalado"
+- Importar `costPerKm` das configurações do usuário
+- Calcular e exibir tanto bruto quanto líquido em tempo real
+- Nova UI com 4 cards: R$/km Bruto, R$/hora Bruto, R$/km Líquido, R$/hora Líquido
 
 ---
 
-## Detalhes Tecnicos
+## Arquivos a Criar
 
-### Deteccao de Instalacao PWA
+1. `src/hooks/useActiveShift.tsx` - Hook para turno ativo
+2. `src/components/shifts/ActiveShiftBanner.tsx` - Banner no dashboard
+3. `src/components/shifts/StartShiftModal.tsx` - Modal início
+4. `src/components/shifts/EndShiftModal.tsx` - Modal fim
 
-```typescript
-// Detectar se ja esta instalado
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-  || (window.navigator as any).standalone === true;
+## Arquivos a Modificar
 
-// Capturar evento de instalacao
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  setCanInstall(true);
-});
-```
-
-### LocalStorage Keys
-
-```typescript
-const PWA_DISMISSED_KEY = 'pedy_pwa_dismissed';
-const PWA_DISMISSED_AT_KEY = 'pedy_pwa_dismissed_at';
-```
+1. **Migração SQL** - Criar tabela `active_shifts`
+2. `src/hooks/useDashboard.tsx` - Adicionar métricas brutas
+3. `src/pages/Dashboard.tsx` - Adicionar banner + botão iniciar turno
+4. `src/pages/QuickEntry.tsx` - Mostrar métricas bruto/líquido
+5. `src/components/dashboard/MetricCard.tsx` - Suportar valor secundário
+6. `src/components/forms/ShiftForm.tsx` - Toggle modo rápido/odômetro (opcional)
 
 ---
 
-## Fluxo do Usuario
+## Resultado Final
 
-```text
-1. Usuario faz login
-   |
-2. Dashboard carrega
-   |
-3. Banner aparece no topo (se nao instalado e nao dispensado)
-   |
-   +-- Usuario clica "Instalar"
-   |   |
-   |   +-- Prompt nativo do navegador aparece
-   |       |
-   |       +-- Aceita: App instalado, banner desaparece
-   |       +-- Recusa: Banner continua visivel
-   |
-   +-- Usuario clica "X" para fechar
-       |
-       +-- Banner desaparece
-       +-- Salva no localStorage
-       +-- Opcao disponivel em Configuracoes
-```
+O motorista poderá:
 
----
-
-## Arquivos a Criar/Modificar
-
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `src/hooks/usePWAInstall.tsx` | Criar | Hook para logica de instalacao PWA |
-| `src/components/pwa/PWAInstallBanner.tsx` | Criar | Componente do banner |
-| `src/pages/Dashboard.tsx` | Modificar | Adicionar banner |
-| `src/pages/Settings.tsx` | Modificar | Adicionar opcao de instalacao |
-
----
-
-## Design do Banner
-
-```text
-+--------------------------------------------------+
-| [Smartphone] Instale o PEDY Driver          [X]  |
-|              para acesso rapido!                 |
-|              [Instalar App]                      |
-+--------------------------------------------------+
-
-Cores:
-- Fundo: bg-primary/10 com borda bg-primary/30
-- Icone: text-primary
-- Botao: bg-primary (verde esmeralda)
-- Texto: text-foreground
-```
-
----
-
-## Consideracoes
-
-1. **iOS Safari**: O evento `beforeinstallprompt` nao e suportado. Mostrar instrucoes manuais (Compartilhar > Adicionar a Tela Inicial)
-
-2. **Ja Instalado**: Nao mostrar o banner se detectar que esta rodando como PWA
-
-3. **Dispensar Temporario**: Considerar mostrar novamente apos 7 dias (opcional)
-
-4. **Analytics**: Podemos rastrear quantos usuarios instalam vs dispensam (implementacao futura)
+- Iniciar turno informando apenas o km do odômetro
+- Ver banner com tempo decorrido durante o trabalho
+- Finalizar turno informando km final (sistema calcula tudo)
+- Ver claramente quanto ganha bruto vs líquido por km/hora
+- Entender a diferença real entre receita aparente e lucro
