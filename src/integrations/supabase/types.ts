@@ -384,6 +384,7 @@ export type Database = {
       }
       referrals: {
         Row: {
+          bonus_applied: boolean | null
           completed_at: string | null
           created_at: string
           id: string
@@ -396,6 +397,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          bonus_applied?: boolean | null
           completed_at?: string | null
           created_at?: string
           id?: string
@@ -408,6 +410,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          bonus_applied?: boolean | null
           completed_at?: string | null
           created_at?: string
           id?: string
