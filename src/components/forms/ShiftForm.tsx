@@ -3,11 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, Navigation } from 'lucide-react';
+import { CalendarIcon, Clock, Navigation, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -18,7 +17,7 @@ import { EntryLimitBlocker } from '@/components/subscription/EntryLimitBlocker';
 
 const schema = z.object({
   date: z.date(),
-  platform_id: z.string().min(1, 'Selecione uma plataforma'),
+  platform_ids: z.array(z.string()).min(1, 'Selecione ao menos uma plataforma'),
   hours_worked: z.number().min(0, 'Horas devem ser maior ou igual a zero'),
   km_driven: z.number().min(0, 'Km deve ser maior ou igual a zero'),
 });
@@ -35,18 +34,29 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const { canAddEntry, isPro } = useSubscriptionContext();
   const [showBlocker, setShowBlocker] = useState(!canAddEntry);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       date: new Date(),
+      platform_ids: [],
       hours_worked: 0,
       km_driven: 0,
     }
   });
 
   const date = watch('date');
+  const selectedPlatforms = watch('platform_ids') || [];
   const isBlocked = !canAddEntry && !isPro;
+
+  const togglePlatform = (platformId: string) => {
+    const current = selectedPlatforms;
+    const updated = current.includes(platformId)
+      ? current.filter(id => id !== platformId)
+      : [...current, platformId];
+    setValue('platform_ids', updated);
+  };
 
   const onSubmit = async (data: FormData) => {
     if (isBlocked) {
@@ -54,14 +64,22 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
       return;
     }
     
-    await createShift.mutateAsync({
-      platform_id: data.platform_id,
-      hours_worked: data.hours_worked,
-      km_driven: data.km_driven,
-      date: format(data.date, 'yyyy-MM-dd'),
-    });
-    reset();
-    onSuccess?.();
+    setIsSubmitting(true);
+    try {
+      // Create one shift for EACH platform selected
+      for (const platformId of data.platform_ids) {
+        await createShift.mutateAsync({
+          platform_id: platformId,
+          hours_worked: data.hours_worked,
+          km_driven: data.km_driven,
+          date: format(data.date, 'yyyy-MM-dd'),
+        });
+      }
+      reset();
+      onSuccess?.();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -102,23 +120,43 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
           </Popover>
         </div>
 
-        {/* Platform */}
+        {/* Platform - Multiple Selection */}
         <div className="space-y-1.5 sm:space-y-2">
-          <Label className="text-sm sm:text-base">Plataforma</Label>
-          <Select onValueChange={(v) => setValue('platform_id', v)}>
-            <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {platforms?.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="py-3">
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.platform_id && (
-            <p className="text-2xs sm:text-xs text-destructive">{errors.platform_id.message}</p>
+          <Label className="text-sm sm:text-base">Plataformas (selecione todas que usou)</Label>
+          <div className="grid grid-cols-2 gap-2">
+            {platforms?.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => togglePlatform(p.id)}
+                className={cn(
+                  "flex items-center gap-2 p-3 rounded-lg border transition-all touch-feedback",
+                  selectedPlatforms.includes(p.id)
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                )}
+              >
+                <div className={cn(
+                  "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                  selectedPlatforms.includes(p.id)
+                    ? "bg-primary border-primary"
+                    : "border-muted-foreground/30"
+                )}>
+                  {selectedPlatforms.includes(p.id) && (
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  )}
+                </div>
+                <span className="text-sm font-medium truncate">{p.name}</span>
+              </button>
+            ))}
+          </div>
+          {errors.platform_ids && (
+            <p className="text-2xs sm:text-xs text-destructive">{errors.platform_ids.message}</p>
+          )}
+          {selectedPlatforms.length > 1 && (
+            <p className="text-2xs sm:text-xs text-muted-foreground">
+              As horas e km serão registradas para cada plataforma
+            </p>
           )}
         </div>
 
@@ -157,9 +195,9 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
         <Button 
           type="submit" 
           className="w-full h-11 sm:h-12 text-sm sm:text-base touch-feedback" 
-          disabled={createShift.isPending || isBlocked}
+          disabled={isSubmitting || isBlocked}
         >
-          {createShift.isPending ? 'Salvando...' : 'Registrar Turno'}
+          {isSubmitting ? 'Salvando...' : 'Registrar Turno'}
         </Button>
       </form>
     </div>

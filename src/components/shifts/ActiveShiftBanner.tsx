@@ -53,8 +53,8 @@ export function ActiveShiftBanner() {
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                {activeShift.platform && (
-                  <span>{activeShift.platform.name}</span>
+                {activeShift.platforms && activeShift.platforms.length > 0 && (
+                  <span>{activeShift.platforms.map(p => p.name).join(', ')}</span>
                 )}
                 <span className="flex items-center gap-1">
                   <Navigation className="w-3 h-3" />

@@ -11,15 +11,16 @@ export interface ActiveShift {
   id: string;
   user_id: string;
   platform_id: string | null;
+  platform_ids: string[] | null;
   started_at: string;
   start_km: number;
   notes: string | null;
   created_at: string;
-  platform?: Platform;
+  platforms?: Platform[];
 }
 
 interface StartShiftData {
-  platform_id: string;
+  platform_ids: string[];
   start_km: number;
   notes?: string;
 }
@@ -44,8 +45,14 @@ export function useActiveShift() {
       if (error) throw error;
       
       if (data && platforms) {
-        const platform = platforms.find(p => p.id === data.platform_id);
-        return { ...data, platform } as ActiveShift;
+        // Support both old single platform_id and new platform_ids array
+        const platformIds = data.platform_ids || (data.platform_id ? [data.platform_id] : []);
+        const shiftPlatforms = platforms.filter(p => platformIds.includes(p.id));
+        return { 
+          ...data, 
+          platform_ids: platformIds,
+          platforms: shiftPlatforms 
+        } as ActiveShift;
       }
       
       return data as ActiveShift | null;
@@ -61,7 +68,8 @@ export function useActiveShift() {
         .from('active_shifts')
         .insert({
           user_id: user.id,
-          platform_id: data.platform_id,
+          platform_id: data.platform_ids[0], // Keep first for backwards compatibility
+          platform_ids: data.platform_ids,
           start_km: data.start_km,
           notes: data.notes || null,
         });
@@ -88,22 +96,28 @@ export function useActiveShift() {
       const startedAt = new Date(activeShift.started_at);
       const now = new Date();
       const minutesWorked = differenceInMinutes(now, startedAt);
-      const hoursWorked = Math.round((minutesWorked / 60) * 100) / 100; // 2 decimais
+      const hoursWorked = Math.round((minutesWorked / 60) * 100) / 100;
       const kmDriven = endKm - activeShift.start_km;
       
       if (kmDriven < 0) {
         throw new Error('Km final deve ser maior que o inicial');
       }
       
-      // Criar registro de turno
-      await createShift.mutateAsync({
-        platform_id: activeShift.platform_id || undefined,
-        hours_worked: hoursWorked,
-        km_driven: kmDriven,
-        date: format(startedAt, 'yyyy-MM-dd'),
-      });
+      // Get platform IDs (support both old and new format)
+      const platformIds = activeShift.platform_ids || 
+        (activeShift.platform_id ? [activeShift.platform_id] : []);
       
-      // Deletar turno ativo
+      // Create one shift record for EACH platform selected
+      for (const platformId of platformIds) {
+        await createShift.mutateAsync({
+          platform_id: platformId,
+          hours_worked: hoursWorked,
+          km_driven: kmDriven,
+          date: format(startedAt, 'yyyy-MM-dd'),
+        });
+      }
+      
+      // Delete active shift
       const { error } = await supabase
         .from('active_shifts')
         .delete()
@@ -111,12 +125,15 @@ export function useActiveShift() {
       
       if (error) throw error;
       
-      return { hoursWorked, kmDriven };
+      return { hoursWorked, kmDriven, platformCount: platformIds.length };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['active-shift'] });
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
-      toast.success(`Turno finalizado! ${result.hoursWorked}h, ${result.kmDriven} km`);
+      const platformMsg = result.platformCount > 1 
+        ? ` (${result.platformCount} plataformas)` 
+        : '';
+      toast.success(`Turno finalizado! ${result.hoursWorked}h, ${result.kmDriven} km${platformMsg}`);
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao finalizar turno');
@@ -143,7 +160,7 @@ export function useActiveShift() {
     },
   });
 
-  // Calcular duração formatada
+  // Calculate formatted duration
   const getDuration = () => {
     if (!activeShift) return '';
     

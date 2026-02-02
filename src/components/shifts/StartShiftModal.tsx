@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Play, Navigation, Car } from 'lucide-react';
+import { Play, Navigation, Car, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { usePlatforms } from '@/hooks/usePlatforms';
 import { useActiveShift } from '@/hooks/useActiveShift';
+import { cn } from '@/lib/utils';
 
 interface StartShiftModalProps {
   open: boolean;
@@ -17,13 +18,21 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
   const { data: platforms } = usePlatforms();
   const { startShift, isStarting } = useActiveShift();
   
-  const [platformId, setPlatformId] = useState('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [startKm, setStartKm] = useState('');
+
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platformId)
+        ? prev.filter(id => id !== platformId)
+        : [...prev, platformId]
+    );
+  };
 
   const handleStart = async () => {
     const kmNum = parseFloat(startKm);
     
-    if (!platformId) {
+    if (selectedPlatforms.length === 0) {
       return;
     }
     
@@ -33,12 +42,12 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
     
     try {
       await startShift({
-        platform_id: platformId,
+        platform_ids: selectedPlatforms,
         start_km: kmNum,
       });
       
       // Reset and close
-      setPlatformId('');
+      setSelectedPlatforms([]);
       setStartKm('');
       onOpenChange(false);
     } catch (error) {
@@ -59,21 +68,41 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Platform Selection */}
+          {/* Platform Selection - Multiple */}
           <div className="space-y-2">
-            <Label>Plataforma</Label>
-            <Select value={platformId} onValueChange={setPlatformId}>
-              <SelectTrigger className="h-12">
-                <SelectValue placeholder="Selecione a plataforma" />
-              </SelectTrigger>
-              <SelectContent>
-                {platforms?.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="py-3">
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Plataformas (selecione todas que vai usar)</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {platforms?.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => togglePlatform(p.id)}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border transition-all touch-feedback",
+                    selectedPlatforms.includes(p.id)
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                  )}
+                >
+                  <div className={cn(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                    selectedPlatforms.includes(p.id)
+                      ? "bg-primary border-primary"
+                      : "border-muted-foreground/30"
+                  )}>
+                    {selectedPlatforms.includes(p.id) && (
+                      <Check className="w-3 h-3 text-primary-foreground" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium truncate">{p.name}</span>
+                </button>
+              ))}
+            </div>
+            {selectedPlatforms.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {selectedPlatforms.length} plataforma{selectedPlatforms.length > 1 ? 's' : ''} selecionada{selectedPlatforms.length > 1 ? 's' : ''}
+              </p>
+            )}
           </div>
 
           {/* Start KM */}
@@ -108,7 +137,7 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
           </Button>
           <Button
             onClick={handleStart}
-            disabled={isStarting || !platformId || !startKm}
+            disabled={isStarting || selectedPlatforms.length === 0 || !startKm}
             className="flex-1 bg-primary hover:bg-primary/90"
           >
             {isStarting ? (
