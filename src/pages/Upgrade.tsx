@@ -1,9 +1,19 @@
-import { Crown, Check, Zap, BarChart3, Calendar, Infinity } from 'lucide-react';
+import { useState } from 'react';
+import { Crown, Check, Zap, BarChart3, Calendar, Infinity, Mail, AlertCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const FREE_FEATURES = [
   'Registrar ganhos e gastos',
@@ -25,13 +35,26 @@ const PRO_FEATURES = [
   { text: 'Registros ilimitados', icon: Infinity },
 ];
 
+const CHECKOUT_URL = 'https://checkout.infinitepay.io/pedy-solucoes_digitais/1nb3d1a9Fx';
+
 export default function Upgrade() {
   const { isPro, plan } = useSubscriptionContext();
+  const { user } = useAuth();
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
 
-  const handleSubscribe = async (priceType: 'monthly' | 'yearly') => {
-    // TODO: Integrate with Stripe
-    console.log('Subscribe to:', priceType);
+  const handleSubscribe = (priceType: 'monthly' | 'yearly') => {
+    setSelectedPlan(priceType);
+    setShowEmailModal(true);
   };
+
+  const handleConfirmCheckout = () => {
+    setShowEmailModal(false);
+    // Open InfinitePay checkout in a new tab
+    window.open(CHECKOUT_URL, '_blank');
+  };
+
+  const userEmail = user?.email || '';
 
   return (
     <AppLayout>
@@ -152,10 +175,72 @@ export default function Upgrade() {
 
         {/* FAQ or guarantee */}
         <div className="text-center text-sm text-muted-foreground pt-4">
-          <p>💳 Pagamento seguro via Stripe</p>
+          <p>💳 Pagamento seguro via PIX ou Cartão</p>
           <p className="mt-1">Cancele quando quiser, sem complicação</p>
         </div>
       </div>
+
+      {/* Email Confirmation Modal */}
+      <Dialog open={showEmailModal} onOpenChange={setShowEmailModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-amber-500" />
+              Quase lá! Confirme seu e-mail
+            </DialogTitle>
+            <DialogDescription>
+              Para ativar seu plano PRO automaticamente, use o <strong>mesmo e-mail</strong> cadastrado no app durante o pagamento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* User's email highlight */}
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Seu e-mail cadastrado:</p>
+                  <p className="font-medium text-lg break-all">{userEmail}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning */}
+            <div className="flex gap-3 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-medium">Importante:</p>
+                <p>Use exatamente este e-mail no checkout para que seu plano seja ativado automaticamente.</p>
+              </div>
+            </div>
+
+            {/* Selected plan info */}
+            <div className="text-center text-sm text-muted-foreground">
+              Plano selecionado: <span className="font-medium text-foreground">
+                {selectedPlan === 'monthly' ? 'Mensal - R$ 14,90' : 'Anual - R$ 99,00'}
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEmailModal(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmCheckout}
+              className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+            >
+              Entendi, ir para pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
