@@ -4,18 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useReferral } from '@/hooks/useReferral';
+import { ReferralProgressBanner } from './ReferralProgressBanner';
 import { cn } from '@/lib/utils';
 
 export function ReferralCard() {
   const {
     referralCode,
     totalReferrals,
+    pendingReferrals,
     bonusDaysEarned,
     wasReferred,
+    canShowReferralCard,
     isLoading,
+    progress,
     copyLink,
     shareLink,
     getShareableLink,
+    checkAndCompletePendingReferral,
   } = useReferral();
 
   const [copying, setCopying] = useState(false);
@@ -41,6 +46,21 @@ export function ReferralCard() {
         </CardContent>
       </Card>
     );
+  }
+
+  // Show progress banner if user has a pending referral
+  if (progress?.hasPending) {
+    return (
+      <ReferralProgressBanner 
+        progress={progress} 
+        onCheckReferral={checkAndCompletePendingReferral}
+      />
+    );
+  }
+
+  // Hide card if account is too new (< 48h) and no successful referrals
+  if (!canShowReferralCard) {
+    return null;
   }
 
   return (

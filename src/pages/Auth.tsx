@@ -92,7 +92,7 @@ export default function Auth() {
   // Detect referral code from URL
   const referralCodeFromUrl = useReferralCodeFromUrl();
   const [referralCode, setReferralCode] = useState<string | null>(null);
-  const { validateReferral, fingerprint } = useReferral();
+  const { registerPendingReferral, fingerprint } = useReferral();
 
   // Store referral code when detected from URL
   useEffect(() => {
@@ -112,17 +112,17 @@ export default function Auth() {
     }
   }, [searchParams]);
 
-  // Validate referral after successful signup
+  // Register pending referral after successful signup (does NOT grant bonus immediately)
   useEffect(() => {
     const storedCode = localStorage.getItem(REFERRAL_CODE_KEY);
     if (user && storedCode && fingerprint) {
       // Small delay to ensure user is fully created
       const timer = setTimeout(() => {
-        validateReferral();
+        registerPendingReferral();
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [user, fingerprint, validateReferral]);
+  }, [user, fingerprint, registerPendingReferral]);
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
