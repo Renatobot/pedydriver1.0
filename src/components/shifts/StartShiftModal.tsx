@@ -23,23 +23,26 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
   const [startKm, setStartKm] = useState('');
 
   const togglePlatform = (platformId: string) => {
-    // Se já está selecionada, permite remover
-    if (selectedPlatforms.includes(platformId)) {
-      setSelectedPlatforms(prev => prev.filter(id => id !== platformId));
-      return;
-    }
-    
-    // Se não é Pro e já atingiu o limite de plataformas no turno
-    if (!isPro && selectedPlatforms.length >= limits.maxPlatforms) {
-      return;
-    }
-    
-    // Verifica se pode usar essa plataforma baseado no histórico
-    if (!canUsePlatform(platformId)) {
-      return;
-    }
-    
-    setSelectedPlatforms(prev => [...prev, platformId]);
+    // IMPORTANT: enforce limits inside the state updater to avoid race conditions
+    // when the user taps quickly on multiple platforms.
+    setSelectedPlatforms((prev) => {
+      // If already selected, toggle off
+      if (prev.includes(platformId)) {
+        return prev.filter((id) => id !== platformId);
+      }
+
+      // Free plan: only up to maxPlatforms selected at once
+      if (!isPro && prev.length >= limits.maxPlatforms) {
+        return prev;
+      }
+
+      // If platform is not allowed (based on historical usage), don't add it
+      if (!canUsePlatform(platformId)) {
+        return prev;
+      }
+
+      return [...prev, platformId];
+    });
   };
   
   // Check if platform is locked (can't be used)
