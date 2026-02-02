@@ -102,7 +102,7 @@ export function MetricCard({
         </p>
         {secondaryValue !== undefined && (
           <span className="text-2xs sm:text-xs text-muted-foreground font-mono">
-            {secondaryLabel || 'bruto'}
+            líquido
           </span>
         )}
       </div>
