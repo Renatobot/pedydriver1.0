@@ -1,4 +1,4 @@
-export type VehicleType = 'carro' | 'moto';
+export type VehicleType = 'carro' | 'moto' | 'bicicleta' | 'bicicleta_eletrica';
 export type CostDistributionRule = 'km' | 'horas' | 'receita';
 export type ServiceType = 'corrida' | 'entrega' | 'outro';
 export type EarningType = 'corrida_entrega' | 'gorjeta' | 'bonus' | 'ajuste';

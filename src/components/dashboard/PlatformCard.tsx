@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Car, Bike, Truck, Package } from 'lucide-react';
+import { Car, Bike, Truck, Package, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
 import { PlatformMetrics } from '@/types/database';
@@ -13,7 +13,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   car: Car,
   bike: Bike,
   truck: Truck,
-  package: Package
+  package: Package,
+  bicycle: Bike,
+  ebike: Zap
 };
 
 export const PlatformCard = memo(function PlatformCard({ data, rank }: PlatformCardProps) {

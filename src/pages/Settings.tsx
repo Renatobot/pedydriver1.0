@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -182,6 +182,33 @@ export default function Settings() {
                 >
                   <Bike className="w-5 h-5" />
                   <span className="font-medium text-sm sm:text-base">Moto</span>
+                </button>
+                <button
+                  onClick={() => setVehicleType('bicicleta')}
+                  className={cn(
+                    'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
+                    vehicleType === 'bicicleta'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                  )}
+                >
+                  <Bike className="w-5 h-5" />
+                  <span className="font-medium text-sm sm:text-base">Bicicleta</span>
+                </button>
+                <button
+                  onClick={() => setVehicleType('bicicleta_eletrica')}
+                  className={cn(
+                    'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
+                    vehicleType === 'bicicleta_eletrica'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                  )}
+                >
+                  <div className="flex items-center gap-0.5">
+                    <Bike className="w-5 h-5" />
+                    <Zap className="w-3 h-3" />
+                  </div>
+                  <span className="font-medium text-sm sm:text-base">E-Bike</span>
                 </button>
               </div>
             </div>

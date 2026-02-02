@@ -178,30 +178,61 @@ export const vehicleDatabase: VehicleData[] = [
   { name: 'Shineray SE3 (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
   { name: 'Super Soco TC Max (Elétrico)', type: 'moto', consumptionCity: 30.0, consumptionHighway: 35.0 },
   { name: 'NIU NQi GTS (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
+
+  // =============================================
+  // BICICLETAS COMUNS
+  // =============================================
+  { name: 'Bicicleta Comum (Simples)', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+  { name: 'Bicicleta Comum (Com Bag)', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+  { name: 'Bicicleta Speed/Road', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+  { name: 'Bicicleta Mountain Bike', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+  { name: 'Bicicleta Fixa/Single Speed', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+  { name: 'Bicicleta Cargo/Cargueira', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+
+  // =============================================
+  // BICICLETAS ELÉTRICAS (consumo em km/kWh)
+  // =============================================
+  { name: 'Caloi E-Vibe City (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 50.0, consumptionHighway: 55.0 },
+  { name: 'Caloi E-Vibe Urbam (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'Caloi E-Vibe Easy Rider (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 48.0, consumptionHighway: 53.0 },
+  { name: 'Sense Impulse E-Trail (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 40.0, consumptionHighway: 45.0 },
+  { name: 'Oggi Big Wheel 8.3 E-Bike (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 38.0, consumptionHighway: 42.0 },
+  { name: 'Tembici E-Bike (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 55.0, consumptionHighway: 60.0 },
+  { name: 'Muuv Veloster (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 42.0, consumptionHighway: 47.0 },
+  { name: 'Vibe Bikes V1 (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'E-Bike Genérica (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
 ];
 
 // Custo de manutenção por tipo de veículo (R$/km)
 export const maintenanceCostPerKm: Record<VehicleType, number> = {
   carro: 0.08,
   moto: 0.04,
+  bicicleta: 0.02,
+  bicicleta_eletrica: 0.03,
 };
 
 // Custo de manutenção reduzido para veículos elétricos (R$/km)
 export const electricMaintenanceCostPerKm: Record<VehicleType, number> = {
   carro: 0.03,
   moto: 0.02,
+  bicicleta: 0.02,
+  bicicleta_eletrica: 0.03,
 };
 
 // Custo base de desgaste por tipo (R$/km)
 export const wearCostPerKm: Record<VehicleType, number> = {
   carro: 0.05,
   moto: 0.02,
+  bicicleta: 0.01,
+  bicicleta_eletrica: 0.01,
 };
 
 // Custo de desgaste reduzido para veículos elétricos (R$/km)
 export const electricWearCostPerKm: Record<VehicleType, number> = {
   carro: 0.02,
   moto: 0.01,
+  bicicleta: 0.01,
+  bicicleta_eletrica: 0.01,
 };
 
 // Preços de referência
@@ -210,7 +241,17 @@ export const DEFAULT_ELECTRICITY_PRICE = 0.85; // R$/kWh residencial
 
 // Detectar se veículo é elétrico ou híbrido
 export function isElectricVehicle(vehicle: VehicleData): boolean {
-  return vehicle.name.includes('(Elétrico)') || vehicle.name.includes('(Híbrido)');
+  return vehicle.name.includes('(Elétrico)') || vehicle.name.includes('(Híbrido)') || vehicle.type === 'bicicleta_eletrica';
+}
+
+// Detectar se é bicicleta comum (sem custo de energia)
+export function isBicycle(vehicle: VehicleData): boolean {
+  return vehicle.type === 'bicicleta';
+}
+
+// Detectar se o veículo tem custo de energia (não é bicicleta comum)
+export function hasEnergyCost(vehicle: VehicleData): boolean {
+  return vehicle.type !== 'bicicleta';
 }
 
 // Buscar veículos por nome (fuzzy search simples)
@@ -255,6 +296,7 @@ export interface CostBreakdown {
   wearCost: number;
   totalCost: number;
   isElectric: boolean;
+  isBicycle: boolean;
 }
 
 export function calculateCostPerKm(
@@ -264,14 +306,20 @@ export function calculateCostPerKm(
   useHighwayConsumption: boolean = false
 ): CostBreakdown {
   const isElectric = isElectricVehicle(vehicle);
+  const isBike = isBicycle(vehicle);
   
-  // Usar consumo médio entre cidade e estrada (mais realista para app drivers)
-  const consumption = useHighwayConsumption 
-    ? vehicle.consumptionHighway 
-    : (vehicle.consumptionCity + vehicle.consumptionHighway) / 2;
+  // Para bicicletas comuns, não há custo de energia
+  let fuelCost = 0;
   
-  // Custo de combustível/energia = preço por unidade / consumo
-  const fuelCost = fuelPrice / consumption;
+  if (!isBike) {
+    // Usar consumo médio entre cidade e estrada (mais realista para app drivers)
+    const consumption = useHighwayConsumption 
+      ? vehicle.consumptionHighway 
+      : (vehicle.consumptionCity + vehicle.consumptionHighway) / 2;
+    
+    // Custo de combustível/energia = preço por unidade / consumo
+    fuelCost = consumption > 0 ? fuelPrice / consumption : 0;
+  }
   
   // Custo de manutenção base (menor para elétricos)
   let maintenanceCost = isElectric 
@@ -303,5 +351,6 @@ export function calculateCostPerKm(
     wearCost: Math.round(wearCost * 100) / 100,
     totalCost: Math.round(totalCost * 100) / 100,
     isElectric,
+    isBicycle: isBike,
   };
 }

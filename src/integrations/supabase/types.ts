@@ -807,7 +807,7 @@ export type Database = {
       service_type: "corrida" | "entrega" | "outro"
       subscription_plan: "free" | "pro"
       subscription_status: "active" | "cancelled" | "expired" | "trialing"
-      vehicle_type: "carro" | "moto"
+      vehicle_type: "carro" | "moto" | "bicicleta" | "bicicleta_eletrica"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -952,7 +952,7 @@ export const Constants = {
       service_type: ["corrida", "entrega", "outro"],
       subscription_plan: ["free", "pro"],
       subscription_status: ["active", "cancelled", "expired", "trialing"],
-      vehicle_type: ["carro", "moto"],
+      vehicle_type: ["carro", "moto", "bicicleta", "bicicleta_eletrica"],
     },
   },
 } as const
