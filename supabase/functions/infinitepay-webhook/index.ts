@@ -161,9 +161,10 @@ Deno.serve(async (req) => {
         console.error("Error saving pending payment:", insertError);
       }
 
+      // Alerta específico para pagamento órfão (sem intent_id)
       await supabase.from("admin_alerts").insert({
-        event_type: "payment_user_not_found",
-        message: `💰 Pagamento PIX recebido! Valor: R$ ${(actualAmount / 100).toFixed(2)}. Plano detectado: ${expectedPlanType}. Método: ${captureMethod}. Invoice: ${invoiceSlug || 'N/A'}. Nenhum intent encontrado - aguardando claim.`,
+        event_type: "payment_orphan",
+        message: `⚠️ PAGAMENTO ÓRFÃO: R$ ${(actualAmount / 100).toFixed(2)} recebido sem intent_id! Plano: ${expectedPlanType}. Invoice: ${invoiceSlug || 'N/A'}. Transaction: ${transactionId}. Nenhum usuário aguardando pagamento nos últimos 30min. Requer vinculação manual ou claim do usuário.`,
       });
       
       return new Response(
