@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useUserSettings } from './useUserSettings';
 
 export interface Achievement {
   id: string;
@@ -63,7 +64,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'level_50', name: 'Nível 50', description: 'Alcance o nível 50', icon: '🌟', category: 'level', requirement: 50, xpReward: 1000 },
 ];
 
-// Default weekly goals
+// Default weekly goals (used when no user settings are available)
 export const DEFAULT_WEEKLY_GOALS = {
   earnings: 1500,
   services: 50,
@@ -74,6 +75,15 @@ export const DEFAULT_WEEKLY_GOALS = {
 export function useGamification() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { data: userSettings } = useUserSettings();
+
+  // Get user's custom weekly goals or use defaults
+  const weeklyGoals: WeeklyGoals = {
+    earnings: userSettings?.weekly_goal_earnings ?? DEFAULT_WEEKLY_GOALS.earnings,
+    services: userSettings?.weekly_goal_services ?? DEFAULT_WEEKLY_GOALS.services,
+    km: userSettings?.weekly_goal_km ?? DEFAULT_WEEKLY_GOALS.km,
+    hours: userSettings?.weekly_goal_hours ?? DEFAULT_WEEKLY_GOALS.hours,
+  };
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['gamification-stats', user?.id],
@@ -253,7 +263,7 @@ export function useGamification() {
   return {
     stats,
     weeklyProgress,
-    weeklyGoals: DEFAULT_WEEKLY_GOALS,
+    weeklyGoals,
     unlockedAchievements: unlockedAchievements || [],
     achievements: ACHIEVEMENTS,
     isLoading: statsLoading || achievementsLoading || weeklyLoading,
