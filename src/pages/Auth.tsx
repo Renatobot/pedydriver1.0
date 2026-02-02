@@ -219,7 +219,7 @@ export default function Auth() {
 
       {/* Logo */}
       <div className="mb-6 sm:mb-8 text-center">
-        <img src={logo3d} alt="PEDY Driver" className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl mx-auto mb-3 sm:mb-4 shadow-lg" width={96} height={96} loading="eager" />
+        <img src={logo3d} alt="PEDY Driver" className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl mx-auto mb-3 sm:mb-4 shadow-xl" width={128} height={128} loading="eager" />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">PEDY Driver</h1>
         <p className="text-muted-foreground text-sm sm:text-base mt-1">Controle seus ganhos como motorista de aplicativo</p>
       </div>
