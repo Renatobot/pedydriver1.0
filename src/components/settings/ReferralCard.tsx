@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gift, Copy, Share2, Users, Trophy, Loader2, ExternalLink } from 'lucide-react';
+import { Gift, Copy, Share2, Users, Trophy, Loader2, ExternalLink, Clock, UserCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -132,13 +132,37 @@ export function ReferralCard() {
           <ExternalLink className="w-3 h-3 ml-2" />
         </Button>
 
+        {/* Pending referrals notice */}
+        {pendingReferrals > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {pendingReferrals} indicação{pendingReferrals > 1 ? 'ões' : ''} pendente{pendingReferrals > 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Seu{pendingReferrals > 1 ? 's' : ''} amigo{pendingReferrals > 1 ? 's' : ''} se cadastrou{pendingReferrals > 1 ? 'ram' : ''}! O bônus será liberado quando {pendingReferrals > 1 ? 'eles usarem' : 'ele usar'} o app normalmente (registrar ganhos, despesas, etc).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <StatsCard
-            icon={<Users className="w-4 h-4" />}
-            label="Indicações"
+            icon={<UserCheck className="w-4 h-4" />}
+            label="Confirmadas"
             value={totalReferrals}
             highlight={totalReferrals > 0}
+          />
+          <StatsCard
+            icon={<Clock className="w-4 h-4" />}
+            label="Pendentes"
+            value={pendingReferrals}
+            highlight={pendingReferrals > 0}
+            variant="pending"
           />
           <StatsCard
             icon={<Trophy className="w-4 h-4" />}
@@ -174,28 +198,42 @@ function StatsCard({
   label,
   value,
   highlight,
+  variant = 'default',
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   highlight: boolean;
+  variant?: 'default' | 'pending';
 }) {
   return (
     <div
       className={cn(
-        'rounded-lg p-3 text-center transition-colors',
+        'rounded-lg p-2 text-center transition-colors',
         highlight
-          ? 'bg-primary/20 border border-primary/30'
+          ? variant === 'pending'
+            ? 'bg-amber-500/20 border border-amber-500/30'
+            : 'bg-primary/20 border border-primary/30'
           : 'bg-muted/50'
       )}
     >
-      <div className="flex items-center justify-center gap-1.5 mb-1">
-        <span className={highlight ? 'text-primary' : 'text-muted-foreground'}>
+      <div className="flex items-center justify-center gap-1 mb-0.5">
+        <span className={
+          highlight 
+            ? variant === 'pending' 
+              ? 'text-amber-500' 
+              : 'text-primary' 
+            : 'text-muted-foreground'
+        }>
           {icon}
         </span>
         <span className={cn(
-          'text-xl font-bold',
-          highlight ? 'text-primary' : 'text-foreground'
+          'text-lg font-bold',
+          highlight 
+            ? variant === 'pending' 
+              ? 'text-amber-500' 
+              : 'text-primary' 
+            : 'text-foreground'
         )}>
           {value}
         </span>
