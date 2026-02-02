@@ -33,10 +33,11 @@ export const FUEL_UNITS: Record<FuelType, string> = {
 
 // Fator de ajuste de consumo por tipo de combustível
 // Etanol rende ~30% menos que gasolina
+// GNV rende ~15% mais que gasolina (1m³ GNV ≈ 1.15L gasolina em km)
 export const FUEL_EFFICIENCY_FACTOR: Record<FuelType, number> = {
   gasolina: 1.0,
   etanol: 0.70,
-  gnv: 1.0,
+  gnv: 1.15, // GNV é mais eficiente que gasolina
   eletrico: 1.0,
 };
 
