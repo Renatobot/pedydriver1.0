@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import logo3d from '@/assets/logo-3d-tiny.webp';
+import logo3d from '@/assets/logo-3d-micro.webp';
 import { cn } from '@/lib/utils';
 
 interface SplashScreenProps {
