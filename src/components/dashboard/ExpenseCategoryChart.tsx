@@ -14,6 +14,8 @@ const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   alimentacao: 'Alimentação',
   seguro: 'Seguro',
   aluguel: 'Aluguel',
+  aluguel_veiculo: 'Aluguel Veículo',
+  financiamento: 'Financiamento',
   internet: 'Internet',
   pedagio_estacionamento: 'Pedágio/Est.',
   outros: 'Outros',
@@ -27,6 +29,8 @@ const COLORS = [
   'hsl(221 83% 53%)',
   'hsl(142 76% 36%)',
   'hsl(0 84% 60%)',
+  'hsl(45 93% 47%)',
+  'hsl(330 81% 60%)',
   'hsl(var(--muted-foreground))',
 ];
 

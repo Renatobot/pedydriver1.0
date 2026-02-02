@@ -20,7 +20,7 @@ import { EXPENSE_CATEGORY_LABELS } from '@/lib/formatters';
 
 const schema = z.object({
   date: z.date(),
-  category: z.enum(['combustivel', 'manutencao', 'alimentacao', 'seguro', 'aluguel', 'internet', 'pedagio_estacionamento', 'outros'] as const),
+  category: z.enum(['combustivel', 'manutencao', 'alimentacao', 'seguro', 'aluguel', 'aluguel_veiculo', 'financiamento', 'internet', 'pedagio_estacionamento', 'outros'] as const),
   amount: z.number().min(0.01, 'Valor deve ser maior que zero'),
   platform_id: z.string().optional(),
   notes: z.string().optional(),

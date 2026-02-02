@@ -36,6 +36,8 @@ export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
   alimentacao: 'Alimentação',
   seguro: 'Seguro',
   aluguel: 'Aluguel',
+  aluguel_veiculo: 'Aluguel de Veículo',
+  financiamento: 'Financiamento/Prestação',
   internet: 'Internet',
   pedagio_estacionamento: 'Pedágio/Estac.',
   outros: 'Outros'

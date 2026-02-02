@@ -3,7 +3,7 @@ export type CostDistributionRule = 'km' | 'horas' | 'receita';
 export type ServiceType = 'corrida' | 'entrega' | 'outro';
 export type EarningType = 'corrida_entrega' | 'gorjeta' | 'bonus' | 'ajuste';
 export type PaymentType = 'imediato' | 'app';
-export type ExpenseCategory = 'combustivel' | 'manutencao' | 'alimentacao' | 'seguro' | 'aluguel' | 'internet' | 'pedagio_estacionamento' | 'outros';
+export type ExpenseCategory = 'combustivel' | 'manutencao' | 'alimentacao' | 'seguro' | 'aluguel' | 'aluguel_veiculo' | 'financiamento' | 'internet' | 'pedagio_estacionamento' | 'outros';
 
 export interface Platform {
   id: string;
