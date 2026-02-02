@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Fuel, Wrench, UtensilsCrossed, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Fuel, Wrench, UtensilsCrossed, Clock, Info } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
@@ -40,7 +40,7 @@ export default function Reports() {
     end: format(now, 'yyyy-MM-dd'),
   };
 
-  const { platformMetrics, isLoading } = useDashboard(range);
+  const { platformMetrics, isLoading, hasMultiPlatformShifts } = useDashboard(range);
   const { data: expenses } = useExpenses(dateRange.start, dateRange.end);
   const { data: allEarnings } = useEarnings(analysisDateRange.start, analysisDateRange.end);
   const { data: allShifts } = useShifts(analysisDateRange.start, analysisDateRange.end);
@@ -201,6 +201,16 @@ export default function Reports() {
               {platformMetrics.length > 0 && (
                 <div className="space-y-3 sm:space-y-4">
                   <h2 className="text-base sm:text-lg font-semibold text-foreground">Ranking de Plataformas</h2>
+                  
+                  {hasMultiPlatformShifts && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/10 border border-primary/30">
+                      <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-primary">
+                        Horas e KMs são distribuídos proporcionalmente pela receita de cada plataforma. 
+                        Quem gerou mais receita, provavelmente consumiu mais tempo e quilômetros.
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="rounded-xl overflow-hidden border border-border/50">
                     <div className="overflow-x-auto">
