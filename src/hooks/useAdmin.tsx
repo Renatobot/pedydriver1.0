@@ -126,6 +126,7 @@ export function useUpdateSubscription() {
       status: 'active' | 'cancelled' | 'expired' | 'trialing';
       expiresAt?: string | null;
     }) => {
+      // Update subscription
       const { data, error } = await supabase.rpc('admin_update_subscription', {
         _target_user_id: targetUserId,
         _plan: plan,
@@ -133,6 +134,14 @@ export function useUpdateSubscription() {
         _expires_at: expiresAt || null,
       });
       if (error) throw error;
+
+      // Send notification to user
+      await supabase.rpc('notify_subscription_update', {
+        _target_user_id: targetUserId,
+        _plan: plan,
+        _status: status,
+      });
+
       return data;
     },
     onSuccess: () => {
@@ -141,7 +150,7 @@ export function useUpdateSubscription() {
       queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
       toast({
         title: 'Sucesso',
-        description: 'Assinatura atualizada com sucesso.',
+        description: 'Assinatura atualizada e usuário notificado.',
       });
     },
     onError: (error) => {

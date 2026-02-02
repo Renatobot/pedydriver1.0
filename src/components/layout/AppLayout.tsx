@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { BottomNav } from './BottomNav';
 import { ThemeToggle } from './ThemeToggle';
+import { NotificationBell } from './NotificationBell';
 import { EntryLimitIndicator } from '@/components/subscription/EntryLimitBanner';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 
@@ -13,8 +14,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Theme Toggle - Fixed Position */}
-      <div className="fixed top-3 right-3 z-50 safe-top">
+      {/* Header Actions - Fixed Position */}
+      <div className="fixed top-3 right-3 z-50 safe-top flex items-center gap-1">
+        <NotificationBell />
         <ThemeToggle />
       </div>
 
