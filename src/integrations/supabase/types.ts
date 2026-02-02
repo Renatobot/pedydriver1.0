@@ -751,6 +751,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_pending_referrals: { Args: never; Returns: Json }
       create_payment_failure_alert: {
         Args: { _error_type?: string; _user_id: string }
         Returns: boolean
@@ -823,6 +824,7 @@ export type Database = {
           transaction_id: string
         }[]
       }
+      get_referral_progress: { Args: never; Returns: Json }
       get_referral_stats: { Args: never; Returns: Json }
       get_support_tickets: {
         Args: { _status?: string }
@@ -854,6 +856,10 @@ export type Database = {
       notify_subscription_update: {
         Args: { _plan: string; _status: string; _target_user_id: string }
         Returns: boolean
+      }
+      register_pending_referral: {
+        Args: { _device_fingerprint: string; _referral_code: string }
+        Returns: Json
       }
       validate_referral: {
         Args: { _device_fingerprint: string; _referral_code: string }

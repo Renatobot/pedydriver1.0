@@ -10,10 +10,31 @@ interface ReferralData {
   pendingReferrals: number;
   bonusDaysEarned: number;
   wasReferred: boolean;
+  canShowReferralCard: boolean;
+  accountAgeHours: number;
   isLoading: boolean;
 }
 
-interface ValidateResult {
+interface ReferralProgress {
+  hasPending: boolean;
+  accountAgeHours: number;
+  hoursUntilEligible: number;
+  criteriaMet: number;
+  criteriaNeeded: number;
+  hasVehicle: boolean;
+  hasEarnings: boolean;
+  hasExpenses: boolean;
+  hasShifts: boolean;
+  isEligible: boolean;
+}
+
+interface RegisterResult {
+  success: boolean;
+  error?: string;
+  status?: string;
+}
+
+interface CheckResult {
   success: boolean;
   error?: string;
   bonusDays?: number;
@@ -30,8 +51,11 @@ export function useReferral() {
     pendingReferrals: 0,
     bonusDaysEarned: 0,
     wasReferred: false,
+    canShowReferralCard: false,
+    accountAgeHours: 0,
     isLoading: true,
   });
+  const [progress, setProgress] = useState<ReferralProgress | null>(null);
 
   // Load referral code and stats
   const loadReferralData = useCallback(async () => {
@@ -61,6 +85,8 @@ export function useReferral() {
         pending_referrals: number;
         bonus_days_earned: number;
         was_referred: boolean;
+        account_age_hours: number;
+        can_show_referral_card: boolean;
       } | null;
 
       setData({
@@ -69,6 +95,8 @@ export function useReferral() {
         pendingReferrals: stats?.pending_referrals || 0,
         bonusDaysEarned: stats?.bonus_days_earned || 0,
         wasReferred: stats?.was_referred || false,
+        canShowReferralCard: stats?.can_show_referral_card || false,
+        accountAgeHours: stats?.account_age_hours || 0,
         isLoading: false,
       });
     } catch (error) {
@@ -77,11 +105,59 @@ export function useReferral() {
     }
   }, [user, fingerprint]);
 
+  // Load referral progress for referred users
+  const loadReferralProgress = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data: progressData, error } = await supabase
+        .rpc('get_referral_progress');
+
+      if (error) {
+        console.error('Error getting referral progress:', error);
+        return;
+      }
+
+      const p = progressData as {
+        has_pending: boolean;
+        account_age_hours?: number;
+        hours_until_eligible?: number;
+        criteria_met?: number;
+        criteria_needed?: number;
+        has_vehicle?: boolean;
+        has_earnings?: boolean;
+        has_expenses?: boolean;
+        has_shifts?: boolean;
+        is_eligible?: boolean;
+      } | null;
+
+      if (p?.has_pending) {
+        setProgress({
+          hasPending: true,
+          accountAgeHours: p.account_age_hours || 0,
+          hoursUntilEligible: p.hours_until_eligible || 0,
+          criteriaMet: p.criteria_met || 0,
+          criteriaNeeded: p.criteria_needed || 2,
+          hasVehicle: p.has_vehicle || false,
+          hasEarnings: p.has_earnings || false,
+          hasExpenses: p.has_expenses || false,
+          hasShifts: p.has_shifts || false,
+          isEligible: p.is_eligible || false,
+        });
+      } else {
+        setProgress(null);
+      }
+    } catch (error) {
+      console.error('Error loading referral progress:', error);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!fingerprintLoading && user) {
       loadReferralData();
+      loadReferralProgress();
     }
-  }, [user, fingerprint, fingerprintLoading, loadReferralData]);
+  }, [user, fingerprint, fingerprintLoading, loadReferralData, loadReferralProgress]);
 
   // Store referral code from URL to localStorage (before signup)
   const storeReferralCode = useCallback((code: string) => {
@@ -98,8 +174,8 @@ export function useReferral() {
     localStorage.removeItem(REFERRAL_CODE_KEY);
   }, []);
 
-  // Validate and complete referral after signup
-  const validateReferral = useCallback(async (): Promise<ValidateResult> => {
+  // Register pending referral after signup (does NOT grant bonus immediately)
+  const registerPendingReferral = useCallback(async (): Promise<RegisterResult> => {
     const storedCode = getStoredReferralCode();
     
     if (!storedCode || !fingerprint || !user) {
@@ -108,26 +184,25 @@ export function useReferral() {
 
     try {
       const { data: result, error } = await supabase
-        .rpc('validate_referral', {
+        .rpc('register_pending_referral', {
           _referral_code: storedCode,
           _device_fingerprint: fingerprint,
         });
 
       if (error) {
-        console.error('Error validating referral:', error);
-        return { success: false, error: 'validation_error' };
+        console.error('Error registering pending referral:', error);
+        return { success: false, error: 'registration_error' };
       }
 
-      const resultObj = result as { success: boolean; error?: string; bonus_days?: number };
+      const resultObj = result as { success: boolean; error?: string; status?: string };
 
       if (resultObj.success) {
         clearStoredReferralCode();
-        toast.success('🎉 Indicação confirmada! Você ganhou 7 dias de PRO grátis!');
-        // Reload data
-        setTimeout(loadReferralData, 1000);
-        return { success: true, bonusDays: resultObj.bonus_days };
+        // Don't show success toast yet - referral is pending
+        loadReferralProgress();
+        return { success: true, status: 'pending' };
       } else {
-        // Keep the code stored in case of temporary errors
+        // Handle errors
         const errorMessages: Record<string, string> = {
           invalid_code: 'Código de indicação inválido',
           self_referral: 'Você não pode usar seu próprio código',
@@ -136,20 +211,54 @@ export function useReferral() {
           already_referred: 'Você já foi indicado por alguém',
         };
 
-        const errorMessage = errorMessages[resultObj.error || ''] || 'Erro ao validar indicação';
-        
-        // Clear code for permanent errors
-        if (['invalid_code', 'self_referral', 'same_device', 'device_already_used', 'already_referred'].includes(resultObj.error || '')) {
+        const permanentErrors = ['invalid_code', 'self_referral', 'same_device', 'device_already_used', 'already_referred'];
+        if (permanentErrors.includes(resultObj.error || '')) {
           clearStoredReferralCode();
         }
 
-        return { success: false, error: errorMessage };
+        return { success: false, error: errorMessages[resultObj.error || ''] || 'Erro ao registrar indicação' };
       }
     } catch (error) {
-      console.error('Error in validateReferral:', error);
+      console.error('Error in registerPendingReferral:', error);
       return { success: false, error: 'Erro inesperado' };
     }
-  }, [fingerprint, user, getStoredReferralCode, clearStoredReferralCode, loadReferralData]);
+  }, [fingerprint, user, getStoredReferralCode, clearStoredReferralCode, loadReferralProgress]);
+
+  // Check and complete pending referral (called periodically or on actions)
+  const checkAndCompletePendingReferral = useCallback(async (): Promise<CheckResult> => {
+    if (!user) {
+      return { success: false, error: 'not_authenticated' };
+    }
+
+    try {
+      const { data: result, error } = await supabase
+        .rpc('check_pending_referrals');
+
+      if (error) {
+        console.error('Error checking pending referrals:', error);
+        return { success: false, error: 'check_error' };
+      }
+
+      const resultObj = result as { success: boolean; error?: string; bonus_days?: number };
+
+      if (resultObj.success) {
+        toast.success('🎉 Indicação confirmada! Você ganhou 7 dias de PRO grátis!');
+        loadReferralData();
+        loadReferralProgress();
+        return { success: true, bonusDays: resultObj.bonus_days };
+      }
+
+      return { success: false, error: resultObj.error };
+    } catch (error) {
+      console.error('Error in checkAndCompletePendingReferral:', error);
+      return { success: false, error: 'Erro inesperado' };
+    }
+  }, [user, loadReferralData, loadReferralProgress]);
+
+  // Legacy validateReferral - now just calls registerPendingReferral
+  const validateReferral = useCallback(async () => {
+    return registerPendingReferral();
+  }, [registerPendingReferral]);
 
   // Generate shareable link
   const getShareableLink = useCallback(() => {
@@ -206,16 +315,20 @@ export function useReferral() {
 
   return {
     ...data,
+    progress,
     fingerprint,
     fingerprintLoading,
     storeReferralCode,
     getStoredReferralCode,
     clearStoredReferralCode,
-    validateReferral,
+    registerPendingReferral,
+    checkAndCompletePendingReferral,
+    validateReferral, // Legacy alias
     getShareableLink,
     copyLink,
     shareLink,
     reload: loadReferralData,
+    reloadProgress: loadReferralProgress,
   };
 }
 
