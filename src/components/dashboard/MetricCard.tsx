@@ -96,20 +96,26 @@ export function MetricCard({
           </span>
         )}
       </div>
-      <div className="flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
+      {secondaryValue !== undefined ? (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <p className={cn('text-lg sm:text-xl font-bold font-mono animate-count-up', valueColorClass())}>
+              {formattedValue()}
+            </p>
+            <span className="text-2xs px-1.5 py-0.5 rounded bg-profit/15 text-profit font-medium">
+              líquido
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-muted-foreground">
+            <span className="font-mono text-xs sm:text-sm">{formattedSecondary()}</span>
+            <span className="text-2xs px-1.5 py-0.5 rounded bg-muted font-medium">
+              bruto
+            </span>
+          </div>
+        </div>
+      ) : (
         <p className={cn('text-lg sm:text-xl md:text-2xl font-bold font-mono animate-count-up', valueColorClass())}>
           {formattedValue()}
-        </p>
-        {secondaryValue !== undefined && (
-          <span className="text-2xs text-muted-foreground font-mono leading-none">
-            líq.
-          </span>
-        )}
-      </div>
-      {secondaryValue !== undefined && (
-        <p className="text-2xs sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-          <span className="font-mono">{formattedSecondary()}</span>
-          <span>bruto</span>
         </p>
       )}
       {subtitle && !secondaryValue && (
