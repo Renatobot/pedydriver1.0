@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import logoWebp from '@/assets/logo-3d-optimized.webp';
+import logoWebp from '@/assets/logo-auth.webp';
 
 interface OnboardingTutorialProps {
   onComplete: () => void;
