@@ -76,10 +76,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!customerEmail) {
+  if (!customerEmail) {
       console.error("No customer email found in payload");
-      // Log the full payload for debugging
       console.log("Full payload structure:", Object.keys(payload));
+      
+      // Save as pending payment without email for manual review
+      await supabase.from("pending_payments").insert({
+        email: "unknown@payment.com",
+        amount: amount,
+        transaction_id: transactionId,
+        payment_data: payload,
+        status: "pending",
+      });
+
+      // Create admin alert
+      await supabase.from("admin_alerts").insert({
+        event_type: "payment_user_not_found",
+        message: `⚠️ Pagamento recebido sem email identificado. Valor: R$ ${(amount / 100).toFixed(2)}. Verifique em Pagamentos Pendentes.`,
+      });
       
       return new Response(
         JSON.stringify({ 
@@ -106,20 +120,29 @@ Deno.serve(async (req) => {
     if (!user) {
       console.error("User not found for email:", customerEmail);
       
+      // Save as pending payment for manual linking
+      await supabase.from("pending_payments").insert({
+        email: customerEmail,
+        amount: amount,
+        transaction_id: transactionId,
+        payment_data: payload,
+        status: "pending",
+      });
+
       // Create an admin alert for manual review
       await supabase.from("admin_alerts").insert({
         event_type: "payment_user_not_found",
-        message: `Pagamento recebido mas usuário não encontrado. Email: ${customerEmail}, Valor: R$ ${(amount / 100).toFixed(2)}`,
+        message: `⚠️ Pagamento recebido mas usuário não encontrado. Email: ${customerEmail}, Valor: R$ ${(amount / 100).toFixed(2)}. Vincule em Pagamentos Pendentes.`,
         user_email: customerEmail,
       });
 
       return new Response(
         JSON.stringify({ 
-          success: false, 
-          error: "User not found",
+          success: true, 
+          message: "Payment saved as pending - user not found",
           email: customerEmail 
         }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

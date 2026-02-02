@@ -209,6 +209,48 @@ export type Database = {
           },
         ]
       }
+      pending_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          email: string
+          id: string
+          linked_at: string | null
+          linked_by: string | null
+          linked_user_id: string | null
+          payment_data: Json | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          email: string
+          id?: string
+          linked_at?: string | null
+          linked_by?: string | null
+          linked_user_id?: string | null
+          payment_data?: Json | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          email?: string
+          id?: string
+          linked_at?: string | null
+          linked_by?: string | null
+          linked_user_id?: string | null
+          payment_data?: Json | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platforms: {
         Row: {
           color: string | null
@@ -411,9 +453,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_cancel_pending_payment: {
+        Args: { _payment_id: string }
+        Returns: boolean
+      }
       admin_get_user_for_reset: {
         Args: { _target_user_id: string }
         Returns: Json
+      }
+      admin_link_payment_to_user: {
+        Args: {
+          _is_annual?: boolean
+          _payment_id: string
+          _target_user_id: string
+        }
+        Returns: boolean
       }
       admin_reset_monthly_limit: {
         Args: { _target_user_id: string }
@@ -479,6 +533,21 @@ export type Database = {
         }[]
       }
       get_email_by_phone: { Args: { _phone: string }; Returns: string }
+      get_pending_payments: {
+        Args: never
+        Returns: {
+          amount: number
+          created_at: string
+          email: string
+          id: string
+          linked_at: string
+          linked_user_email: string
+          linked_user_id: string
+          linked_user_name: string
+          status: string
+          transaction_id: string
+        }[]
+      }
       get_unread_alerts_count: { Args: never; Returns: number }
       has_role: {
         Args: {
