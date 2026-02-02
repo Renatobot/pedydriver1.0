@@ -105,10 +105,10 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 safe-area-inset">
-      <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
+    <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 pb-24 safe-area-inset">
+      <div className="w-full max-w-md max-h-[calc(100vh-120px)] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="relative p-4 flex items-center justify-between border-b border-border">
+        <div className="relative p-4 flex items-center justify-between border-b border-border shrink-0">
           <div className="flex items-center gap-2">
             <img src={logoWebp} alt="PEDY" className="w-8 h-8 rounded-lg" />
             <span className="font-semibold text-sm">Tutorial</span>
@@ -124,7 +124,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
         </div>
 
         {/* Progress dots */}
-        <div className="flex justify-center gap-1.5 py-3 px-4">
+        <div className="flex justify-center gap-1.5 py-3 px-4 shrink-0">
           {steps.map((_, index) => (
             <button
               key={index}
@@ -141,31 +141,31 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
           ))}
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - scrollable */}
+        <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Icon */}
           <div className="flex justify-center">
             <div
               className={cn(
-                'w-20 h-20 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg',
+                'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg',
                 step.color,
                 step.highlight && 'ring-4 ring-primary/20 animate-pulse'
               )}
             >
-              <step.icon className="w-10 h-10 text-white" />
+              <step.icon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
           </div>
 
           {/* Text */}
-          <div className="text-center space-y-3">
-            <h2 className="text-xl font-bold">{step.title}</h2>
+          <div className="text-center space-y-2">
+            <h2 className="text-lg sm:text-xl font-bold">{step.title}</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {step.description}
             </p>
           </div>
 
           {/* Tip box */}
-          <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 sm:p-4">
             <p className="text-sm text-center">
               <span className="font-medium text-primary">💡 Dica:</span>{' '}
               <span className="text-foreground">{step.tip}</span>
@@ -173,8 +173,8 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-border flex items-center justify-between gap-3">
+        {/* Footer - always visible */}
+        <div className="p-4 border-t border-border flex items-center justify-between gap-3 shrink-0 bg-card">
           <Button
             variant="ghost"
             onClick={handlePrev}
