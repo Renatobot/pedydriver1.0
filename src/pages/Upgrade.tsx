@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Crown, Check, Zap, BarChart3, Calendar, Infinity, Mail, AlertCircle } from 'lucide-react';
+import { Crown, Check, Zap, BarChart3, Calendar, Infinity, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -45,16 +47,43 @@ export default function Upgrade() {
   const { user } = useAuth();
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSubscribe = (priceType: 'monthly' | 'yearly') => {
     setSelectedPlan(priceType);
     setShowEmailModal(true);
   };
 
-  const handleConfirmCheckout = () => {
-    setShowEmailModal(false);
-    // Open correct InfinitePay checkout based on selected plan
-    window.open(CHECKOUT_URLS[selectedPlan], '_blank');
+  const handleConfirmCheckout = async () => {
+    if (!user?.email || !user?.id) {
+      toast.error('Erro ao identificar usuário. Faça login novamente.');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      // Create payment intent to track this payment attempt
+      const { error } = await supabase.from('payment_intents').insert({
+        user_id: user.id,
+        user_email: user.email,
+        plan_type: selectedPlan === 'yearly' ? 'annual' : 'monthly',
+      });
+
+      if (error) {
+        console.error('Error creating payment intent:', error);
+        // Don't block payment, just log the error
+      }
+
+      setShowEmailModal(false);
+      // Open correct InfinitePay checkout based on selected plan
+      window.open(CHECKOUT_URLS[selectedPlan], '_blank');
+    } catch (err) {
+      console.error('Error in checkout:', err);
+      toast.error('Erro ao processar. Tente novamente.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const userEmail = user?.email || '';
@@ -255,9 +284,17 @@ export default function Upgrade() {
             </Button>
             <Button 
               onClick={handleConfirmCheckout}
+              disabled={isProcessing}
               className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
             >
-              Entendi, ir para pagamento
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Preparando...
+                </>
+              ) : (
+                'Entendi, ir para pagamento'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
