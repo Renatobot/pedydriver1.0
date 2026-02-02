@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect } from "react";
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +9,7 @@ import { SyncProvider } from "@/contexts/SyncContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SplashScreen, PageLoader } from "@/components/ui/splash-screen";
+import { PageLoader } from "@/components/ui/splash-screen";
 
 // Eager load critical pages
 import Dashboard from "./pages/Dashboard";
@@ -98,21 +98,9 @@ function AppRoutes() {
 }
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash on first visit per session
-    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
-    return !hasSeenSplash;
-  });
-
-  const handleSplashComplete = () => {
-    sessionStorage.setItem('hasSeenSplash', 'true');
-    setShowSplash(false);
-  };
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
         <AuthProvider>
           <SyncProvider>
             <SubscriptionProvider>

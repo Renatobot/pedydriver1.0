@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'icons/*.png', 'icons/*.webp'],
       manifest: false, // Using existing manifest.json
-      injectRegister: 'auto',
+      injectRegister: 'script-defer',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB
