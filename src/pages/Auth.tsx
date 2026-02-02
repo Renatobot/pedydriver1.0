@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import logo3d from '@/assets/logo-3d-optimized.webp';
+import logo3d from '@/assets/logo-auth.webp';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
