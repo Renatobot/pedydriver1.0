@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
+import { ThemeProvider } from "@/components/theme-provider";
 import Dashboard from "./pages/Dashboard";
 import Add from "./pages/Add";
 import QuickEntry from "./pages/QuickEntry";
@@ -86,20 +87,22 @@ function AppRoutes() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <SyncProvider>
-        <SubscriptionProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <SyncStatusIndicator />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </SubscriptionProvider>
-      </SyncProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SyncProvider>
+          <SubscriptionProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <SyncStatusIndicator />
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </SubscriptionProvider>
+        </SyncProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
