@@ -96,13 +96,13 @@ export function MetricCard({
           </span>
         )}
       </div>
-      <div className="flex items-baseline gap-1.5 sm:gap-2">
+      <div className="flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
         <p className={cn('text-lg sm:text-xl md:text-2xl font-bold font-mono animate-count-up', valueColorClass())}>
           {formattedValue()}
         </p>
         {secondaryValue !== undefined && (
-          <span className="text-2xs sm:text-xs text-muted-foreground font-mono">
-            líquido
+          <span className="text-2xs text-muted-foreground font-mono leading-none">
+            líq.
           </span>
         )}
       </div>
