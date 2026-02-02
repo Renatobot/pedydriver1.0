@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Clock, Navigation, Banknote, CreditCard, Hash, Play, Info, Layers } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfitCard } from '@/components/dashboard/ProfitCard';
@@ -10,6 +10,7 @@ import { PlatformComparisonChart } from '@/components/dashboard/PlatformComparis
 import { ExpenseCategoryChart } from '@/components/dashboard/ExpenseCategoryChart';
 import { ExpenseDetailCard } from '@/components/dashboard/ExpenseDetailCard';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
+import { useProcessRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
@@ -42,12 +43,22 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { hasActiveShift } = useActiveShift();
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  const processRecurring = useProcessRecurringExpenses();
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Motorista';
 
+  // Processa gastos recorrentes pendentes ao carregar
+  useEffect(() => {
+    if (user) {
+      processRecurring.mutate();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const handleRefresh = useCallback(async () => {
+    await processRecurring.mutateAsync();
     await refetch();
-  }, [refetch]);
+  }, [refetch, processRecurring]);
 
   return (
     <>

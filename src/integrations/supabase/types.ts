@@ -382,6 +382,65 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_expenses: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string
+          day_of_month: number | null
+          day_of_week: number | null
+          frequency: string
+          id: string
+          is_active: boolean
+          last_generated_at: string | null
+          next_due_date: string
+          notes: string | null
+          platform_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_due_date: string
+          notes?: string | null
+          platform_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          next_due_date?: string
+          notes?: string | null
+          platform_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           bonus_applied: boolean | null
