@@ -149,10 +149,10 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           <Label className="text-sm sm:text-base">Plataforma (opcional)</Label>
           <Select onValueChange={(v) => setValue('platform_id', v === 'geral' ? undefined : v)}>
             <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
-              <SelectValue placeholder="Geral (rateio)" />
+              <SelectValue placeholder="Geral (divide entre todas)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="geral" className="py-3">Geral (rateio)</SelectItem>
+              <SelectItem value="geral" className="py-3">Geral (divide entre todas)</SelectItem>
               {platforms?.map((p) => (
                 <SelectItem key={p.id} value={p.id} className="py-3">
                   {p.name}
@@ -161,7 +161,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
             </SelectContent>
           </Select>
           <p className="text-2xs sm:text-xs text-muted-foreground">
-            Gastos "Geral" são rateados entre as plataformas
+            Gastos "Geral" são divididos entre as plataformas
           </p>
         </div>
 
