@@ -31,6 +31,44 @@ type LoginData = z.infer<typeof loginSchema>;
 type SignupData = z.infer<typeof signupSchema>;
 type PhoneLoginData = z.infer<typeof phoneLoginSchema>;
 
+// Função para traduzir mensagens de erro do Supabase Auth para português
+const translateAuthError = (message: string): string => {
+  const msg = message.toLowerCase();
+  
+  // Erros de login
+  if (msg.includes('invalid login')) 
+    return 'Email ou senha incorretos';
+  
+  // Erros de cadastro
+  if (msg.includes('already registered')) 
+    return 'Este email já está cadastrado';
+  if (msg.includes('email not confirmed')) 
+    return 'Email não confirmado. Verifique sua caixa de entrada.';
+  
+  // Erros de senha
+  if (msg.includes('password should be at least 6 characters') || 
+      msg.includes('password must be at least 6')) 
+    return 'A senha deve ter no mínimo 6 caracteres';
+  if (msg.includes('password is too weak')) 
+    return 'Sua senha é muito fraca. Use letras, números e símbolos.';
+  if (msg.includes('most common passwords')) 
+    return 'Esta senha é muito comum. Escolha outra mais segura.';
+  if (msg.includes('contain at least one character of each')) 
+    return 'A senha deve conter letras maiúsculas, minúsculas, números e símbolos.';
+  if (msg.includes('should not contain your email')) 
+    return 'A senha não pode conter seu email.';
+  
+  // Erros gerais
+  if (msg.includes('signup is currently disabled')) 
+    return 'O cadastro está temporariamente desativado.';
+  if (msg.includes('rate limit')) 
+    return 'Muitas tentativas. Aguarde alguns minutos.';
+  if (msg.includes('email rate limit')) 
+    return 'Muitas tentativas de email. Aguarde alguns minutos.';
+  
+  return message; // Retorna original se não encontrar tradução
+};
+
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup' | 'phone'>('login');
   const [showPassword, setShowPassword] = useState(false);
@@ -55,11 +93,7 @@ export default function Auth() {
     setError(null);
     const { error } = await signIn(data.email, data.password);
     if (error) {
-      if (error.message.includes('Invalid login')) {
-        setError('Email ou senha incorretos');
-      } else {
-        setError(error.message);
-      }
+      setError(translateAuthError(error.message));
     } else {
       navigate('/');
     }
@@ -70,11 +104,7 @@ export default function Auth() {
     const formattedPhone = data.phone.startsWith('+') ? data.phone : '+55' + data.phone;
     const { error } = await signUp(data.email, data.password, data.fullName, formattedPhone);
     if (error) {
-      if (error.message.includes('already registered')) {
-        setError('Este email já está cadastrado');
-      } else {
-        setError(error.message);
-      }
+      setError(translateAuthError(error.message));
     } else {
       navigate('/');
     }
@@ -108,11 +138,7 @@ export default function Auth() {
       const { error: signInError } = await signIn(email, data.password);
       
       if (signInError) {
-        if (signInError.message.includes('Invalid login')) {
-          setError('Senha incorreta');
-        } else {
-          setError(signInError.message);
-        }
+        setError(translateAuthError(signInError.message));
       } else {
         navigate('/');
       }
