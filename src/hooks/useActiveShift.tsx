@@ -45,8 +45,10 @@ export function useActiveShift() {
       if (error) throw error;
       
       if (data && platforms) {
+        // Cast data to access platform_ids (added via migration, not in generated types yet)
+        const rawData = data as typeof data & { platform_ids?: string[] };
         // Support both old single platform_id and new platform_ids array
-        const platformIds = data.platform_ids || (data.platform_id ? [data.platform_id] : []);
+        const platformIds = rawData.platform_ids || (data.platform_id ? [data.platform_id] : []);
         const shiftPlatforms = platforms.filter(p => platformIds.includes(p.id));
         return { 
           ...data, 
@@ -64,15 +66,18 @@ export function useActiveShift() {
     mutationFn: async (data: StartShiftData) => {
       if (!user?.id) throw new Error('Usuário não autenticado');
       
+      // Use raw insert to include platform_ids (not in generated types yet)
+      const insertData = {
+        user_id: user.id,
+        platform_id: data.platform_ids[0], // Keep first for backwards compatibility
+        platform_ids: data.platform_ids,
+        start_km: data.start_km,
+        notes: data.notes || null,
+      };
+      
       const { error } = await supabase
         .from('active_shifts')
-        .insert({
-          user_id: user.id,
-          platform_id: data.platform_ids[0], // Keep first for backwards compatibility
-          platform_ids: data.platform_ids,
-          start_km: data.start_km,
-          notes: data.notes || null,
-        });
+        .insert(insertData as any);
       
       if (error) throw error;
     },
