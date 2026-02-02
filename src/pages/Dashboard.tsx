@@ -16,6 +16,7 @@ import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
 import { PWAInstallBanner } from '@/components/pwa/PWAInstallBanner';
 import { ActiveShiftBanner } from '@/components/shifts/ActiveShiftBanner';
 import { StartShiftModal } from '@/components/shifts/StartShiftModal';
+import { GamificationCard } from '@/components/gamification/GamificationCard';
 import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import { useActiveShift } from '@/hooks/useActiveShift';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -91,6 +92,9 @@ export default function Dashboard() {
 
           {/* Entry Limit Banner */}
           <EntryLimitBanner />
+
+          {/* Gamification Card */}
+          <GamificationCard />
 
           {/* Date Range Selector */}
           <DateRangeSelector value={range} onChange={setRange} />
