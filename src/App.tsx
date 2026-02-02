@@ -11,9 +11,9 @@ import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
 
-// Eager load critical pages
-import Dashboard from "./pages/Dashboard";
-import Auth from "./pages/Auth";
+// Lazy load all pages for better code splitting
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Auth = lazy(() => import("./pages/Auth"));
 
 // Lazy load non-critical pages
 const Add = lazy(() => import("./pages/Add"));
