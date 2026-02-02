@@ -13,6 +13,14 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        admin: 'public/admin/index.html',
+      },
+    },
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
