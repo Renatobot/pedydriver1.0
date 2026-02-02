@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEarnings } from './useEarnings';
 import { useExpenses } from './useExpenses';
 import { useShifts } from './useShifts';
@@ -11,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 export type DateRange = 'day' | 'week' | 'month';
 
 export function useDashboard(range: DateRange = 'week') {
+  const queryClient = useQueryClient();
   const { data: settings } = useUserSettings();
   const { data: platforms } = usePlatforms();
   
@@ -177,6 +179,14 @@ export function useDashboard(range: DateRange = 'week') {
     return result.sort((a, b) => b.profit - a.profit);
   }, [earnings, expenses, shifts, platforms, costPerKm, distributionRule]);
 
+  const refetch = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['earnings'] }),
+      queryClient.invalidateQueries({ queryKey: ['expenses'] }),
+      queryClient.invalidateQueries({ queryKey: ['shifts'] }),
+    ]);
+  }, [queryClient]);
+
   return {
     metrics,
     platformMetrics,
@@ -187,5 +197,6 @@ export function useDashboard(range: DateRange = 'week') {
     dateRange,
     weekStartsOn,
     costPerKm,
+    refetch,
   };
 }
