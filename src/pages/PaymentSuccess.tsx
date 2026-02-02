@@ -19,6 +19,30 @@ export default function PaymentSuccess() {
   const MAX_ATTEMPTS = 10;
   const POLL_INTERVAL = 3000; // 3 seconds
 
+  // Recuperar intent_id do localStorage (salvo no Upgrade.tsx)
+  const getPendingIntent = useCallback(() => {
+    const intentId = localStorage.getItem('pending_intent_id');
+    const intentPlan = localStorage.getItem('pending_intent_plan');
+    const intentTime = localStorage.getItem('pending_intent_time');
+    
+    // Verificar se o intent é recente (menos de 2 horas)
+    if (intentId && intentTime) {
+      const timeDiff = Date.now() - parseInt(intentTime, 10);
+      const twoHours = 2 * 60 * 60 * 1000;
+      if (timeDiff < twoHours) {
+        return { intentId, intentPlan };
+      }
+    }
+    return null;
+  }, []);
+
+  // Limpar intent do localStorage após sucesso
+  const clearPendingIntent = useCallback(() => {
+    localStorage.removeItem('pending_intent_id');
+    localStorage.removeItem('pending_intent_plan');
+    localStorage.removeItem('pending_intent_time');
+  }, []);
+
   // Function to check if subscription is already PRO
   const checkSubscription = useCallback(async () => {
     if (!user?.id) return false;
@@ -32,21 +56,26 @@ export default function PaymentSuccess() {
     if (data?.plan === 'pro' && data?.status === 'active') {
       setIsActivated(true);
       setIsLoading(false);
+      clearPendingIntent();
       // Invalidate subscription cache
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
       return true;
     }
     return false;
-  }, [user?.id, queryClient]);
+  }, [user?.id, queryClient, clearPendingIntent]);
 
   // Function to claim a pending payment
   const claimPayment = useCallback(async () => {
     if (!user?.id) return false;
 
     try {
-      console.log('Attempting to claim payment...');
+      // Recuperar intent_id do localStorage para vínculo seguro
+      const pendingIntent = getPendingIntent();
+      console.log('Attempting to claim payment with intent:', pendingIntent?.intentId);
       
-      const { data, error } = await supabase.functions.invoke('claim-payment');
+      const { data, error } = await supabase.functions.invoke('claim-payment', {
+        body: pendingIntent?.intentId ? { intent_id: pendingIntent.intentId } : undefined
+      });
 
       console.log('Claim response:', data, error);
 
@@ -63,6 +92,7 @@ export default function PaymentSuccess() {
         }
         setIsActivated(true);
         setIsLoading(false);
+        clearPendingIntent();
         // Invalidate subscription cache
         queryClient.invalidateQueries({ queryKey: ['subscription'] });
         return true;
@@ -73,7 +103,7 @@ export default function PaymentSuccess() {
       console.error('Error claiming payment:', err);
       return false;
     }
-  }, [user?.id, queryClient]);
+  }, [user?.id, queryClient, getPendingIntent, clearPendingIntent]);
 
   // Main effect to handle payment claiming and polling
   useEffect(() => {
