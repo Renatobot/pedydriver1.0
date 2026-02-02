@@ -1,11 +1,12 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Shield, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Shield, Wallet, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { AdminAlertsBell } from './AdminAlertsBell';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -19,10 +20,58 @@ const navItems = [
   { to: '/admin/logs', icon: FileText, label: 'Logs' },
 ];
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
+
+  return (
+    <>
+      <nav className="flex-1 p-3 sm:p-4 space-y-1">
+        {navItems.map(({ to, icon: Icon, label }) => {
+          const isActive = location.pathname === to;
+          return (
+            <Link
+              key={to}
+              to={to}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 sm:py-2 rounded-lg transition-colors min-h-[44px]',
+                isActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent'
+              )}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="font-medium">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-3 sm:p-4 border-t border-border space-y-2">
+        <Link to="/" onClick={onNavigate}>
+          <Button variant="outline" className="w-full justify-start gap-2 h-11">
+            <LayoutDashboard className="w-4 h-4" />
+            Voltar ao App
+          </Button>
+        </Link>
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start gap-2 text-muted-foreground h-11"
+          onClick={() => signOut()}
+        >
+          <LogOut className="w-4 h-4" />
+          Sair
+        </Button>
+      </div>
+    </>
+  );
+}
+
+export function AdminLayout({ children }: AdminLayoutProps) {
+  const { user } = useAuth();
   const { data: isAdmin, isLoading } = useIsAdmin();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -37,73 +86,67 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border">
+    <div className="min-h-screen bg-background">
+      {/* Mobile Header */}
+      <header className="lg:hidden sticky top-0 z-50 h-14 border-b border-border bg-card flex items-center justify-between px-3 safe-top">
+        <div className="flex items-center gap-2">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+              <div className="p-4 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-6 h-6 text-primary" />
+                  <span className="font-bold text-lg">Admin</span>
+                </div>
+              </div>
+              <NavContent onNavigate={() => setMobileMenuOpen(false)} />
+            </SheetContent>
+          </Sheet>
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">PEDY Driver Admin</span>
+            <Shield className="w-5 h-5 text-primary" />
+            <span className="font-bold text-sm">Admin</span>
           </div>
         </div>
-
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(({ to, icon: Icon, label }) => {
-            const isActive = location.pathname === to;
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="p-4 border-t border-border space-y-2">
-          <Link to="/">
-            <Button variant="outline" className="w-full justify-start gap-2">
-              <LayoutDashboard className="w-4 h-4" />
-              Voltar ao App
-            </Button>
-          </Link>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-2 text-muted-foreground"
-            onClick={() => signOut()}
-          >
-            <LogOut className="w-4 h-4" />
-            Sair
-          </Button>
+        <div className="flex items-center gap-2">
+          <AdminAlertsBell />
         </div>
-      </aside>
+      </header>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="h-14 border-b border-border bg-card flex items-center justify-between px-6">
-          <div className="text-sm text-muted-foreground">
-            Olá, {user?.email}
+      <div className="lg:flex">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen bg-card border-r border-border flex-col">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <Shield className="w-6 h-6 text-primary" />
+              <span className="font-bold text-lg">PEDY Admin</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <AdminAlertsBell />
-          </div>
-        </header>
+          <NavContent />
+        </aside>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
+        {/* Main content */}
+        <div className="lg:ml-64 flex-1 min-h-screen flex flex-col">
+          {/* Desktop Top Header */}
+          <header className="hidden lg:flex h-14 border-b border-border bg-card items-center justify-between px-6">
+            <div className="text-sm text-muted-foreground truncate">
+              {user?.email}
+            </div>
+            <div className="flex items-center gap-2">
+              <AdminAlertsBell />
+            </div>
+          </header>
+
+          {/* Page content */}
+          <main className="flex-1 overflow-auto">
+            <div className="p-3 sm:p-4 lg:p-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
