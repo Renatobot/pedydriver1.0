@@ -94,14 +94,48 @@ Deno.serve(async (req) => {
     
     console.log("Payment confirmed as successful!");
 
-  if (!customerEmail) {
-      console.log("No customer email found in payload - saving for manual linking");
+    // If no email in payload, try to find a recent payment intent
+    // This happens because InfinitePay doesn't send customer email in webhook
+    let userFromIntent = null;
+    let intentEmail = customerEmail;
+    
+    if (!customerEmail) {
+      console.log("No customer email in payload - looking for recent payment intent...");
+      
+      // Look for a pending payment intent created in the last hour
+      // We match by timing since InfinitePay doesn't give us a way to link
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      
+      const { data: recentIntents, error: intentError } = await supabase
+        .from("payment_intents")
+        .select("*")
+        .eq("status", "pending")
+        .gte("created_at", oneHourAgo)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      
+      if (intentError) {
+        console.error("Error fetching payment intents:", intentError);
+      }
+      
+      if (recentIntents && recentIntents.length > 0) {
+        const intent = recentIntents[0];
+        console.log("Found recent payment intent:", intent.user_email, intent.plan_type);
+        intentEmail = intent.user_email;
+        userFromIntent = {
+          id: intent.user_id,
+          email: intent.user_email,
+          plan_type: intent.plan_type,
+          intent_id: intent.id
+        };
+      }
+    }
+    
+    // If still no email, save as pending for manual review
+    if (!intentEmail && !userFromIntent) {
+      console.log("No customer email and no recent payment intent - saving for manual linking");
       console.log("Full payload structure:", Object.keys(payload));
       
-      // Get item description for more context
-      const itemDescription = payload.items?.[0]?.description || "Assinatura PRO";
-      
-      // Save as pending payment for manual review with more context
       const { error: insertError } = await supabase.from("pending_payments").insert({
         email: `pix_${invoiceSlug || transactionId}@pending.local`,
         amount: paidAmount || amount,
@@ -114,72 +148,87 @@ Deno.serve(async (req) => {
         console.error("Error saving pending payment:", insertError);
       }
 
-      // Create admin alert with more details
-      const { error: alertError } = await supabase.from("admin_alerts").insert({
+      await supabase.from("admin_alerts").insert({
         event_type: "payment_user_not_found",
         message: `💰 Pagamento PIX recebido! Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}. Método: ${captureMethod}. Invoice: ${invoiceSlug || 'N/A'}. Vincule manualmente em Pagamentos Pendentes.`,
       });
       
-      if (alertError) {
-        console.error("Error creating alert:", alertError);
-      }
-      
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "Customer email not found in payload",
+          error: "Customer email not found and no recent payment intent",
           payload_keys: Object.keys(payload)
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Find user by email in auth.users
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
     
-    if (authError) {
-      console.error("Error listing users:", authError);
-      throw authError;
-    }
+    // Use the email we found (either from payload or from intent)
+    const finalEmail = intentEmail || customerEmail;
 
-    const user = authUsers.users.find(
-      u => u.email?.toLowerCase() === customerEmail.toLowerCase()
-    );
-
-    if (!user) {
-      console.error("User not found for email:", customerEmail);
+    // If we have a user from intent, use that directly
+    let user = null;
+    let userId = null;
+    let userEmail = finalEmail;
+    
+    if (userFromIntent) {
+      // We already have the user from the payment intent
+      userId = userFromIntent.id;
+      userEmail = userFromIntent.email;
+      console.log("Using user from payment intent:", userId, userEmail);
+    } else {
+      // Find user by email in auth.users
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
       
-      // Save as pending payment for manual linking
-      await supabase.from("pending_payments").insert({
-        email: customerEmail,
-        amount: amount,
-        transaction_id: transactionId,
-        payment_data: payload,
-        status: "pending",
-      });
+      if (authError) {
+        console.error("Error listing users:", authError);
+        throw authError;
+      }
 
-      // Create an admin alert for manual review
-      await supabase.from("admin_alerts").insert({
-        event_type: "payment_user_not_found",
-        message: `⚠️ Pagamento recebido mas usuário não encontrado. Email: ${customerEmail}, Valor: R$ ${(amount / 100).toFixed(2)}. Vincule em Pagamentos Pendentes.`,
-        user_email: customerEmail,
-      });
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Payment saved as pending - user not found",
-          email: customerEmail 
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      user = authUsers.users.find(
+        u => u.email?.toLowerCase() === finalEmail.toLowerCase()
       );
+
+      if (!user) {
+        console.error("User not found for email:", finalEmail);
+        
+        // Save as pending payment for manual linking
+        await supabase.from("pending_payments").insert({
+          email: finalEmail,
+          amount: paidAmount || amount,
+          transaction_id: transactionId,
+          payment_data: payload,
+          status: "pending",
+        });
+
+        // Create an admin alert for manual review
+        await supabase.from("admin_alerts").insert({
+          event_type: "payment_user_not_found",
+          message: `⚠️ Pagamento recebido mas usuário não encontrado. Email: ${finalEmail}, Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}. Vincule em Pagamentos Pendentes.`,
+          user_email: finalEmail,
+        });
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Payment saved as pending - user not found",
+            email: finalEmail 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      userId = user.id;
+      userEmail = user.email;
     }
 
-    console.log("Found user:", user.id, user.email);
+    console.log("Processing subscription for user:", userId, userEmail);
 
-    // Calculate expiration date (1 month from now for monthly, 1 year for annual)
-    // Detect if it's annual based on amount (R$ 99 = 9900 centavos)
-    const isAnnual = amount >= 9000; // R$ 90 or more is considered annual
+    // Calculate expiration date
+    // Use plan_type from intent if available, otherwise detect from amount
+    const intentPlanType = userFromIntent?.plan_type;
+    const isAnnual = intentPlanType === 'annual' || (paidAmount || amount) >= 9000;
+    
     const expiresAt = new Date();
     if (isAnnual) {
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -195,42 +244,55 @@ Deno.serve(async (req) => {
         status: "active",
         started_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString(),
-        stripe_customer_id: transactionId, // Using this field to store InfinitePay transaction ID
+        stripe_customer_id: transactionId,
         updated_at: new Date().toISOString(),
       })
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
     if (updateError) {
       console.error("Error updating subscription:", updateError);
       throw updateError;
     }
 
-    console.log("Subscription updated successfully for user:", user.id);
+    console.log("Subscription updated successfully for user:", userId);
+
+    // Mark payment intent as completed if we used one
+    if (userFromIntent?.intent_id) {
+      await supabase
+        .from("payment_intents")
+        .update({ 
+          status: "completed", 
+          completed_at: new Date().toISOString() 
+        })
+        .eq("id", userFromIntent.intent_id);
+      console.log("Payment intent marked as completed:", userFromIntent.intent_id);
+    }
 
     // Get user profile for alert
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     // Create admin alert for new PRO subscription via InfinitePay
     await supabase.from("admin_alerts").insert({
       event_type: "new_user_pro",
-      user_id: user.id,
+      user_id: userId,
       user_name: profile?.full_name,
-      user_email: user.email,
-      message: `💰 Novo assinante PRO via InfinitePay: ${profile?.full_name || user.email}. Plano: ${isAnnual ? 'Anual' : 'Mensal'}. Valor: R$ ${(amount / 100).toFixed(2)}`,
+      user_email: userEmail,
+      message: `💰 Novo assinante PRO via InfinitePay: ${profile?.full_name || userEmail}. Plano: ${isAnnual ? 'Anual' : 'Mensal'}. Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}`,
     });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Subscription activated",
-        user_id: user.id,
+        message: "Subscription activated automatically",
+        user_id: userId,
         plan: "pro",
         expires_at: expiresAt.toISOString(),
-        is_annual: isAnnual
+        is_annual: isAnnual,
+        matched_via: userFromIntent ? "payment_intent" : "email"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
