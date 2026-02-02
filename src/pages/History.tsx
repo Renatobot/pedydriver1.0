@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { DollarSign, Wallet, Clock, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Wallet, Clock, Pencil, Trash2, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
 import { useEarnings, useDeleteEarning } from '@/hooks/useEarnings';
@@ -316,20 +316,38 @@ export default function History() {
                   <p>Nenhum turno registrado no período</p>
                 </div>
               ) : (
-                shifts?.map((shift) => (
+                shifts?.map((shift) => {
+                  const isMultiPlatform = (shift.platform_ids?.length || 0) > 1 || (shift.platforms?.length || 0) > 1;
+                  const platformNames = shift.platforms?.map(p => p.name).join(', ') || shift.platform?.name || 'Plataforma';
+                  
+                  return (
                   <div key={shift.id} className="bg-card rounded-xl border border-border/50 overflow-hidden">
                     <button
                       onClick={() => toggleExpand(shift.id)}
                       className="w-full p-3 sm:p-4 flex items-center justify-between touch-feedback"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Clock className="w-5 h-5 text-primary" />
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 relative",
+                          isMultiPlatform ? "bg-amber-500/10" : "bg-primary/10"
+                        )}>
+                          {isMultiPlatform ? (
+                            <Layers className="w-5 h-5 text-amber-500" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-primary" />
+                          )}
                         </div>
                         <div className="text-left min-w-0">
-                          <p className="font-medium text-sm sm:text-base text-foreground truncate">
-                            {shift.platform?.name || 'Plataforma'}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-sm sm:text-base text-foreground truncate">
+                              {platformNames}
+                            </p>
+                            {isMultiPlatform && (
+                              <span className="text-2xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium flex-shrink-0">
+                                Multi
+                              </span>
+                            )}
+                          </div>
                           <p className="text-2xs sm:text-xs text-muted-foreground">
                             {format(parseISO(shift.date), "dd 'de' MMM", { locale: ptBR })}
                           </p>
@@ -393,7 +411,8 @@ export default function History() {
                       </div>
                     )}
                   </div>
-                ))
+                  );
+                })
               )
             )}
           </div>

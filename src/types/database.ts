@@ -49,11 +49,13 @@ export interface Shift {
   user_id: string;
   date: string;
   platform_id: string | null;
+  platform_ids: string[] | null;
   hours_worked: number;
   km_driven: number;
   created_at: string;
   updated_at: string;
   platform?: Platform;
+  platforms?: Platform[];
 }
 
 export interface UserSettings {
