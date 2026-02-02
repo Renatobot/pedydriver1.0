@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap } from 'lucide-react';
+import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap, MapPin, Users, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,11 @@ import {
   FUEL_PRICES,
   FUEL_LABELS,
   FUEL_UNITS,
-  getDefaultFuelPrice,
   supportsFuelChoice
 } from '@/lib/vehicleData';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useFuelPrices } from '@/hooks/useFuelPrices';
+import { toast } from 'sonner';
 
 interface VehicleCostCalculatorProps {
   open: boolean;
@@ -46,6 +48,20 @@ export function VehicleCostCalculator({
   const [fuelPrice, setFuelPrice] = useState(String(FUEL_PRICES[currentFuelType]));
   const [mileage, setMileage] = useState('');
   const [result, setResult] = useState<CostBreakdown | null>(null);
+  const [showContributeForm, setShowContributeForm] = useState(false);
+  const [contributePrice, setContributePrice] = useState('');
+
+  // Geolocalização e preços regionais
+  const { location, isLoading: isLoadingLocation, error: locationError, requestLocation } = useGeolocation();
+  const { 
+    priceStats, 
+    isLoadingStats, 
+    canContribute, 
+    contribute, 
+    isContributing,
+    setLocation,
+    setFuelType: setFuelTypePrices
+  } = useFuelPrices();
 
   const vehicles = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
   
@@ -59,7 +75,9 @@ export function VehicleCostCalculator({
     if (open) {
       setVehicleType(currentVehicleType);
       setFuelType(currentFuelType);
+      setFuelTypePrices(currentFuelType);
       setResult(null);
+      setShowContributeForm(false);
       
       // Se já temos um modelo selecionado, pré-selecionar
       if (currentVehicleModel) {
@@ -81,7 +99,7 @@ export function VehicleCostCalculator({
         setSelectedVehicle(null);
       }
     }
-  }, [open, currentVehicleType, currentVehicleModel, currentFuelType]);
+  }, [open, currentVehicleType, currentVehicleModel, currentFuelType, setFuelTypePrices]);
 
   // Auto-selecionar quando há apenas um veículo disponível para o tipo
   useEffect(() => {
@@ -90,6 +108,20 @@ export function VehicleCostCalculator({
     }
   }, [vehicles, selectedVehicle]);
 
+  // Atualizar preço quando localização for detectada e tiver dados regionais
+  useEffect(() => {
+    if (location) {
+      setLocation(location);
+    }
+  }, [location, setLocation]);
+
+  // Atualizar preço sugerido quando priceStats mudar
+  useEffect(() => {
+    if (priceStats && priceStats.sampleCount >= 3 && !isElectric && !isBike) {
+      setFuelPrice(String(priceStats.avgPrice));
+    }
+  }, [priceStats, isElectric, isBike]);
+
   // Atualizar preço padrão quando trocar entre elétrico e combustível ou tipo de combustível
   useEffect(() => {
     if (selectedVehicle) {
@@ -97,17 +129,70 @@ export function VehicleCostCalculator({
         setFuelPrice('0'); // Bicicleta comum não tem custo de energia
       } else if (isElectricVehicle(selectedVehicle)) {
         setFuelPrice(String(FUEL_PRICES.eletrico));
-      } else {
-        // Veículo a combustão - usar preço do combustível selecionado
+      } else if (!priceStats || priceStats.sampleCount < 3) {
+        // Veículo a combustão sem dados regionais - usar preço padrão
         setFuelPrice(String(FUEL_PRICES[fuelType]));
       }
     }
-  }, [selectedVehicle, fuelType]);
+  }, [selectedVehicle, fuelType, priceStats]);
+
+  // Atualizar tipo de combustível no hook de preços
+  useEffect(() => {
+    setFuelTypePrices(fuelType);
+  }, [fuelType, setFuelTypePrices]);
 
   const handleVehicleTypeChange = (type: VehicleType) => {
     setVehicleType(type);
     setSelectedVehicle(null);
     setResult(null);
+  };
+
+  const handleRequestLocation = async () => {
+    const loc = await requestLocation();
+    if (loc) {
+      toast.success(`Localização detectada: ${loc.city}, ${loc.state}`);
+    }
+  };
+
+  const handleFuelTypeChange = (newFuelType: FuelType) => {
+    setFuelType(newFuelType);
+    setFuelTypePrices(newFuelType);
+    // Atualizar para preço regional se disponível, senão usar padrão
+    if (priceStats && priceStats.sampleCount >= 3) {
+      // Precisamos refetch com novo tipo
+      setFuelPrice(String(FUEL_PRICES[newFuelType]));
+    } else {
+      setFuelPrice(String(FUEL_PRICES[newFuelType]));
+    }
+    setResult(null);
+  };
+
+  const handleContribute = () => {
+    if (!location || !contributePrice) return;
+    
+    const price = parseFloat(contributePrice);
+    if (isNaN(price) || price <= 0) {
+      toast.error('Informe um preço válido');
+      return;
+    }
+
+    contribute({
+      fuelType,
+      price,
+      city: location.city,
+      state: location.state,
+      latitude: location.latitude,
+      longitude: location.longitude
+    }, {
+      onSuccess: () => {
+        toast.success('Preço contribuído com sucesso! Obrigado por ajudar a comunidade.');
+        setShowContributeForm(false);
+        setContributePrice('');
+      },
+      onError: () => {
+        toast.error('Erro ao contribuir preço. Tente novamente.');
+      }
+    });
   };
 
   const handleCalculate = () => {
@@ -147,6 +232,105 @@ export function VehicleCostCalculator({
         </DialogHeader>
 
         <div className="space-y-4 sm:space-y-5 pt-2">
+          {/* Geolocation Section */}
+          {!isElectric && !isBike && (
+            <div className="rounded-lg p-3 bg-muted/50 border border-border space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="text-xs sm:text-sm font-medium">Preço Regional</span>
+                </div>
+                {!location ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRequestLocation}
+                    disabled={isLoadingLocation}
+                    className="h-7 text-xs"
+                  >
+                    {isLoadingLocation ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                        Buscando...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-3 h-3 mr-1" />
+                        Detectar Localização
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {location.city}, {location.state}
+                  </span>
+                )}
+              </div>
+              
+              {locationError && (
+                <p className="text-2xs text-destructive">{locationError}</p>
+              )}
+              
+              {location && priceStats && priceStats.sampleCount >= 3 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Users className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    Média regional: <strong className="text-foreground">R$ {priceStats.avgPrice.toFixed(2)}</strong>
+                    <span className="text-2xs ml-1">({priceStats.sampleCount} contribuições)</span>
+                  </span>
+                </div>
+              )}
+              
+              {location && (!priceStats || priceStats.sampleCount < 3) && (
+                <p className="text-2xs text-muted-foreground">
+                  Poucos dados na sua região. Contribua informando o preço que você pagou!
+                </p>
+              )}
+              
+              {location && canContribute && !showContributeForm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowContributeForm(true)}
+                  className="h-7 text-xs w-full"
+                >
+                  <Users className="w-3 h-3 mr-1" />
+                  Contribuir com preço da sua região
+                </Button>
+              )}
+              
+              {showContributeForm && (
+                <div className="space-y-2 pt-1">
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={contributePrice}
+                      onChange={(e) => setContributePrice(e.target.value)}
+                      placeholder={`Preço do ${FUEL_LABELS[fuelType]}`}
+                      className="h-8 text-xs flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleContribute}
+                      disabled={isContributing || !contributePrice}
+                      className="h-8 text-xs"
+                    >
+                      {isContributing ? 'Enviando...' : 'Contribuir'}
+                    </Button>
+                  </div>
+                  <button
+                    onClick={() => setShowContributeForm(false)}
+                    className="text-2xs text-muted-foreground hover:text-foreground"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Vehicle Type Selection */}
           <div className="space-y-2 sm:space-y-3">
             <Label className="text-sm sm:text-base">Tipo de Veículo</Label>
@@ -246,11 +430,7 @@ export function VehicleCostCalculator({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setFuelType('gasolina');
-                    setFuelPrice(String(FUEL_PRICES.gasolina));
-                    setResult(null);
-                  }}
+                  onClick={() => handleFuelTypeChange('gasolina')}
                   className={cn(
                     'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
                     fuelType === 'gasolina'
@@ -263,11 +443,7 @@ export function VehicleCostCalculator({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFuelType('etanol');
-                    setFuelPrice(String(FUEL_PRICES.etanol));
-                    setResult(null);
-                  }}
+                  onClick={() => handleFuelTypeChange('etanol')}
                   className={cn(
                     'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
                     fuelType === 'etanol'
@@ -280,11 +456,7 @@ export function VehicleCostCalculator({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFuelType('gnv');
-                    setFuelPrice(String(FUEL_PRICES.gnv));
-                    setResult(null);
-                  }}
+                  onClick={() => handleFuelTypeChange('gnv')}
                   className={cn(
                     'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
                     fuelType === 'gnv'
@@ -330,6 +502,11 @@ export function VehicleCostCalculator({
                 placeholder={isElectric ? String(FUEL_PRICES.eletrico) : String(FUEL_PRICES[fuelType])}
                 className="font-mono h-11 sm:h-12 text-sm sm:text-base"
               />
+              {priceStats && priceStats.sampleCount >= 3 && !isElectric && !isBike && (
+                <p className="text-2xs text-primary">
+                  ✓ Preço atualizado com base na média da sua região
+                </p>
+              )}
             </div>
           )}
 

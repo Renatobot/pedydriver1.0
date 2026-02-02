@@ -233,6 +233,42 @@ export type Database = {
           },
         ]
       }
+      fuel_prices: {
+        Row: {
+          city: string
+          created_at: string
+          fuel_type: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          price: number
+          state: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          fuel_type?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          price: number
+          state: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          fuel_type?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          price?: number
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_intents: {
         Row: {
           completed_at: string | null
@@ -870,6 +906,21 @@ export type Database = {
           plan_started_at: string
           plan_status: string
           user_id: string
+        }[]
+      }
+      get_average_fuel_price: {
+        Args: {
+          _city?: string
+          _days_ago?: number
+          _fuel_type?: string
+          _state: string
+        }
+        Returns: {
+          avg_price: number
+          last_updated: string
+          max_price: number
+          min_price: number
+          sample_count: number
         }[]
       }
       get_email_by_phone: { Args: { _phone: string }; Returns: string }
