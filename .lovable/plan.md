@@ -1,68 +1,95 @@
 
-# Plano: Limite de 90 Dias Acumulados por Indicação
+# Plano: Adicionar Categorias de Aluguel de Veículo e Financiamento
 
-## Visão Geral
+## Objetivo
+Adicionar duas novas categorias de gasto específicas para motoristas de aplicativo:
+- **Aluguel de Veículo** - Para quem aluga carro/moto semanalmente
+- **Financiamento/Prestação** - Para quem paga parcelas do veículo
 
-Implementar um limite máximo de **90 dias de PRO** que podem ser acumulados através de indicações. Quando o usuário atingir esse limite, ele recebe uma notificação amigável incentivando-o a continuar indicando para manter o PRO ativo.
+Isso tornará o cálculo do lucro real muito mais preciso, já que a maioria dos motoristas tem esses custos recorrentes.
 
----
-
-## Lógica do Limite
-
-| Situação | Comportamento |
-|----------|---------------|
-| Total acumulado < 90 dias | Aplica bônus normalmente |
-| Total acumulado = 90 dias | Notifica: "Continue indicando para manter seu PRO ativo sempre" |
-| Expiração começa a acontecer | Novas indicações passam a contar novamente |
-
-O limite é **dinâmico**: quando os dias começam a expirar, o usuário pode acumular novamente através de novas indicações.
-
----
-
-## O Que Será Feito
-
-### 1. Modificar Função `check_pending_referrals`
-
-Antes de aplicar o bônus, verificar quanto o indicador já acumulou:
-
-```sql
--- Calcular dias restantes de PRO por indicação
-SELECT expires_at - NOW() as days_remaining
-FROM subscriptions
-WHERE user_id = referrer_id;
-
--- Se days_remaining >= 90 dias:
---   Não adiciona mais dias
---   Marca indicação como completed
---   Cria notificação especial
-```
-
-### 2. Nova Coluna na Tabela `referrals`
-
-Adicionar campo para rastrear se o bônus foi aplicado ou não:
-
-```sql
-ALTER TABLE referrals ADD COLUMN bonus_applied BOOLEAN DEFAULT true;
-```
-
-Isso permite indicações válidas mesmo quando limite foi atingido.
-
-### 3. Notificações Personalizadas
-
-| Cenário | Notificação para Indicador |
-|---------|---------------------------|
-| Bônus aplicado normalmente | "Seu amigo ativou a indicação. +7 dias PRO!" |
-| Limite de 90 dias atingido | "Indicação confirmada! Continue indicando para manter seu PRO ativo sempre." |
-
-### 4. Atualizar UI do `ReferralCard`
-
-Mostrar informação quando próximo ou no limite:
-
+## Impacto no Lucro Real
+Atualmente o sistema calcula:
 ```text
-┌─────────────────────────────────────────────┐
-│  📊 Seu PRO expira em 85 dias               │
-│  ⚡ Continue indicando para manter ativo!   │
-└─────────────────────────────────────────────┘
+Lucro Real = Receita - Gastos Diretos - Custo por KM - Rateio de Custos Gerais
+```
+
+Com as novas categorias, esses custos fixos do veículo serão automaticamente incluídos no cálculo, mostrando o lucro verdadeiro após pagar o carro/moto.
+
+---
+
+## Etapas de Implementação
+
+### 1. Migração do Banco de Dados
+Adicionar dois novos valores ao enum `expense_category`:
+- `aluguel_veiculo` - Aluguel de Veículo
+- `financiamento` - Financiamento/Prestação
+
+**SQL:**
+```sql
+ALTER TYPE expense_category ADD VALUE 'aluguel_veiculo';
+ALTER TYPE expense_category ADD VALUE 'financiamento';
+```
+
+### 2. Atualizar Tipos TypeScript
+Arquivo: `src/types/database.ts`
+
+Adicionar os novos valores ao tipo `ExpenseCategory`:
+```typescript
+export type ExpenseCategory = 
+  'combustivel' | 'manutencao' | 'alimentacao' | 'seguro' | 
+  'aluguel' | 'aluguel_veiculo' | 'financiamento' |
+  'internet' | 'pedagio_estacionamento' | 'outros';
+```
+
+### 3. Atualizar Labels de Categorias
+Arquivo: `src/lib/formatters.ts`
+
+Adicionar os labels em português:
+```typescript
+export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
+  combustivel: 'Combustível',
+  manutencao: 'Manutenção',
+  alimentacao: 'Alimentação',
+  seguro: 'Seguro',
+  aluguel: 'Aluguel',
+  aluguel_veiculo: 'Aluguel de Veículo',   // NOVO
+  financiamento: 'Financiamento/Prestação', // NOVO
+  internet: 'Internet',
+  pedagio_estacionamento: 'Pedágio/Estac.',
+  outros: 'Outros'
+};
+```
+
+### 4. Atualizar Formulário de Gastos
+Arquivo: `src/components/forms/ExpenseForm.tsx`
+
+Adicionar as novas categorias ao schema Zod:
+```typescript
+category: z.enum([
+  'combustivel', 'manutencao', 'alimentacao', 'seguro', 
+  'aluguel', 'aluguel_veiculo', 'financiamento',
+  'internet', 'pedagio_estacionamento', 'outros'
+] as const)
+```
+
+### 5. Atualizar Modal de Edição de Gastos
+Arquivo: `src/components/history/EditExpenseModal.tsx`
+
+Mesma atualização do schema Zod para incluir as novas categorias.
+
+### 6. Atualizar Gráfico de Categorias
+Arquivo: `src/components/dashboard/ExpenseCategoryChart.tsx`
+
+Adicionar labels e cores para as novas categorias:
+```typescript
+const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  // ... existentes ...
+  aluguel_veiculo: 'Aluguel Veículo',
+  financiamento: 'Financiamento',
+};
+
+// Adicionar mais 2 cores ao array COLORS
 ```
 
 ---
@@ -71,78 +98,19 @@ Mostrar informação quando próximo ou no limite:
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `supabase/migrations/...` | Atualizar `check_pending_referrals` com lógica de limite |
-| `supabase/migrations/...` | Adicionar coluna `bonus_applied` na tabela referrals |
-| `supabase/migrations/...` | Atualizar `get_referral_stats` para retornar dias restantes |
-| `src/components/settings/ReferralCard.tsx` | Mostrar aviso quando próximo/no limite |
-| `src/hooks/useReferral.tsx` | Adicionar campo `daysRemaining` nos dados |
-
----
-
-## Detalhes Técnicos
-
-### Cálculo do Limite
-
-```sql
--- Dias de PRO restantes oriundos de indicações
-v_days_from_referrals := EXTRACT(EPOCH FROM (
-  COALESCE(expires_at, NOW()) - NOW()
-)) / 86400;
-
--- Limite de 90 dias
-IF v_days_from_referrals >= 90 THEN
-  -- Não aplica mais dias ao indicador
-  -- Indicado ainda recebe os 7 dias
-  v_apply_referrer_bonus := false;
-END IF;
-```
-
-### Mensagem Persuasiva
-
-Quando o limite é atingido ou o usuário está próximo:
-
-```typescript
-// No ReferralCard
-{daysRemaining >= 80 && (
-  <div className="bg-primary/10 rounded-lg p-3 text-sm">
-    <p className="font-medium">
-      {daysRemaining >= 90 
-        ? "Você atingiu o máximo de 90 dias acumulados!"
-        : `Faltam ${90 - daysRemaining} dias para o limite.`
-      }
-    </p>
-    <p className="text-muted-foreground text-xs mt-1">
-      Continue indicando para manter seu PRO ativo sempre.
-    </p>
-  </div>
-)}
-```
-
----
-
-## Experiência do Usuário
-
-### Indicador com Espaço para Acumular
-- Recebe os 7 dias normalmente
-- Vê contador atualizado
-
-### Indicador Próximo do Limite (80-89 dias)
-- Recebe os 7 dias (ou parcial até 90)
-- Vê aviso: "Continue indicando para manter seu PRO ativo sempre"
-
-### Indicador no Limite (90+ dias)
-- Indicação é registrada como válida
-- Indicado recebe os 7 dias normalmente
-- Indicador recebe notificação:
-  - "Indicação confirmada! Continue indicando para manter seu PRO ativo sempre."
-- Quando seus dias começarem a expirar, novas indicações voltam a contar
+| Migração SQL | Adicionar valores ao enum |
+| `src/types/database.ts` | Adicionar tipos |
+| `src/lib/formatters.ts` | Adicionar labels |
+| `src/components/forms/ExpenseForm.tsx` | Atualizar schema Zod |
+| `src/components/history/EditExpenseModal.tsx` | Atualizar schema Zod |
+| `src/components/dashboard/ExpenseCategoryChart.tsx` | Adicionar labels e cores |
 
 ---
 
 ## Resultado Esperado
+Após a implementação, os motoristas poderão:
 
-- Limite justo de 90 dias evita acúmulo infinito
-- Indicador sabe que precisa continuar indicando para manter benefício
-- Indicado sempre recebe seu bônus (não é penalizado)
-- Mensagem persuasiva incentiva engajamento contínuo
-- Sistema se "reseta" naturalmente conforme dias expiram
+1. Registrar gastos de **Aluguel de Veículo** (pagamento semanal/mensal do aluguel do carro/moto)
+2. Registrar gastos de **Financiamento/Prestação** (parcelas do veículo próprio)
+3. Ver esses custos no gráfico de pizza de gastos
+4. Ter um **lucro real mais preciso** que considera todos os custos do veículo
