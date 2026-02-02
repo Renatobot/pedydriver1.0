@@ -546,6 +546,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -745,6 +775,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       mark_alert_as_read: { Args: { _alert_id: string }; Returns: boolean }
       mark_all_alerts_as_read: { Args: never; Returns: boolean }
+      notify_subscription_update: {
+        Args: { _plan: string; _status: string; _target_user_id: string }
+        Returns: boolean
+      }
       verify_user_for_password_reset: {
         Args: { _email: string; _full_name: string; _phone: string }
         Returns: string
