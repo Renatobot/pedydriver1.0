@@ -247,7 +247,7 @@ export default function Settings() {
             <div className="space-y-2 sm:space-y-3">
               <Label className="flex items-center gap-2 text-sm sm:text-base">
                 <Scale className="w-4 h-4" />
-                Rateio de Custos Gerais
+                Dividir Custos Gerais
               </Label>
               <Select value={distributionRule} onValueChange={(v) => setDistributionRule(v as CostDistributionRule)}>
                 <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">

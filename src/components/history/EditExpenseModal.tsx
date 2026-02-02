@@ -153,10 +153,10 @@ export function EditExpenseModal({ expense, open, onClose }: EditExpenseModalPro
               onValueChange={(v) => setValue('platform_id', v === 'geral' ? undefined : v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Geral (rateio)" />
+                <SelectValue placeholder="Geral (divide entre todas)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="geral">Geral (rateio)</SelectItem>
+                <SelectItem value="geral">Geral (divide entre todas)</SelectItem>
                 {platforms?.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
