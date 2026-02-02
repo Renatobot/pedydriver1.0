@@ -1,112 +1,83 @@
 
-# Plano: Controle de Turno por Odômetro e Métricas Bruto vs Líquido
+# Plano: Correção do Nome/Logo e Valor Bruto no ProfitCard
 
-## Visão Geral
+## Problema 1: Nome e Logo do PWA
 
-Implementar duas funcionalidades importantes:
+### Diagnóstico
+Os arquivos de configuração (`manifest.json`, `index.html`) já estão corretos com o nome "PEDY Driver". O problema está nos **ícones do PWA** que provavelmente ainda são os ícones padrão do Lovable:
 
-1. **Iniciar/Finalizar Turno por Odômetro**: Registrar a quilometragem no início e fim do turno
-2. **Métricas Bruto vs Líquido**: Exibir R$/km e R$/hora baseado tanto na receita bruta quanto no lucro líquido
+- `public/icons/icon-192.png`
+- `public/icons/icon-512.png`
+
+### Solução
+Substituir os ícones por novos ícones personalizados do PEDY Driver. O design seguirá o estilo do favicon.svg existente:
+- Fundo escuro (#0f1419)
+- Gradiente verde (#10b981 → #059669)
+- Símbolo de check/dinheiro
+
+### Arquivos a modificar
+| Arquivo | Ação |
+|---------|------|
+| `public/icons/icon-192.png` | Substituir por ícone PEDY Driver |
+| `public/icons/icon-512.png` | Substituir por ícone PEDY Driver |
 
 ---
 
-## Feature 1: Controle de Turno por Odômetro
+## Problema 2: ProfitCard sem Valor Bruto
 
-### Nova Tabela no Banco
-
-```sql
-CREATE TABLE active_shifts (
-  id UUID PRIMARY KEY,
-  user_id UUID NOT NULL,
-  platform_id UUID,
-  started_at TIMESTAMPTZ DEFAULT now(),
-  start_km NUMERIC NOT NULL,
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
--- Com índice único por usuário e RLS policies
+### Diagnóstico
+O componente `ProfitCard.tsx` mostra apenas o lucro líquido:
+```typescript
+<ProfitCard value={metrics.realProfit} />
 ```
 
-### Novos Componentes
+O usuário quer ver também o valor bruto (receita total) para comparação.
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/hooks/useActiveShift.tsx` | Hook para gerenciar turno ativo |
-| `src/components/shifts/ActiveShiftBanner.tsx` | Banner mostrando turno em andamento |
-| `src/components/shifts/StartShiftModal.tsx` | Modal para iniciar turno |
-| `src/components/shifts/EndShiftModal.tsx` | Modal para finalizar turno |
+### Solução
+Atualizar o `ProfitCard` para aceitar e exibir um valor secundário (bruto), similar ao que foi implementado no `MetricCard`. Isso inclui:
+1. Adicionar prop `secondaryValue` opcional
+2. Exibir o valor bruto abaixo do líquido
+3. Adicionar tooltip explicativo
 
-### Fluxo do Usuário
+### Arquivos a modificar
+| Arquivo | Ação |
+|---------|------|
+| `src/components/dashboard/ProfitCard.tsx` | Adicionar suporte a valor bruto |
+| `src/pages/Dashboard.tsx` | Passar `totalRevenue` como valor secundário |
 
+---
+
+## Implementação Detalhada
+
+### ProfitCard Atualizado
+
+O card principal mostrará:
+- **Valor grande**: Lucro Real (líquido)
+- **Valor secundário**: Receita Bruta (para comparação)
+- **Tooltip**: Explicação da diferença
+
+Layout visual:
 ```text
-1. Usuário clica "Iniciar Turno" no Dashboard
-   ↓
-2. Informa plataforma + km atual do odômetro
-   ↓
-3. Banner aparece: "Turno ativo desde XX:XX"
-   ↓
-4. Ao finalizar, informa km final
-   ↓
-5. Sistema calcula: km_final - km_inicial = km rodados
-   Sistema calcula: now() - started_at = horas trabalhadas
-   ↓
-6. Cria registro na tabela shifts automaticamente
++--------------------------------------------------+
+| LUCRO REAL                              [↑/↓]    |
+|                                                  |
+|            R$ 450,00    (líquido)                |
+|            R$ 680,00 bruto                       |
++--------------------------------------------------+
 ```
 
----
-
-## Feature 2: Métricas Bruto vs Líquido
-
-### Fórmulas
+### Uso no Dashboard
 
 ```typescript
-// Bruto (receita / trabalho)
-brutoPorKm = totalRevenue / totalKm
-brutoPorHora = totalRevenue / totalHours
-
-// Líquido (lucro / trabalho)
-liquidoPorKm = realProfit / totalKm
-liquidoPorHora = realProfit / totalHours
+<ProfitCard 
+  value={metrics.realProfit}           // Líquido (principal)
+  secondaryValue={metrics.totalRevenue} // Bruto (secundário)
+/>
 ```
-
-### Alterações no Dashboard
-
-- Atualizar `useDashboard.tsx` para retornar métricas brutas e líquidas
-- Atualizar `MetricCard.tsx` para suportar valor secundário (bruto como principal, líquido como subtítulo)
-- Cards de R$/hora e R$/km mostrarão ambos valores
-
-### Alterações no QuickEntry
-
-- Importar `costPerKm` das configurações do usuário
-- Calcular e exibir tanto bruto quanto líquido em tempo real
-- Nova UI com 4 cards: R$/km Bruto, R$/hora Bruto, R$/km Líquido, R$/hora Líquido
-
----
-
-## Arquivos a Criar
-
-1. `src/hooks/useActiveShift.tsx` - Hook para turno ativo
-2. `src/components/shifts/ActiveShiftBanner.tsx` - Banner no dashboard
-3. `src/components/shifts/StartShiftModal.tsx` - Modal início
-4. `src/components/shifts/EndShiftModal.tsx` - Modal fim
-
-## Arquivos a Modificar
-
-1. **Migração SQL** - Criar tabela `active_shifts`
-2. `src/hooks/useDashboard.tsx` - Adicionar métricas brutas
-3. `src/pages/Dashboard.tsx` - Adicionar banner + botão iniciar turno
-4. `src/pages/QuickEntry.tsx` - Mostrar métricas bruto/líquido
-5. `src/components/dashboard/MetricCard.tsx` - Suportar valor secundário
-6. `src/components/forms/ShiftForm.tsx` - Toggle modo rápido/odômetro (opcional)
 
 ---
 
 ## Resultado Final
 
-O motorista poderá:
-
-- Iniciar turno informando apenas o km do odômetro
-- Ver banner com tempo decorrido durante o trabalho
-- Finalizar turno informando km final (sistema calcula tudo)
-- Ver claramente quanto ganha bruto vs líquido por km/hora
-- Entender a diferença real entre receita aparente e lucro
+1. **PWA**: Ícones personalizados PEDY Driver aparecerão quando o usuário instalar o app
+2. **Dashboard**: Card principal mostrará lucro líquido E receita bruta para fácil comparação
