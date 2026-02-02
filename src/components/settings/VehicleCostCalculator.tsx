@@ -13,6 +13,8 @@ import {
   calculateCostPerKm, 
   CostBreakdown,
   isElectricVehicle,
+  isBicycle,
+  hasEnergyCost,
   getConsumptionUnit,
   DEFAULT_FUEL_PRICE,
   DEFAULT_ELECTRICITY_PRICE
@@ -40,13 +42,19 @@ export function VehicleCostCalculator({
   const vehicles = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
   
   const isElectric = selectedVehicle ? isElectricVehicle(selectedVehicle) : false;
+  const isBike = selectedVehicle ? isBicycle(selectedVehicle) : false;
+  const showEnergyInput = selectedVehicle ? hasEnergyCost(selectedVehicle) : true;
 
   // Atualizar preço padrão quando trocar entre elétrico e combustível
   useEffect(() => {
     if (selectedVehicle) {
-      const newIsElectric = isElectricVehicle(selectedVehicle);
-      const defaultPrice = newIsElectric ? DEFAULT_ELECTRICITY_PRICE : DEFAULT_FUEL_PRICE;
-      setFuelPrice(String(defaultPrice));
+      if (isBicycle(selectedVehicle)) {
+        setFuelPrice('0'); // Bicicleta comum não tem custo de energia
+      } else {
+        const newIsElectric = isElectricVehicle(selectedVehicle);
+        const defaultPrice = newIsElectric ? DEFAULT_ELECTRICITY_PRICE : DEFAULT_FUEL_PRICE;
+        setFuelPrice(String(defaultPrice));
+      }
     }
   }, [selectedVehicle]);
 
@@ -122,6 +130,35 @@ export function VehicleCostCalculator({
                 <Bike className="w-5 h-5" />
                 <span className="font-medium text-sm sm:text-base">Moto</span>
               </button>
+              <button
+                type="button"
+                onClick={() => handleVehicleTypeChange('bicicleta')}
+                className={cn(
+                  'flex items-center justify-center gap-2 p-3 rounded-xl border transition-all touch-feedback min-h-[48px]',
+                  vehicleType === 'bicicleta'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                )}
+              >
+                <Bike className="w-5 h-5" />
+                <span className="font-medium text-sm sm:text-base">Bicicleta</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleVehicleTypeChange('bicicleta_eletrica')}
+                className={cn(
+                  'flex items-center justify-center gap-2 p-3 rounded-xl border transition-all touch-feedback min-h-[48px]',
+                  vehicleType === 'bicicleta_eletrica'
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                )}
+              >
+                <div className="flex items-center gap-0.5">
+                  <Bike className="w-5 h-5" />
+                  <Zap className="w-3 h-3" />
+                </div>
+                <span className="font-medium text-sm sm:text-base">E-Bike</span>
+              </button>
             </div>
           </div>
 
@@ -142,36 +179,50 @@ export function VehicleCostCalculator({
               <SelectContent>
                 {vehicles.map((vehicle) => (
                   <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
-                    {vehicle.name} ({vehicle.consumptionCity} {getConsumptionUnit(vehicle)} cidade)
+                    {isBicycle(vehicle) 
+                      ? vehicle.name 
+                      : `${vehicle.name} (${vehicle.consumptionCity} ${getConsumptionUnit(vehicle)} cidade)`
+                    }
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Fuel/Energy Price */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="flex items-center gap-2 text-sm sm:text-base">
-              {isElectric ? (
-                <Zap className="w-4 h-4 text-yellow-500" />
-              ) : (
-                <Fuel className="w-4 h-4" />
-              )}
-              {isElectric ? 'Preço da Energia (R$/kWh)' : 'Preço do Combustível (R$/L)'}
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={fuelPrice}
-              onChange={(e) => {
-                setFuelPrice(e.target.value);
-                setResult(null);
-              }}
-              placeholder={isElectric ? String(DEFAULT_ELECTRICITY_PRICE) : String(DEFAULT_FUEL_PRICE)}
-              className="font-mono h-11 sm:h-12 text-sm sm:text-base"
-            />
-          </div>
+          {/* Fuel/Energy Price - Only show for vehicles with energy cost */}
+          {showEnergyInput && (
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
+                {isElectric ? (
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                ) : (
+                  <Fuel className="w-4 h-4" />
+                )}
+                {isElectric ? 'Preço da Energia (R$/kWh)' : 'Preço do Combustível (R$/L)'}
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={fuelPrice}
+                onChange={(e) => {
+                  setFuelPrice(e.target.value);
+                  setResult(null);
+                }}
+                placeholder={isElectric ? String(DEFAULT_ELECTRICITY_PRICE) : String(DEFAULT_FUEL_PRICE)}
+                className="font-mono h-11 sm:h-12 text-sm sm:text-base"
+              />
+            </div>
+          )}
+
+          {/* Info for regular bicycles */}
+          {isBike && (
+            <div className="rounded-lg p-3 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400">
+              <p className="text-xs sm:text-sm">
+                🚴 Bicicletas comuns não têm custo de energia! O cálculo considera apenas manutenção e desgaste.
+              </p>
+            </div>
+          )}
 
           {/* Mileage (Optional) */}
           <div className="space-y-1.5 sm:space-y-2">
@@ -195,7 +246,7 @@ export function VehicleCostCalculator({
           {/* Calculate Button */}
           <Button 
             onClick={handleCalculate}
-            disabled={!selectedVehicle || !fuelPrice}
+            disabled={!selectedVehicle || (!isBike && !fuelPrice)}
             className="w-full h-11 sm:h-12 text-sm sm:text-base touch-feedback"
           >
             <Calculator className="w-4 h-4 mr-2" />
@@ -212,19 +263,22 @@ export function VehicleCostCalculator({
               </div>
               
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    {result.isElectric ? (
-                      <Zap className="w-4 h-4 text-yellow-500" />
-                    ) : (
-                      <Fuel className="w-4 h-4 text-orange-500" />
-                    )}
-                    <span className="text-xs sm:text-sm">{result.isElectric ? 'Energia' : 'Combustível'}</span>
+                {/* Energy cost - only show if not a regular bicycle */}
+                {!result.isBicycle && (
+                  <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      {result.isElectric ? (
+                        <Zap className="w-4 h-4 text-yellow-500" />
+                      ) : (
+                        <Fuel className="w-4 h-4 text-orange-500" />
+                      )}
+                      <span className="text-xs sm:text-sm">{result.isElectric ? 'Energia' : 'Combustível'}</span>
+                    </div>
+                    <span className="font-mono text-sm sm:text-base font-medium">
+                      R$ {result.fuelCost.toFixed(2)}/km
+                    </span>
                   </div>
-                  <span className="font-mono text-sm sm:text-base font-medium">
-                    R$ {result.fuelCost.toFixed(2)}/km
-                  </span>
-                </div>
+                )}
                 
                 <div className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2">
