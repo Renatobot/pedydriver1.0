@@ -6,6 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Valores esperados em centavos
+const MONTHLY_AMOUNT = 1490;
+const ANNUAL_AMOUNT = 9900;
+const AMOUNT_TOLERANCE = 100; // Tolerância de R$ 1,00 para variações
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -62,78 +67,132 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Look for pending payments from the last 2 hours
+    // ============================================
+    // SECURITY FIX: Buscar payment_intent DO PRÓPRIO USUÁRIO primeiro
+    // ============================================
+    
+    // Janela de tempo reduzida: 30 minutos (mais seguro que 2h)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+    console.log("Looking for user's payment intent since:", thirtyMinutesAgo);
+
+    // 1. Primeiro buscar o payment_intent do próprio usuário
+    const { data: userIntent, error: intentError } = await supabase
+      .from("payment_intents")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .gte("created_at", thirtyMinutesAgo)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (intentError) {
+      console.error("Error fetching user's payment intent:", intentError);
+    }
+
+    // Se encontrou intent completado recentemente, verificar subscription
+    const { data: completedIntent } = await supabase
+      .from("payment_intents")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .gte("completed_at", thirtyMinutesAgo)
+      .order("completed_at", { ascending: false })
+      .limit(1);
+
+    if (completedIntent && completedIntent.length > 0) {
+      console.log("Found completed payment intent - subscription should be active already");
+      // Force refresh the subscription status
+      const { data: freshSub } = await supabase
+        .from("subscriptions")
+        .select("plan, status")
+        .eq("user_id", userId)
+        .single();
+
+      if (freshSub?.plan === "pro" && freshSub?.status === "active") {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: "Subscription already activated via webhook",
+            already_pro: true 
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Se não tem intent pendente, não pode reclamar pagamento
+    if (!userIntent || userIntent.length === 0) {
+      console.log("No pending payment intent found for user:", userId);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "No payment intent found",
+          hint: "Please start the payment process first"
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const intent = userIntent[0];
+    console.log("Found user's payment intent:", intent.id, "Plan:", intent.plan_type);
+
+    // 2. Determinar o valor esperado baseado no tipo de plano do intent
+    const expectedAmount = intent.plan_type === 'annual' ? ANNUAL_AMOUNT : MONTHLY_AMOUNT;
+    const minAmount = expectedAmount - AMOUNT_TOLERANCE;
+    const maxAmount = expectedAmount + AMOUNT_TOLERANCE;
+
+    console.log(`Looking for pending payment with amount between ${minAmount} and ${maxAmount} (expected: ${expectedAmount})`);
+
+    // 3. Buscar pending_payments com valor correspondente ao plano do usuário
+    // Usa janela mais ampla (2h) para pending_payments pois o webhook pode demorar
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-
-    console.log("Looking for pending payments since:", twoHoursAgo);
-
-    // Try to find a pending payment that hasn't been linked yet
+    
     const { data: pendingPayments, error: fetchError } = await supabase
       .from("pending_payments")
       .select("*")
       .eq("status", "pending")
+      .gte("amount", minAmount)
+      .lte("amount", maxAmount)
       .gte("created_at", twoHoursAgo)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true }); // FIFO - primeiro pagamento primeiro
 
     if (fetchError) {
       console.error("Error fetching pending payments:", fetchError);
       throw fetchError;
     }
 
-    console.log("Found pending payments:", pendingPayments?.length || 0);
+    console.log("Found matching pending payments:", pendingPayments?.length || 0);
 
     if (!pendingPayments || pendingPayments.length === 0) {
-      // No pending payment found - check if there's a payment_intent that was completed
-      const { data: completedIntent } = await supabase
-        .from("payment_intents")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("status", "completed")
-        .gte("completed_at", twoHoursAgo)
-        .order("completed_at", { ascending: false })
-        .limit(1);
-
-      if (completedIntent && completedIntent.length > 0) {
-        console.log("Found completed payment intent - subscription should be active already");
-        // Force refresh the subscription status
-        const { data: freshSub } = await supabase
-          .from("subscriptions")
-          .select("plan, status")
-          .eq("user_id", userId)
-          .single();
-
-        if (freshSub?.plan === "pro" && freshSub?.status === "active") {
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: "Subscription already activated via webhook",
-              already_pro: true 
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      }
-
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "No pending payment found",
-          hint: "Payment may still be processing or was already claimed"
+          message: "No matching pending payment found",
+          hint: "Payment may still be processing or amount doesn't match your plan",
+          expected_plan: intent.plan_type,
+          expected_amount: expectedAmount
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get the most recent pending payment
-    const payment = pendingPayments[0];
-    const amount = payment.amount;
+    // Preferir pagamento com intent_id vinculado a este usuário
+    let payment = pendingPayments.find(p => p.intent_id === intent.id);
+    
+    // Se não encontrou com intent_id, usar o primeiro disponível (FIFO)
+    if (!payment) {
+      payment = pendingPayments[0];
+      console.log("Using FIFO matching - no intent_id link found");
+    } else {
+      console.log("Found payment with matching intent_id");
+    }
 
+    const amount = payment.amount;
     console.log("Claiming payment:", payment.id, "Amount:", amount);
 
-    // Determine plan type based on amount
-    // R$ 14,90 = 1490 centavos = mensal
-    // R$ 99,00 = 9900 centavos = anual
-    const isAnnual = amount >= 9000;
+    // Determinar tipo de plano baseado no intent (não no amount)
+    const isAnnual = intent.plan_type === 'annual';
 
     // Calculate expiration date
     const expiresAt = new Date();
@@ -179,6 +238,19 @@ Deno.serve(async (req) => {
       // Don't throw - subscription was already updated
     }
 
+    // Mark intent as completed
+    const { error: intentUpdateError } = await supabase
+      .from("payment_intents")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", intent.id);
+
+    if (intentUpdateError) {
+      console.error("Error updating intent status:", intentUpdateError);
+    }
+
     // Get user profile for alert
     const { data: profile } = await supabase
       .from("profiles")
@@ -192,10 +264,10 @@ Deno.serve(async (req) => {
       user_id: userId,
       user_name: profile?.full_name,
       user_email: userEmail,
-      message: `💰 Novo assinante PRO via claim automático: ${profile?.full_name || userEmail}. Plano: ${isAnnual ? "Anual" : "Mensal"}. Valor: R$ ${(amount / 100).toFixed(2)}`,
+      message: `💰 Novo assinante PRO via claim seguro: ${profile?.full_name || userEmail}. Plano: ${isAnnual ? "Anual" : "Mensal"}. Valor: R$ ${(amount / 100).toFixed(2)}. Intent: ${intent.id.substring(0, 8)}`,
     });
 
-    console.log("Payment claimed successfully!");
+    console.log("Payment claimed successfully with secure matching!");
 
     return new Response(
       JSON.stringify({
@@ -204,6 +276,7 @@ Deno.serve(async (req) => {
         plan: "pro",
         is_annual: isAnnual,
         expires_at: expiresAt.toISOString(),
+        intent_id: intent.id,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
