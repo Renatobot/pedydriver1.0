@@ -1,76 +1,73 @@
 
-# Plano: Alternância entre Tema Claro e Escuro
+# Plano: Preço Âncora de R$ 29,90 no PIX
 
 ## Resumo
-Permitir que o usuário alterne entre modo claro e escuro diretamente nas configurações do app, utilizando a biblioteca `next-themes` que já está instalada no projeto.
+Atualizar a exibição de preços no card PRO e na seção de pagamento para mostrar o preço "original" de R$ 29,90 riscado, com o preço real de R$ 14,90 em destaque, criando uma percepção de 50% de desconto via PIX.
 
 ---
 
-## O que será implementado
+## Alterações Visuais
 
-### 1. Nova seção "Aparência" na página de Configurações
-- Toggle visual com ícones de Sol/Lua para alternar entre temas
-- Três opções: Claro, Escuro e Automático (segue o sistema)
-- Botões estilizados seguindo o padrão visual existente (como o seletor de veículo)
+### Card PRO - Seção de Preço (linha 131-139)
+**Antes:**
+```
+R$ 14,90/mês
+ou R$ 99/ano (economize 45%)
+```
 
-### 2. Tema Claro
-O app atualmente só tem cores configuradas para o modo escuro. Será criado um conjunto completo de cores para o modo claro:
-- Fundo claro profissional (branco/cinza suave)
-- Cards com sombras sutis
-- Textos escuros para boa legibilidade
-- Mantém a identidade visual (verde primário para lucros, vermelho para despesas)
+**Depois:**
+```
+~R$ 29,90~ R$ 14,90/mês ← preço riscado + preço real
+ou R$ 149/ano ~R$ 99~ (economize 34%) ← ajustar proporcionalmente
+```
 
-### 3. Persistência automática
-O `next-themes` automaticamente salva a preferência do usuário no `localStorage`, então a escolha será lembrada entre sessões.
+### Seção de Pagamento (linha 179-184)
+**Antes:**
+```
+💳 Pagamento seguro via PIX ou Cartão
+PIX sem taxa • Cartão com taxa da operadora
+```
+
+**Depois:**
+```
+💳 Pagamento seguro
+
+PIX (sem taxa adicional)
+~R$ 29,90~ → R$ 14,90/mês
+
+Cartão de crédito
+R$ 14,90/mês + taxa da operadora
+```
 
 ---
 
-## Arquivos que serão modificados/criados
+## Estilo Visual
+
+| Elemento | Estilo |
+|----------|--------|
+| R$ 29,90 riscado | `text-muted-foreground line-through text-lg` |
+| R$ 14,90 real | `text-3xl font-bold text-emerald-500` (destaque verde) |
+| Badge PIX | Pequeno badge verde "sem taxa" |
+| Info cartão | Texto neutro, menor, discreto |
+
+---
+
+## Arquivo a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/theme-provider.tsx` | **NOVO** - Wrapper do ThemeProvider |
-| `src/App.tsx` | Adicionar ThemeProvider envolvendo todo o app |
-| `src/index.css` | Adicionar variáveis CSS para tema claro (`:root` sem `.dark`) |
-| `src/pages/Settings.tsx` | Adicionar seção "Aparência" com toggle de tema |
-| `index.html` | Remover `class="dark"` fixo do `<html>` (será gerenciado dinamicamente) |
+| `src/pages/Upgrade.tsx` | Atualizar exibição de preços com âncora de R$ 29,90 riscado |
 
 ---
 
-## Detalhes Técnicos
+## Implementação
 
-### Componente ThemeProvider (novo)
-```text
-src/components/theme-provider.tsx
-```
-- Cria um wrapper reutilizável do next-themes
-- Configurado com `attribute="class"` para funcionar com Tailwind
-- `defaultTheme="dark"` mantém o comportamento atual como padrão
-- `enableSystem` permite opção automática
+1. Modificar a seção de preço do card PRO (linhas 131-139) para mostrar:
+   - R$ 29,90 riscado em cinza
+   - R$ 14,90 em destaque verde
+   - Manter info do plano anual
 
-### Variáveis CSS para tema claro
-Cores profissionais que mantêm a identidade:
-- Background: `#fafafa` (cinza muito claro)
-- Cards: `#ffffff` (branco puro)
-- Textos: tons de cinza escuro
-- Primary (verde): mantido igual
-- Destructive (vermelho): mantido igual
-
-### UI na página de Configurações
-Nova seção "Aparência" com 3 botões:
-- **Sol** = Modo Claro
-- **Lua** = Modo Escuro  
-- **Monitor** = Automático (segue sistema)
-
-Estilo similar aos botões de "Tipo de Veículo" já existentes.
-
----
-
-## Fluxo de Implementação
-
-1. Criar arquivo `theme-provider.tsx`
-2. Envolver app com ThemeProvider
-3. Adicionar variáveis CSS do tema claro
-4. Atualizar `index.html` removendo classe fixa
-5. Adicionar controle de tema em Settings
-6. Testar transições e persistência
+2. Redesenhar a seção de pagamento (linhas 179-184) para:
+   - Separar claramente PIX vs Cartão
+   - Mostrar preço âncora riscado no PIX
+   - Indicar taxa adicional no cartão de forma discreta
