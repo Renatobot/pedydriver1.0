@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap, MapPin, Users, RefreshCw, Crown, TrendingUp } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap, MapPin, Users, RefreshCw, Crown, TrendingUp, Search, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { VehicleType, FuelType } from '@/types/database';
 import { 
@@ -62,6 +63,9 @@ export function VehicleCostCalculator({
   const [result, setResult] = useState<CostBreakdown | null>(null);
   const [showContributeForm, setShowContributeForm] = useState(false);
   const [contributePrice, setContributePrice] = useState('');
+  const [vehicleSearch, setVehicleSearch] = useState('');
+  const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Geolocalização e preços regionais
   const { location, isLoading: isLoadingLocation, error: locationError, requestLocation } = useGeolocation();
@@ -75,7 +79,16 @@ export function VehicleCostCalculator({
     setFuelType: setFuelTypePrices
   } = useFuelPrices();
 
-  const vehicles = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
+  const vehicles = useMemo(() => getVehiclesByType(vehicleType).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')), [vehicleType]);
+  
+  // Filtrar veículos pela busca
+  const filteredVehicles = useMemo(() => {
+    if (!vehicleSearch.trim()) return vehicles;
+    const search = vehicleSearch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return vehicles.filter(v => 
+      v.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(search)
+    );
+  }, [vehicles, vehicleSearch]);
   
   const isElectric = selectedVehicle ? isElectricVehicle(selectedVehicle) : false;
   const isBike = selectedVehicle ? isBicycle(selectedVehicle) : false;
@@ -447,34 +460,97 @@ export function VehicleCostCalculator({
             </div>
           </div>
 
-          {/* Vehicle Model Selection */}
+          {/* Vehicle Model Selection with Search */}
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-sm sm:text-base">Modelo do Veículo</Label>
-            <Select 
-              value={selectedVehicle?.name || ''} 
-              onValueChange={(name) => {
-                const vehicle = vehicles.find(v => v.name === name);
-                setSelectedVehicle(vehicle || null);
-                setResult(null);
-              }}
-            >
-              <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
-                <SelectValue placeholder="Selecione o modelo..." />
-              </SelectTrigger>
-              <SelectContent>
-                {vehicles.map((vehicle) => {
-                  const consumption = getConsumptionByFuelType(vehicle, fuelType);
-                  return (
-                    <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
-                      {isBicycle(vehicle) 
-                        ? vehicle.name 
-                        : `${vehicle.name} (${consumption.city} ${consumption.unit} cidade)`
-                      }
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+            <Popover open={vehiclePopoverOpen} onOpenChange={(open) => {
+              setVehiclePopoverOpen(open);
+              if (open) {
+                setVehicleSearch('');
+                setTimeout(() => searchInputRef.current?.focus(), 100);
+              }
+            }}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex items-center justify-between w-full h-11 sm:h-12 px-3 rounded-lg border bg-card text-left transition-colors",
+                    "hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                    selectedVehicle ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  <span className="truncate text-sm sm:text-base">
+                    {selectedVehicle ? selectedVehicle.name : "Selecione o modelo..."}
+                  </span>
+                  <ChevronDown className="w-4 h-4 opacity-50 flex-shrink-0 ml-2" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover border border-border shadow-lg z-50" 
+                align="start"
+                sideOffset={4}
+              >
+                {/* Search Input */}
+                <div className="p-2 border-b border-border">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Buscar modelo..."
+                      value={vehicleSearch}
+                      onChange={(e) => setVehicleSearch(e.target.value)}
+                      className="pl-8 h-9 text-sm bg-background"
+                    />
+                  </div>
+                </div>
+                
+                {/* Vehicle List */}
+                <ScrollArea className="max-h-[200px]">
+                  <div className="p-1">
+                    {filteredVehicles.length === 0 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        Nenhum modelo encontrado
+                      </div>
+                    ) : (
+                      filteredVehicles.map((vehicle) => {
+                        const consumption = getConsumptionByFuelType(vehicle, fuelType);
+                        const isSelected = selectedVehicle?.name === vehicle.name;
+                        return (
+                          <button
+                            key={vehicle.name}
+                            type="button"
+                            onClick={() => {
+                              setSelectedVehicle(vehicle);
+                              setResult(null);
+                              setVehiclePopoverOpen(false);
+                              setVehicleSearch('');
+                            }}
+                            className={cn(
+                              "flex items-center justify-between w-full px-2 py-2.5 rounded-md text-left text-sm transition-colors",
+                              isSelected 
+                                ? "bg-primary/10 text-primary" 
+                                : "hover:bg-muted"
+                            )}
+                          >
+                            <span className="truncate">
+                              {isBicycle(vehicle) 
+                                ? vehicle.name 
+                                : `${vehicle.name} (${consumption.city} ${consumption.unit})`
+                              }
+                            </span>
+                            {isSelected && <Check className="w-4 h-4 flex-shrink-0 ml-2" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+            <p className="text-2xs text-muted-foreground">
+              {vehicles.length} modelos disponíveis em ordem alfabética
+            </p>
           </div>
 
           {/* Fuel Type Selector - Only for combustion vehicles */}
