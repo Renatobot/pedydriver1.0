@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/formatters';
@@ -16,15 +17,15 @@ const COLORS = [
   'hsl(25 95% 53%)',
 ];
 
-export function PlatformComparisonChart({ platformMetrics }: PlatformComparisonChartProps) {
+export const PlatformComparisonChart = memo(function PlatformComparisonChart({ platformMetrics }: PlatformComparisonChartProps) {
   if (platformMetrics.length === 0) return null;
 
-  const chartData = platformMetrics.slice(0, 6).map((pm, index) => ({
+  const chartData = useMemo(() => platformMetrics.slice(0, 6).map((pm, index) => ({
     name: pm.platform.name,
     profit: pm.profit,
     revenue: pm.revenue,
     color: pm.platform.color || COLORS[index % COLORS.length],
-  }));
+  })), [platformMetrics]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -80,4 +81,4 @@ export function PlatformComparisonChart({ platformMetrics }: PlatformComparisonC
       </CardContent>
     </Card>
   );
-}
+});

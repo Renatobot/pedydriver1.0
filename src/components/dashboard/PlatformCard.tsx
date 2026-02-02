@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Car, Bike, Truck, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
@@ -15,7 +16,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   package: Package
 };
 
-export function PlatformCard({ data, rank }: PlatformCardProps) {
+export const PlatformCard = memo(function PlatformCard({ data, rank }: PlatformCardProps) {
   const Icon = iconMap[data.platform.icon || 'car'] || Car;
   const isPositive = data.profit >= 0;
 
@@ -73,4 +74,4 @@ export function PlatformCard({ data, rank }: PlatformCardProps) {
       </div>
     </div>
   );
-}
+});

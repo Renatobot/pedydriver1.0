@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/formatters';
@@ -15,7 +15,7 @@ interface ProfitEvolutionChartProps {
   costPerKm: number;
 }
 
-export function ProfitEvolutionChart({ 
+export const ProfitEvolutionChart = memo(function ProfitEvolutionChart({
   earnings, 
   expenses, 
   range, 
@@ -144,4 +144,4 @@ export function ProfitEvolutionChart({
       </CardContent>
     </Card>
   );
-}
+});
