@@ -12,8 +12,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
-// Using PWA icon which is properly sized (192x192) for display dimensions
-const logo3d = '/icons/icon-192.png';
+// Using optimized WebP icon for better performance
+import logo3d from '@/assets/logo-optimized.webp';
 
 const REFERRAL_CODE_KEY = 'pedy_referral_code';
 

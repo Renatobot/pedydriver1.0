@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-// Using PWA icon which is properly sized for display
-const logo3d = '/icons/icon-192.png';
+// Using optimized WebP for better performance
+import logo3d from '@/assets/logo-optimized.webp';
 import { cn } from '@/lib/utils';
 
 interface SplashScreenProps {
