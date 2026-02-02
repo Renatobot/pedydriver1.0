@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Clock, Navigation, Banknote, Wallet, CreditCard, Hash, Play } from 'lucide-react';
+import { Clock, Navigation, Banknote, Wallet, CreditCard, Hash, Play, Info, Layers } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfitCard } from '@/components/dashboard/ProfitCard';
 import { MetricCard } from '@/components/dashboard/MetricCard';
@@ -36,6 +36,7 @@ export default function Dashboard() {
     weekStartsOn,
     costPerKm,
     refetch,
+    hasMultiPlatformShifts,
   } = useDashboard(range);
   const { user } = useAuth();
   const { hasActiveShift } = useActiveShift();
@@ -208,9 +209,27 @@ export default function Dashboard() {
               {/* Platform Comparison */}
               {platformMetrics.length > 0 && (
                 <div className="space-y-3 sm:space-y-4">
-                  <h2 className="text-base sm:text-lg font-semibold text-foreground">
-                    Por Plataforma
-                  </h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-semibold text-foreground">
+                      Por Plataforma
+                    </h2>
+                    {hasMultiPlatformShifts && (
+                      <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                        <Layers className="w-4 h-4" />
+                        <span className="text-2xs font-medium">Multi-plat.</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {hasMultiPlatformShifts && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                      <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        Há turnos com múltiplas plataformas neste período. As métricas R$/hora e R$/km por plataforma podem estar incompletas.
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-2 sm:space-y-3">
                     {platformMetrics.map((pm, index) => (
                       <PlatformCard key={pm.platform.id} data={pm} rank={index + 1} />

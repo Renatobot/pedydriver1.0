@@ -187,6 +187,12 @@ export function useDashboard(range: DateRange = 'week') {
     ]);
   }, [queryClient]);
 
+  // Check if there are multi-platform shifts
+  const hasMultiPlatformShifts = useMemo(() => {
+    if (!shifts) return false;
+    return shifts.some(s => (s.platform_ids?.length || 0) > 1);
+  }, [shifts]);
+
   return {
     metrics,
     platformMetrics,
@@ -198,5 +204,6 @@ export function useDashboard(range: DateRange = 'week') {
     weekStartsOn,
     costPerKm,
     refetch,
+    hasMultiPlatformShifts,
   };
 }

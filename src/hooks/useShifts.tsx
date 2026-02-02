@@ -35,7 +35,24 @@ export function useShifts(startDate?: string, endDate?: string) {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as Shift[];
+      
+      // Fetch all platforms for multi-platform shifts
+      const { data: allPlatforms } = await supabase
+        .from('platforms')
+        .select('*');
+      
+      const platformsMap = new Map(allPlatforms?.map(p => [p.id, p]) || []);
+      
+      // Enrich shifts with platforms array
+      const enrichedShifts = (data || []).map(shift => {
+        const platformIds = shift.platform_ids || (shift.platform_id ? [shift.platform_id] : []);
+        const platforms = platformIds
+          .map((id: string) => platformsMap.get(id))
+          .filter(Boolean);
+        return { ...shift, platforms } as Shift;
+      });
+      
+      return enrichedShifts;
     },
     enabled: !!user
   });
