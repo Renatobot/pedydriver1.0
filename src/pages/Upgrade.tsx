@@ -38,8 +38,8 @@ const PRO_FEATURES = [
 ];
 
 const CHECKOUT_URLS = {
-  monthly: 'https://checkout.infinitepay.io/pedy-solucoes_digitais/1nb3d1a9Fx',
-  yearly: 'https://checkout.infinitepay.io/pedy-solucoes_digitais/7COTmR04E5',
+  monthly: 'https://checkout.infinitepay.io/pedy-solucoes_digitais/bCYVkN7lp',
+  yearly: 'https://checkout.infinitepay.io/pedy-solucoes_digitais/B9y11x9Yl',
 };
 
 export default function Upgrade() {
