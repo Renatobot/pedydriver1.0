@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { VehicleType } from '@/types/database';
+import { VehicleType, FuelType } from '@/types/database';
 import { 
   getVehiclesByType, 
   VehicleData, 
@@ -16,14 +16,19 @@ import {
   isBicycle,
   hasEnergyCost,
   getConsumptionUnit,
-  DEFAULT_FUEL_PRICE,
-  DEFAULT_ELECTRICITY_PRICE
+  FUEL_PRICES,
+  FUEL_LABELS,
+  FUEL_UNITS,
+  getDefaultFuelPrice,
+  supportsFuelChoice
 } from '@/lib/vehicleData';
 
 interface VehicleCostCalculatorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentVehicleType: VehicleType;
+  currentVehicleModel?: string | null;
+  currentFuelType?: FuelType;
   onApplyCost: (cost: number) => void;
 }
 
@@ -31,11 +36,14 @@ export function VehicleCostCalculator({
   open, 
   onOpenChange, 
   currentVehicleType,
+  currentVehicleModel,
+  currentFuelType = 'gasolina',
   onApplyCost 
 }: VehicleCostCalculatorProps) {
   const [vehicleType, setVehicleType] = useState<VehicleType>(currentVehicleType);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
-  const [fuelPrice, setFuelPrice] = useState(String(DEFAULT_FUEL_PRICE));
+  const [fuelType, setFuelType] = useState<FuelType>(currentFuelType);
+  const [fuelPrice, setFuelPrice] = useState(String(FUEL_PRICES[currentFuelType]));
   const [mileage, setMileage] = useState('');
   const [result, setResult] = useState<CostBreakdown | null>(null);
 
@@ -44,15 +52,36 @@ export function VehicleCostCalculator({
   const isElectric = selectedVehicle ? isElectricVehicle(selectedVehicle) : false;
   const isBike = selectedVehicle ? isBicycle(selectedVehicle) : false;
   const showEnergyInput = selectedVehicle ? hasEnergyCost(selectedVehicle) : true;
+  const showFuelTypeSelector = selectedVehicle ? supportsFuelChoice(selectedVehicle) : (vehicleType === 'carro' || vehicleType === 'moto');
 
-  // Sincronizar com a prop currentVehicleType quando o modal abrir
+  // Sincronizar com as props quando o modal abrir
   useEffect(() => {
     if (open) {
       setVehicleType(currentVehicleType);
-      setSelectedVehicle(null);
+      setFuelType(currentFuelType);
       setResult(null);
+      
+      // Se já temos um modelo selecionado, pré-selecionar
+      if (currentVehicleModel) {
+        const modelData = getVehiclesByType(currentVehicleType).find(v => v.name === currentVehicleModel);
+        if (modelData) {
+          setSelectedVehicle(modelData);
+          // Ajustar preço baseado no tipo de veículo
+          if (isElectricVehicle(modelData)) {
+            setFuelPrice(String(FUEL_PRICES.eletrico));
+          } else if (isBicycle(modelData)) {
+            setFuelPrice('0');
+          } else {
+            setFuelPrice(String(FUEL_PRICES[currentFuelType]));
+          }
+        } else {
+          setSelectedVehicle(null);
+        }
+      } else {
+        setSelectedVehicle(null);
+      }
     }
-  }, [open, currentVehicleType]);
+  }, [open, currentVehicleType, currentVehicleModel, currentFuelType]);
 
   // Auto-selecionar quando há apenas um veículo disponível para o tipo
   useEffect(() => {
@@ -61,18 +90,19 @@ export function VehicleCostCalculator({
     }
   }, [vehicles, selectedVehicle]);
 
-  // Atualizar preço padrão quando trocar entre elétrico e combustível
+  // Atualizar preço padrão quando trocar entre elétrico e combustível ou tipo de combustível
   useEffect(() => {
     if (selectedVehicle) {
       if (isBicycle(selectedVehicle)) {
         setFuelPrice('0'); // Bicicleta comum não tem custo de energia
+      } else if (isElectricVehicle(selectedVehicle)) {
+        setFuelPrice(String(FUEL_PRICES.eletrico));
       } else {
-        const newIsElectric = isElectricVehicle(selectedVehicle);
-        const defaultPrice = newIsElectric ? DEFAULT_ELECTRICITY_PRICE : DEFAULT_FUEL_PRICE;
-        setFuelPrice(String(defaultPrice));
+        // Veículo a combustão - usar preço do combustível selecionado
+        setFuelPrice(String(FUEL_PRICES[fuelType]));
       }
     }
-  }, [selectedVehicle]);
+  }, [selectedVehicle, fuelType]);
 
   const handleVehicleTypeChange = (type: VehicleType) => {
     setVehicleType(type);
@@ -86,7 +116,8 @@ export function VehicleCostCalculator({
     const price = parseFloat(fuelPrice) || 0;
     const km = mileage ? parseInt(mileage, 10) : undefined;
     
-    const breakdown = calculateCostPerKm(selectedVehicle, price, km);
+    // Passar fuelType para o cálculo (considera fator de eficiência do etanol)
+    const breakdown = calculateCostPerKm(selectedVehicle, price, km, false, fuelType);
     setResult(breakdown);
   };
 
@@ -205,6 +236,74 @@ export function VehicleCostCalculator({
             </Select>
           </div>
 
+          {/* Fuel Type Selector - Only for combustion vehicles */}
+          {showFuelTypeSelector && (
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
+                <Fuel className="w-4 h-4" />
+                Tipo de Combustível
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFuelType('gasolina');
+                    setFuelPrice(String(FUEL_PRICES.gasolina));
+                    setResult(null);
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
+                    fuelType === 'gasolina'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                  )}
+                >
+                  <span className="font-medium text-xs sm:text-sm">Gasolina</span>
+                  <span className="text-2xs text-muted-foreground">R$ 5,89/L</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFuelType('etanol');
+                    setFuelPrice(String(FUEL_PRICES.etanol));
+                    setResult(null);
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
+                    fuelType === 'etanol'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                  )}
+                >
+                  <span className="font-medium text-xs sm:text-sm">Etanol</span>
+                  <span className="text-2xs text-muted-foreground">R$ 3,89/L</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFuelType('gnv');
+                    setFuelPrice(String(FUEL_PRICES.gnv));
+                    setResult(null);
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
+                    fuelType === 'gnv'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                  )}
+                >
+                  <span className="font-medium text-xs sm:text-sm">GNV</span>
+                  <span className="text-2xs text-muted-foreground">R$ 3,99/m³</span>
+                </button>
+              </div>
+              {fuelType === 'etanol' && (
+                <p className="text-2xs text-amber-600 dark:text-amber-400">
+                  ⚠️ Etanol rende ~30% menos. O cálculo considera isso.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Fuel/Energy Price - Only show for vehicles with energy cost */}
           {showEnergyInput && (
             <div className="space-y-1.5 sm:space-y-2">
@@ -214,7 +313,10 @@ export function VehicleCostCalculator({
                 ) : (
                   <Fuel className="w-4 h-4" />
                 )}
-                {isElectric ? 'Preço da Energia (R$/kWh)' : 'Preço do Combustível (R$/L)'}
+                {isElectric 
+                  ? 'Preço da Energia (R$/kWh)' 
+                  : `Preço do ${FUEL_LABELS[fuelType]} (${FUEL_UNITS[fuelType]})`
+                }
               </Label>
               <Input
                 type="number"
@@ -225,7 +327,7 @@ export function VehicleCostCalculator({
                   setFuelPrice(e.target.value);
                   setResult(null);
                 }}
-                placeholder={isElectric ? String(DEFAULT_ELECTRICITY_PRICE) : String(DEFAULT_FUEL_PRICE)}
+                placeholder={isElectric ? String(FUEL_PRICES.eletrico) : String(FUEL_PRICES[fuelType])}
                 className="font-mono h-11 sm:h-12 text-sm sm:text-base"
               />
             </div>
@@ -288,7 +390,9 @@ export function VehicleCostCalculator({
                       ) : (
                         <Fuel className="w-4 h-4 text-orange-500" />
                       )}
-                      <span className="text-xs sm:text-sm">{result.isElectric ? 'Energia' : 'Combustível'}</span>
+                      <span className="text-xs sm:text-sm">
+                        {result.isElectric ? 'Energia' : FUEL_LABELS[result.fuelType]}
+                      </span>
                     </div>
                     <span className="font-mono text-sm sm:text-base font-medium">
                       R$ {result.fuelCost.toFixed(2)}/km

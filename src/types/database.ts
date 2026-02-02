@@ -1,4 +1,5 @@
 export type VehicleType = 'carro' | 'moto' | 'bicicleta' | 'bicicleta_eletrica';
+export type FuelType = 'gasolina' | 'etanol' | 'gnv' | 'eletrico';
 export type CostDistributionRule = 'km' | 'horas' | 'receita';
 export type ServiceType = 'corrida' | 'entrega' | 'outro';
 export type EarningType = 'corrida_entrega' | 'gorjeta' | 'bonus' | 'ajuste';
@@ -64,6 +65,7 @@ export interface UserSettings {
   cost_per_km: number;
   vehicle_type: VehicleType;
   vehicle_model: string | null;
+  fuel_type: FuelType;
   cost_distribution_rule: CostDistributionRule;
   week_starts_on: 'domingo' | 'segunda';
   weekly_goal_earnings: number;

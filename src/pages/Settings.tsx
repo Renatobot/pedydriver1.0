@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, ChevronDown } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, ChevronDown, Fuel } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useUserSettings, useUpdateUserSettings } from '@/hooks/useUserSettings'
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useState, useEffect, useMemo } from 'react';
-import { VehicleType, CostDistributionRule } from '@/types/database';
+import { VehicleType, CostDistributionRule, FuelType } from '@/types/database';
 import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
 import { WeeklyGoalsSettings } from '@/components/settings/WeeklyGoalsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
@@ -22,7 +22,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import { ReferralCard } from '@/components/settings/ReferralCard';
-import { getVehiclesByType, getConsumptionUnit, isBicycle } from '@/lib/vehicleData';
+import { getVehiclesByType, getConsumptionUnit, isBicycle, isElectricVehicle, FUEL_LABELS, vehicleDatabase } from '@/lib/vehicleData';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 export default function Settings() {
@@ -37,18 +37,33 @@ export default function Settings() {
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
   const [vehicleModel, setVehicleModel] = useState<string | null>(null);
+  const [fuelType, setFuelType] = useState<FuelType>('gasolina');
   const [distributionRule, setDistributionRule] = useState<CostDistributionRule>('km');
   const [weekStartsOn, setWeekStartsOn] = useState<'domingo' | 'segunda'>('segunda');
   const [showCalculator, setShowCalculator] = useState(false);
 
   // Lista de modelos disponíveis para o tipo de veículo selecionado
   const availableModels = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
+  
+  // Verificar se o modelo selecionado é elétrico (para esconder seletor de combustível)
+  const selectedVehicleData = useMemo(() => {
+    if (!vehicleModel) return null;
+    return vehicleDatabase.find(v => v.name === vehicleModel) || null;
+  }, [vehicleModel]);
+  
+  const showFuelSelector = useMemo(() => {
+    // Mostrar seletor apenas para carro/moto não-elétricos
+    if (vehicleType === 'bicicleta' || vehicleType === 'bicicleta_eletrica') return false;
+    if (selectedVehicleData && isElectricVehicle(selectedVehicleData)) return false;
+    return true;
+  }, [vehicleType, selectedVehicleData]);
 
   useEffect(() => {
     if (settings) {
       setCostPerKm(String(settings.cost_per_km));
       setVehicleType(settings.vehicle_type);
       setVehicleModel(settings.vehicle_model || null);
+      setFuelType((settings.fuel_type as FuelType) || 'gasolina');
       setDistributionRule(settings.cost_distribution_rule);
       setWeekStartsOn(settings.week_starts_on as 'domingo' | 'segunda');
     }
@@ -59,6 +74,7 @@ export default function Settings() {
       cost_per_km: parseFloat(costPerKm) || 0.5,
       vehicle_type: vehicleType,
       vehicle_model: vehicleModel,
+      fuel_type: fuelType,
       cost_distribution_rule: distributionRule,
       week_starts_on: weekStartsOn,
     });
@@ -68,13 +84,32 @@ export default function Settings() {
   const handleVehicleTypeChange = (type: VehicleType) => {
     setVehicleType(type);
     setVehicleModel(null); // Limpa o modelo ao trocar de tipo
-    updateSettings.mutate({ vehicle_type: type, vehicle_model: null });
+    // Se for bicicleta, resetar combustível para gasolina (não será usado)
+    if (type === 'bicicleta' || type === 'bicicleta_eletrica') {
+      setFuelType('gasolina');
+      updateSettings.mutate({ vehicle_type: type, vehicle_model: null, fuel_type: 'gasolina' });
+    } else {
+      updateSettings.mutate({ vehicle_type: type, vehicle_model: null });
+    }
   };
 
   // Handler para mudar modelo de veículo
   const handleVehicleModelChange = (model: string) => {
     setVehicleModel(model);
-    updateSettings.mutate({ vehicle_model: model });
+    // Se o modelo for elétrico, atualizar fuel_type para 'eletrico'
+    const modelData = vehicleDatabase.find(v => v.name === model);
+    if (modelData && isElectricVehicle(modelData)) {
+      setFuelType('eletrico');
+      updateSettings.mutate({ vehicle_model: model, fuel_type: 'eletrico' });
+    } else {
+      updateSettings.mutate({ vehicle_model: model });
+    }
+  };
+
+  // Handler para mudar tipo de combustível
+  const handleFuelTypeChange = (fuel: FuelType) => {
+    setFuelType(fuel);
+    updateSettings.mutate({ fuel_type: fuel });
   };
 
   return (
@@ -268,6 +303,59 @@ export default function Settings() {
                 </p>
               )}
             </div>
+
+            {/* Fuel Type Selector - only for combustion vehicles */}
+            {showFuelSelector && (
+              <div className="space-y-2 sm:space-y-3">
+                <Label className="flex items-center gap-2 text-sm sm:text-base">
+                  <Fuel className="w-4 h-4" />
+                  Tipo de Combustível
+                </Label>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <button
+                    onClick={() => handleFuelTypeChange('gasolina')}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-1 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[64px] sm:min-h-[72px]',
+                      fuelType === 'gasolina'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                    )}
+                  >
+                    <span className="font-medium text-xs sm:text-sm">Gasolina</span>
+                    <span className="text-2xs text-muted-foreground">R$ 5,89/L</span>
+                  </button>
+                  <button
+                    onClick={() => handleFuelTypeChange('etanol')}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-1 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[64px] sm:min-h-[72px]',
+                      fuelType === 'etanol'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                    )}
+                  >
+                    <span className="font-medium text-xs sm:text-sm">Etanol</span>
+                    <span className="text-2xs text-muted-foreground">R$ 3,89/L</span>
+                  </button>
+                  <button
+                    onClick={() => handleFuelTypeChange('gnv')}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-1 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[64px] sm:min-h-[72px]',
+                      fuelType === 'gnv'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                    )}
+                  >
+                    <span className="font-medium text-xs sm:text-sm">GNV</span>
+                    <span className="text-2xs text-muted-foreground">R$ 3,99/m³</span>
+                  </button>
+                </div>
+                {fuelType === 'etanol' && (
+                  <p className="text-2xs sm:text-xs text-amber-600 dark:text-amber-400">
+                    ⚠️ Etanol rende ~30% menos que gasolina. O cálculo já considera isso.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Cost per KM */}
             <div className="space-y-2 sm:space-y-3">
@@ -514,6 +602,8 @@ export default function Settings() {
         open={showCalculator}
         onOpenChange={setShowCalculator}
         currentVehicleType={vehicleType}
+        currentVehicleModel={vehicleModel}
+        currentFuelType={fuelType}
         onApplyCost={(cost) => setCostPerKm(cost.toFixed(2))}
       />
 

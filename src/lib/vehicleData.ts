@@ -1,4 +1,4 @@
-import { VehicleType } from '@/types/database';
+import { VehicleType, FuelType } from '@/types/database';
 
 export interface VehicleData {
   name: string;
@@ -6,6 +6,39 @@ export interface VehicleData {
   consumptionCity: number; // km/l ou km/kWh para elétricos
   consumptionHighway: number; // km/l ou km/kWh para elétricos
 }
+
+// Preços de referência por tipo de combustível
+export const FUEL_PRICES: Record<FuelType, number> = {
+  gasolina: 5.89,
+  etanol: 3.89,
+  gnv: 3.99,
+  eletrico: 0.85,
+};
+
+// Labels para exibição
+export const FUEL_LABELS: Record<FuelType, string> = {
+  gasolina: 'Gasolina',
+  etanol: 'Etanol',
+  gnv: 'GNV',
+  eletrico: 'Energia',
+};
+
+// Unidades por tipo de combustível
+export const FUEL_UNITS: Record<FuelType, string> = {
+  gasolina: 'R$/L',
+  etanol: 'R$/L',
+  gnv: 'R$/m³',
+  eletrico: 'R$/kWh',
+};
+
+// Fator de ajuste de consumo por tipo de combustível
+// Etanol rende ~30% menos que gasolina
+export const FUEL_EFFICIENCY_FACTOR: Record<FuelType, number> = {
+  gasolina: 1.0,
+  etanol: 0.70,
+  gnv: 1.0,
+  eletrico: 1.0,
+};
 
 // Base de dados de veículos populares no Brasil para motoristas de aplicativo
 export const vehicleDatabase: VehicleData[] = [
@@ -218,9 +251,11 @@ export const electricWearCostPerKm: Record<VehicleType, number> = {
   bicicleta_eletrica: 0.01,
 };
 
-// Preços de referência
-export const DEFAULT_FUEL_PRICE = 5.89; // R$/L gasolina
-export const DEFAULT_ELECTRICITY_PRICE = 0.85; // R$/kWh residencial
+// Preços de referência padrão (agora usamos FUEL_PRICES)
+export const DEFAULT_FUEL_PRICE = FUEL_PRICES.gasolina;
+export const DEFAULT_ELECTRICITY_PRICE = FUEL_PRICES.eletrico;
+export const DEFAULT_ETANOL_PRICE = FUEL_PRICES.etanol;
+export const DEFAULT_GNV_PRICE = FUEL_PRICES.gnv;
 
 // Detectar se veículo é elétrico ou híbrido
 export function isElectricVehicle(vehicle: VehicleData): boolean {
@@ -280,13 +315,15 @@ export interface CostBreakdown {
   totalCost: number;
   isElectric: boolean;
   isBicycle: boolean;
+  fuelType: FuelType;
 }
 
 export function calculateCostPerKm(
   vehicle: VehicleData,
   fuelPrice: number,
   mileage?: number,
-  useHighwayConsumption: boolean = false
+  useHighwayConsumption: boolean = false,
+  fuelType: FuelType = 'gasolina'
 ): CostBreakdown {
   const isElectric = isElectricVehicle(vehicle);
   const isBike = isBicycle(vehicle);
@@ -294,11 +331,19 @@ export function calculateCostPerKm(
   // Para bicicletas comuns, não há custo de energia
   let fuelCost = 0;
   
+  // Determinar o tipo de combustível efetivo
+  const effectiveFuelType = isElectric ? 'eletrico' : (isBike ? 'gasolina' : fuelType);
+  
   if (!isBike) {
     // Usar consumo médio entre cidade e estrada (mais realista para app drivers)
-    const consumption = useHighwayConsumption 
+    let consumption = useHighwayConsumption 
       ? vehicle.consumptionHighway 
       : (vehicle.consumptionCity + vehicle.consumptionHighway) / 2;
+    
+    // Aplicar fator de eficiência para etanol (rende menos)
+    if (!isElectric) {
+      consumption = consumption * FUEL_EFFICIENCY_FACTOR[fuelType];
+    }
     
     // Custo de combustível/energia = preço por unidade / consumo
     fuelCost = consumption > 0 ? fuelPrice / consumption : 0;
@@ -335,5 +380,16 @@ export function calculateCostPerKm(
     totalCost: Math.round(totalCost * 100) / 100,
     isElectric,
     isBicycle: isBike,
+    fuelType: effectiveFuelType,
   };
+}
+
+// Obter preço padrão baseado no tipo de combustível
+export function getDefaultFuelPrice(fuelType: FuelType): number {
+  return FUEL_PRICES[fuelType];
+}
+
+// Verificar se o veículo suporta escolha de combustível (não é elétrico/bicicleta)
+export function supportsFuelChoice(vehicle: VehicleData): boolean {
+  return !isElectricVehicle(vehicle) && !isBicycle(vehicle);
 }

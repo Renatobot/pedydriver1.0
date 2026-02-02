@@ -730,6 +730,7 @@ export type Database = {
           cost_distribution_rule: Database["public"]["Enums"]["cost_distribution_rule"]
           cost_per_km: number
           created_at: string
+          fuel_type: string
           id: string
           updated_at: string
           user_id: string
@@ -745,6 +746,7 @@ export type Database = {
           cost_distribution_rule?: Database["public"]["Enums"]["cost_distribution_rule"]
           cost_per_km?: number
           created_at?: string
+          fuel_type?: string
           id?: string
           updated_at?: string
           user_id: string
@@ -760,6 +762,7 @@ export type Database = {
           cost_distribution_rule?: Database["public"]["Enums"]["cost_distribution_rule"]
           cost_per_km?: number
           created_at?: string
+          fuel_type?: string
           id?: string
           updated_at?: string
           user_id?: string
