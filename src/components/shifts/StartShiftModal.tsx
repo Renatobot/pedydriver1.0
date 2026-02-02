@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Navigation, Car, Check } from 'lucide-react';
+import { Play, Navigation, Car, Check, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,6 +102,14 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
               <p className="text-xs text-muted-foreground">
                 {selectedPlatforms.length} plataforma{selectedPlatforms.length > 1 ? 's' : ''} selecionada{selectedPlatforms.length > 1 ? 's' : ''}
               </p>
+            )}
+            {selectedPlatforms.length > 1 && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Ao usar múltiplas plataformas simultaneamente, não será possível identificar qual é a mais rentável individualmente nos relatórios.
+                </p>
+              </div>
             )}
           </div>
 
