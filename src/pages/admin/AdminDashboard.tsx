@@ -50,18 +50,18 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Visão geral do sistema PEDY Driver</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Visão geral do sistema</p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleCheckChurn}
             disabled={generateChurnAlerts.isPending}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <RefreshCw className={`h-4 w-4 ${generateChurnAlerts.isPending ? 'animate-spin' : ''}`} />
             Verificar Churn
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Total de Usuários"
             value={metrics?.total_users}
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Secondary Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Novos na Semana"
             value={metrics?.new_week}

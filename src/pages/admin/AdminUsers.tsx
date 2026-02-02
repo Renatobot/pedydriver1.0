@@ -153,102 +153,67 @@ export default function AdminUsers() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Usuários</h1>
-          <p className="text-muted-foreground">Gerenciar usuários do sistema</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Usuários</h1>
+          <p className="text-sm text-muted-foreground">Gerenciar usuários do sistema</p>
         </div>
 
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Lista de Usuários</CardTitle>
-              <div className="relative w-64">
+          <CardHeader className="pb-3 sm:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-lg sm:text-xl">Lista de Usuários</CardTitle>
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar usuário..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-10"
                 />
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-0 sm:px-6">
             {isLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-3 px-3 sm:px-0">
                 {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                  <Skeleton key={i} className="h-16 sm:h-12 w-full" />
                 ))}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email / Telefone</TableHead>
-                    <TableHead>Cadastro</TableHead>
-                    <TableHead>Último Acesso</TableHead>
-                    <TableHead>Plano</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile Card View */}
+                <div className="block sm:hidden space-y-3 px-3">
                   {filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
-                        Nenhum usuário encontrado
-                      </TableCell>
-                    </TableRow>
+                    <p className="text-center text-muted-foreground py-8">
+                      Nenhum usuário encontrado
+                    </p>
                   ) : (
                     filteredUsers.map((user) => (
-                      <TableRow key={user.user_id}>
-                        <TableCell className="font-medium">
-                          {user.full_name || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">{user.email || '-'}</div>
-                          {user.phone && (
-                            <a 
-                              href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-700 hover:underline"
-                            >
-                              <MessageCircle className="w-3 h-3" />
-                              {user.phone}
-                            </a>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatDate(user.created_at)}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatDate(user.last_login_at)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={user.plan === 'pro' ? 'default' : 'secondary'}>
-                            {user.plan === 'pro' ? (
-                              <><Crown className="w-3 h-3 mr-1" /> PRO</>
-                            ) : (
-                              'Grátis'
+                      <div 
+                        key={user.user_id} 
+                        className="p-3 rounded-lg border border-border bg-card space-y-2"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate">{user.full_name || 'Sem nome'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                            {user.phone && (
+                              <a 
+                                href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-green-600 mt-1"
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                {user.phone}
+                              </a>
                             )}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {user.is_blocked ? (
-                            <Badge variant="destructive">Bloqueado</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-green-600 border-green-600">
-                              Ativo
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
+                          </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -329,12 +294,188 @@ export default function AdminUsers() {
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant={user.plan === 'pro' ? 'default' : 'secondary'} className="text-xs">
+                            {user.plan === 'pro' ? (
+                              <><Crown className="w-3 h-3 mr-1" /> PRO</>
+                            ) : (
+                              'Grátis'
+                            )}
+                          </Badge>
+                          {user.is_blocked ? (
+                            <Badge variant="destructive" className="text-xs">Bloqueado</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                              Ativo
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {formatDate(user.last_login_at)}
+                          </span>
+                        </div>
+                      </div>
                     ))
                   )}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email / Telefone</TableHead>
+                        <TableHead>Cadastro</TableHead>
+                        <TableHead>Último Acesso</TableHead>
+                        <TableHead>Plano</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-12"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                            Nenhum usuário encontrado
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredUsers.map((user) => (
+                          <TableRow key={user.user_id}>
+                            <TableCell className="font-medium">
+                              {user.full_name || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">{user.email || '-'}</div>
+                              {user.phone && (
+                                <a 
+                                  href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-700 hover:underline"
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  {user.phone}
+                                </a>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(user.created_at)}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(user.last_login_at)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={user.plan === 'pro' ? 'default' : 'secondary'}>
+                                {user.plan === 'pro' ? (
+                                  <><Crown className="w-3 h-3 mr-1" /> PRO</>
+                                ) : (
+                                  'Grátis'
+                                )}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {user.is_blocked ? (
+                                <Badge variant="destructive">Bloqueado</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-green-600 border-green-600">
+                                  Ativo
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setDialogType('view');
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Ver Detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {user.plan === 'pro' ? (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setDialogType('free');
+                                      }}
+                                    >
+                                      <Crown className="w-4 h-4 mr-2" />
+                                      Desativar PRO
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setDialogType('pro');
+                                      }}
+                                    >
+                                      <Crown className="w-4 h-4 mr-2" />
+                                      Ativar PRO
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setDialogType('reset');
+                                    }}
+                                  >
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Resetar Limite
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setDialogType('password');
+                                    }}
+                                  >
+                                    <KeyRound className="w-4 h-4 mr-2" />
+                                    Resetar Senha
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {user.is_blocked ? (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setDialogType('unblock');
+                                      }}
+                                    >
+                                      <UserCheck className="w-4 h-4 mr-2" />
+                                      Desbloquear
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setDialogType('block');
+                                      }}
+                                    >
+                                      <UserX className="w-4 h-4 mr-2" />
+                                      Bloquear
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
