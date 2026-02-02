@@ -242,44 +242,56 @@ export default function Settings() {
             </div>
 
             {/* Vehicle Summary Card - Mostra veículo configurado */}
-            {vehicleModel && (
-              <div className="rounded-xl p-3 sm:p-4 bg-muted/50 border border-border/50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {vehicleType === 'carro' && <Car className="w-4 h-4 text-primary" />}
-                    {vehicleType === 'moto' && <Bike className="w-4 h-4 text-primary" />}
-                    {(vehicleType === 'bicicleta' || vehicleType === 'bicicleta_eletrica') && <Bike className="w-4 h-4 text-primary" />}
-                    <span className="text-sm font-medium">{vehicleModel}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowCalculator(true)}
-                    className="h-8 text-xs text-primary"
-                  >
-                    Alterar
-                  </Button>
+            <div 
+              className={cn(
+                "rounded-xl p-3 sm:p-4 bg-muted/50 border border-border/50 space-y-2 transition-all duration-300 ease-out",
+                vehicleModel 
+                  ? "opacity-100 translate-y-0 scale-100" 
+                  : "opacity-0 translate-y-2 scale-95 h-0 p-0 overflow-hidden border-0"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {vehicleType === 'carro' && <Car className="w-4 h-4 text-primary" />}
+                  {vehicleType === 'moto' && <Bike className="w-4 h-4 text-primary" />}
+                  {(vehicleType === 'bicicleta' || vehicleType === 'bicicleta_eletrica') && <Bike className="w-4 h-4 text-primary" />}
+                  <span className="text-sm font-medium">{vehicleModel}</span>
                 </div>
-                {showFuelInfo && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Fuel className="w-3 h-3" />
-                    <span>Combustível: <strong className="text-foreground">{FUEL_LABELS[fuelType]}</strong></span>
-                  </div>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCalculator(true)}
+                  className="h-8 text-xs text-primary hover:bg-primary/10 transition-colors duration-200"
+                >
+                  Alterar
+                </Button>
               </div>
-            )}
+              {showFuelInfo && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Fuel className="w-3 h-3" />
+                  <span>Combustível: <strong className="text-foreground">{FUEL_LABELS[fuelType]}</strong></span>
+                </div>
+              )}
+            </div>
             
             {/* Botão para configurar veículo se ainda não configurou */}
-            {!vehicleModel && (
+            <div 
+              className={cn(
+                "transition-all duration-300 ease-out",
+                !vehicleModel 
+                  ? "opacity-100 translate-y-0 scale-100" 
+                  : "opacity-0 -translate-y-2 scale-95 h-0 overflow-hidden"
+              )}
+            >
               <Button
                 variant="outline"
                 onClick={() => setShowCalculator(true)}
-                className="w-full h-12 text-sm touch-feedback"
+                className="w-full h-12 text-sm touch-feedback hover:border-primary hover:bg-primary/5 transition-all duration-200"
               >
                 <Calculator className="w-4 h-4 mr-2" />
                 Configurar meu veículo
               </Button>
-            )}
+            </div>
 
             {/* Cost per KM - Show only if vehicle is configured */}
             {vehicleModel && (
