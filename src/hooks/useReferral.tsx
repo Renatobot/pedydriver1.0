@@ -12,6 +12,7 @@ interface ReferralData {
   wasReferred: boolean;
   canShowReferralCard: boolean;
   accountAgeHours: number;
+  daysRemaining: number;
   isLoading: boolean;
 }
 
@@ -53,6 +54,7 @@ export function useReferral() {
     wasReferred: false,
     canShowReferralCard: false,
     accountAgeHours: 0,
+    daysRemaining: 0,
     isLoading: true,
   });
   const [progress, setProgress] = useState<ReferralProgress | null>(null);
@@ -87,6 +89,7 @@ export function useReferral() {
         was_referred: boolean;
         account_age_hours: number;
         can_show_referral_card: boolean;
+        days_remaining: number;
       } | null;
 
       setData({
@@ -97,6 +100,7 @@ export function useReferral() {
         wasReferred: stats?.was_referred || false,
         canShowReferralCard: stats?.can_show_referral_card || false,
         accountAgeHours: stats?.account_age_hours || 0,
+        daysRemaining: stats?.days_remaining || 0,
         isLoading: false,
       });
     } catch (error) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gift, Copy, Share2, Users, Trophy, Loader2, ExternalLink, Clock, UserCheck } from 'lucide-react';
+import { Gift, Copy, Share2, Trophy, Loader2, ExternalLink, Clock, UserCheck, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ export function ReferralCard() {
     bonusDaysEarned,
     wasReferred,
     canShowReferralCard,
+    daysRemaining,
     isLoading,
     progress,
     copyLink,
@@ -143,6 +144,34 @@ export function ReferralCard() {
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Seu{pendingReferrals > 1 ? 's' : ''} amigo{pendingReferrals > 1 ? 's' : ''} se cadastrou{pendingReferrals > 1 ? 'ram' : ''}! O bônus será liberado quando {pendingReferrals > 1 ? 'eles usarem' : 'ele usar'} o app normalmente (registrar ganhos, despesas, etc).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 90-day limit warning */}
+        {daysRemaining >= 80 && (
+          <div className={cn(
+            "rounded-xl p-3 border",
+            daysRemaining >= 90 
+              ? "bg-primary/10 border-primary/30" 
+              : "bg-amber-500/10 border-amber-500/30"
+          )}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle className={cn(
+                "w-4 h-4 mt-0.5 flex-shrink-0",
+                daysRemaining >= 90 ? "text-primary" : "text-amber-500"
+              )} />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  {daysRemaining >= 90 
+                    ? "Você atingiu o máximo de 90 dias acumulados!"
+                    : `Seu PRO expira em ${Math.floor(daysRemaining)} dias`
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Continue indicando para manter seu PRO ativo sempre.
                 </p>
               </div>
             </div>
