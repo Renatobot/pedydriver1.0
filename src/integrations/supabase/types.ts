@@ -577,6 +577,10 @@ export type Database = {
           user_id: string
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
           week_starts_on: string
+          weekly_goal_earnings: number
+          weekly_goal_hours: number
+          weekly_goal_km: number
+          weekly_goal_services: number
         }
         Insert: {
           cost_distribution_rule?: Database["public"]["Enums"]["cost_distribution_rule"]
@@ -587,6 +591,10 @@ export type Database = {
           user_id: string
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
           week_starts_on?: string
+          weekly_goal_earnings?: number
+          weekly_goal_hours?: number
+          weekly_goal_km?: number
+          weekly_goal_services?: number
         }
         Update: {
           cost_distribution_rule?: Database["public"]["Enums"]["cost_distribution_rule"]
@@ -597,6 +605,10 @@ export type Database = {
           user_id?: string
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
           week_starts_on?: string
+          weekly_goal_earnings?: number
+          weekly_goal_hours?: number
+          weekly_goal_km?: number
+          weekly_goal_services?: number
         }
         Relationships: []
       }

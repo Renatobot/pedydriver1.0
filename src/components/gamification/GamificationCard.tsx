@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { useGamification, DEFAULT_WEEKLY_GOALS } from '@/hooks/useGamification';
+import { useGamification } from '@/hooks/useGamification';
 import { Flame, Trophy, Target, ChevronRight, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export function GamificationCard() {
-  const { stats, weeklyProgress, isLoading, xpProgress, unlockedAchievements } = useGamification();
+  const { stats, weeklyProgress, weeklyGoals, isLoading, xpProgress, unlockedAchievements } = useGamification();
 
   if (isLoading) {
     return (
@@ -22,11 +22,11 @@ export function GamificationCard() {
   if (!stats) return null;
 
   const weeklyEarningsProgress = weeklyProgress 
-    ? Math.min(100, (weeklyProgress.earnings / DEFAULT_WEEKLY_GOALS.earnings) * 100) 
+    ? Math.min(100, (weeklyProgress.earnings / weeklyGoals.earnings) * 100) 
     : 0;
 
   const weeklyServicesProgress = weeklyProgress 
-    ? Math.min(100, (weeklyProgress.services / DEFAULT_WEEKLY_GOALS.services) * 100) 
+    ? Math.min(100, (weeklyProgress.services / weeklyGoals.services) * 100) 
     : 0;
 
   return (
@@ -89,7 +89,7 @@ export function GamificationCard() {
                   R$ {weeklyProgress?.earnings.toFixed(0) || 0}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  / {DEFAULT_WEEKLY_GOALS.earnings}
+                  / {weeklyGoals.earnings}
                 </span>
               </div>
               <Progress value={weeklyEarningsProgress} className="h-1 mt-1" />

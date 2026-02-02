@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useGamification, ACHIEVEMENTS, DEFAULT_WEEKLY_GOALS, Achievement } from '@/hooks/useGamification';
+import { useGamification, ACHIEVEMENTS, Achievement } from '@/hooks/useGamification';
 import { 
   Trophy, Flame, Target, Zap, Star, 
   Car, DollarSign, Navigation, Calendar,
@@ -116,6 +116,7 @@ export default function Achievements() {
   const { 
     stats, 
     weeklyProgress, 
+    weeklyGoals,
     isLoading, 
     xpProgress,
     unlockedAchievements,
@@ -154,16 +155,16 @@ export default function Achievements() {
     : ACHIEVEMENTS.filter(a => a.category === activeTab);
 
   const weeklyEarningsProgress = weeklyProgress 
-    ? Math.min(100, (weeklyProgress.earnings / DEFAULT_WEEKLY_GOALS.earnings) * 100) 
+    ? Math.min(100, (weeklyProgress.earnings / weeklyGoals.earnings) * 100) 
     : 0;
   const weeklyServicesProgress = weeklyProgress 
-    ? Math.min(100, (weeklyProgress.services / DEFAULT_WEEKLY_GOALS.services) * 100) 
+    ? Math.min(100, (weeklyProgress.services / weeklyGoals.services) * 100) 
     : 0;
   const weeklyKmProgress = weeklyProgress 
-    ? Math.min(100, (weeklyProgress.km / DEFAULT_WEEKLY_GOALS.km) * 100) 
+    ? Math.min(100, (weeklyProgress.km / weeklyGoals.km) * 100) 
     : 0;
   const weeklyHoursProgress = weeklyProgress 
-    ? Math.min(100, (weeklyProgress.hours / DEFAULT_WEEKLY_GOALS.hours) * 100) 
+    ? Math.min(100, (weeklyProgress.hours / weeklyGoals.hours) * 100) 
     : 0;
 
   return (
@@ -232,7 +233,7 @@ export default function Achievements() {
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-muted-foreground">Ganhos</span>
                 <span className="font-medium">
-                  {formatCurrency(weeklyProgress?.earnings || 0)} / {formatCurrency(DEFAULT_WEEKLY_GOALS.earnings)}
+                  {formatCurrency(weeklyProgress?.earnings || 0)} / {formatCurrency(weeklyGoals.earnings)}
                 </span>
               </div>
               <Progress value={weeklyEarningsProgress} className="h-2" />
@@ -243,7 +244,7 @@ export default function Achievements() {
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-muted-foreground">Serviços</span>
                 <span className="font-medium">
-                  {weeklyProgress?.services || 0} / {DEFAULT_WEEKLY_GOALS.services}
+                  {weeklyProgress?.services || 0} / {weeklyGoals.services}
                 </span>
               </div>
               <Progress value={weeklyServicesProgress} className="h-2" />
@@ -254,7 +255,7 @@ export default function Achievements() {
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-muted-foreground">Quilômetros</span>
                 <span className="font-medium">
-                  {weeklyProgress?.km.toFixed(0) || 0} / {DEFAULT_WEEKLY_GOALS.km} km
+                  {weeklyProgress?.km.toFixed(0) || 0} / {weeklyGoals.km} km
                 </span>
               </div>
               <Progress value={weeklyKmProgress} className="h-2" />
@@ -265,7 +266,7 @@ export default function Achievements() {
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-muted-foreground">Horas trabalhadas</span>
                 <span className="font-medium">
-                  {weeklyProgress?.hours.toFixed(1) || 0} / {DEFAULT_WEEKLY_GOALS.hours}h
+                  {weeklyProgress?.hours.toFixed(1) || 0} / {weeklyGoals.hours}h
                 </span>
               </div>
               <Progress value={weeklyHoursProgress} className="h-2" />

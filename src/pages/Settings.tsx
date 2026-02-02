@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { VehicleType, CostDistributionRule } from '@/types/database';
 import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
+import { WeeklyGoalsSettings } from '@/components/settings/WeeklyGoalsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { PremiumBadge } from '@/components/subscription/PremiumBadge';
@@ -301,6 +302,9 @@ export default function Settings() {
                 "Auto" segue a configuração do seu dispositivo
               </p>
             </div>
+
+            {/* Weekly Goals */}
+            <WeeklyGoalsSettings />
 
             {/* Notifications */}
             <div className="space-y-2 sm:space-y-3">

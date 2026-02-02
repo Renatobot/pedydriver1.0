@@ -63,6 +63,10 @@ export interface UserSettings {
   vehicle_type: VehicleType;
   cost_distribution_rule: CostDistributionRule;
   week_starts_on: 'domingo' | 'segunda';
+  weekly_goal_earnings: number;
+  weekly_goal_services: number;
+  weekly_goal_km: number;
+  weekly_goal_hours: number;
   created_at: string;
   updated_at: string;
 }
