@@ -1,50 +1,105 @@
 
-# Plano: Aviso sobre Análise de Plataformas em Turnos Multi-Plataforma
+# Plano: Adicionar Suporte a Bicicletas (Comum e Elétrica)
 
-## Contexto
-Quando o motorista trabalha com mais de uma plataforma ao mesmo tempo (ex: 99 + Uber), os dados de horas e km são registrados de forma agregada. Isso significa que não é possível calcular métricas individuais por plataforma (R$/hora, R$/km) para identificar qual seria a mais rentável.
-
-## O que será implementado
-
-### 1. Aviso nos Formulários de Turno
-Adicionar mensagem informativa que aparece **apenas quando mais de uma plataforma está selecionada**:
-
-**No formulário de Turno (`ShiftForm.tsx`):**
-- Após a seleção de plataformas, exibir um aviso amarelo/âmbar
-- Texto: "Ao usar múltiplas plataformas, não será possível identificar qual é a mais rentável individualmente"
-- Ícone de informação para chamar atenção
-
-**No modal de Iniciar Turno (`StartShiftModal.tsx`):**
-- Mesmo aviso quando 2+ plataformas são selecionadas
-
-### 2. Aviso nos Relatórios de Melhor Dia/Plataforma
-**No componente de análise (`BestTimesAnalysis.tsx`):**
-- Adicionar nota informativa explicando que turnos com múltiplas plataformas não permitem análise individual
+## Objetivo
+Expandir o sistema para suportar bicicletas comuns e bicicletas elétricas como tipos de veículo, atendendo entregadores que utilizam esses meios de transporte.
 
 ---
 
-## Detalhes Técnicos
+## Escopo das Alterações
 
-### Arquivos a modificar:
-1. `src/components/forms/ShiftForm.tsx` - Adicionar aviso condicional
-2. `src/components/shifts/StartShiftModal.tsx` - Adicionar aviso condicional  
-3. `src/components/reports/BestTimesAnalysis.tsx` - Adicionar nota sobre limitação
+### 1. Banco de Dados (Migration)
+Alterar o ENUM `vehicle_type` para incluir os novos tipos:
+- `bicicleta` - Bicicleta comum
+- `bicicleta_eletrica` - Bicicleta elétrica
 
-### Componente de Aviso
-Criar um bloco visual com:
-- Fundo amarelo/âmbar translúcido
-- Ícone `AlertTriangle` ou `Info`
-- Texto explicativo curto e claro
-- Só aparece quando `selectedPlatforms.length > 1`
-
-### Exemplo de código:
-```tsx
-{selectedPlatforms.length > 1 && (
-  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-    <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-    <p className="text-xs text-amber-600 dark:text-amber-400">
-      Ao usar múltiplas plataformas simultaneamente, não será possível identificar qual é a mais rentável individualmente nos relatórios.
-    </p>
-  </div>
-)}
+### 2. Tipos TypeScript
+Atualizar o tipo `VehicleType` em `src/types/database.ts`:
+```typescript
+export type VehicleType = 'carro' | 'moto' | 'bicicleta' | 'bicicleta_eletrica';
 ```
+
+### 3. Dados de Veículos (`src/lib/vehicleData.ts`)
+Adicionar modelos de bicicletas com custos apropriados:
+
+**Bicicletas Comuns:**
+- Bicicleta Comum (Simples)
+- Bicicleta Comum (Com Bag)
+- Bicicleta Speed/Road
+- Bicicleta Mountain Bike
+
+**Bicicletas Elétricas:**
+- Caloi E-Vibe City
+- Caloi E-Vibe Urbam
+- Sense Impulse E-Trail
+- Oggi Big Wheel 8.3 E-Bike
+- Tembici E-Bike
+- Modelo Genérico (E-Bike)
+
+Definir custos específicos:
+- **Manutenção**: R$ 0,02/km (bicicleta) e R$ 0,03/km (e-bike)
+- **Desgaste**: R$ 0,01/km (ambas, menor que veículos motorizados)
+- **Energia**: 0 para bicicleta comum, cálculo baseado em km/kWh para e-bikes
+
+### 4. Calculadora de Custo (`VehicleCostCalculator.tsx`)
+- Adicionar botões para selecionar "Bicicleta" e "E-Bike"
+- Adaptar UI para 4 tipos (grid 2x2 ou scroll horizontal)
+- Para bicicleta comum: mostrar apenas custos de manutenção e desgaste (sem combustível)
+- Para e-bike: manter lógica similar à moto elétrica
+
+### 5. Página de Configurações (`Settings.tsx`)
+- Expandir seletor de tipo de veículo para 4 opções
+- Usar grid 2x2 para manter boa UX mobile
+- Ícones: usar `Bike` do lucide-react para ambos (ou um ícone diferenciado)
+
+### 6. Outros Componentes
+Atualizar ícones e referências em:
+- `PlatformCard.tsx` - Adicionar ícone de bicicleta no mapa
+- Qualquer lugar que renderize ícone baseado no tipo de veículo
+
+---
+
+## Lógica de Custo para Bicicletas
+
+### Bicicleta Comum
+- **Custo de energia**: R$ 0,00/km (esforço humano)
+- **Manutenção**: R$ 0,02/km (pneus, corrente, freios)
+- **Desgaste**: R$ 0,01/km (menor vida útil de peças)
+- **Total estimado**: ~R$ 0,03/km
+
+### Bicicleta Elétrica
+- **Custo de energia**: ~R$ 0,01-0,02/km (bateria)
+- **Manutenção**: R$ 0,03/km (inclui bateria e motor)
+- **Desgaste**: R$ 0,01/km
+- **Total estimado**: ~R$ 0,05-0,06/km
+
+---
+
+## Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `supabase/migrations/...` | Nova migration para alterar ENUM |
+| `src/types/database.ts` | Adicionar novos tipos ao VehicleType |
+| `src/lib/vehicleData.ts` | Adicionar dados de bicicletas e custos |
+| `src/components/settings/VehicleCostCalculator.tsx` | Adaptar UI para 4 tipos |
+| `src/pages/Settings.tsx` | Expandir seletor de veículos |
+| `src/components/dashboard/PlatformCard.tsx` | Adicionar ícone bike ao mapa |
+
+---
+
+## Considerações Técnicas
+
+1. **Migrations PostgreSQL**: Alterar ENUMs existentes requer usar `ALTER TYPE ... ADD VALUE`
+2. **Retrocompatibilidade**: Usuários existentes mantêm seus tipos atuais
+3. **UI Mobile**: O grid 2x2 funciona bem, mas pode considerar scroll horizontal se mais tipos forem adicionados futuramente
+4. **Ícones**: Lucide tem o ícone `Bike` que pode representar bicicleta; para diferenciar e-bike, podemos usar `Zap` junto
+
+---
+
+## Benefícios
+
+- Atende um público significativo de entregadores de bicicleta
+- Custos muito menores por km (atrativo para cálculo de lucro real)
+- Diferencial competitivo vs outros apps de controle financeiro
+- Base para futura expansão (patinetes elétricos, etc.)
