@@ -66,15 +66,16 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
     
     setIsSubmitting(true);
     try {
-      // Create one shift for EACH platform selected
-      for (const platformId of data.platform_ids) {
-        await createShift.mutateAsync({
-          platform_id: platformId,
-          hours_worked: data.hours_worked,
-          km_driven: data.km_driven,
-          date: format(data.date, 'yyyy-MM-dd'),
-        });
-      }
+      // Create ONE shift with all platforms selected
+      const shiftData = {
+        platform_id: data.platform_ids[0], // First for backwards compatibility
+        platform_ids: data.platform_ids,
+        hours_worked: data.hours_worked,
+        km_driven: data.km_driven,
+        date: format(data.date, 'yyyy-MM-dd'),
+      };
+      
+      await createShift.mutateAsync(shiftData);
       reset();
       onSuccess?.();
     } finally {
@@ -152,11 +153,6 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
           </div>
           {errors.platform_ids && (
             <p className="text-2xs sm:text-xs text-destructive">{errors.platform_ids.message}</p>
-          )}
-          {selectedPlatforms.length > 1 && (
-            <p className="text-2xs sm:text-xs text-muted-foreground">
-              As horas e km serão registradas para cada plataforma
-            </p>
           )}
         </div>
 

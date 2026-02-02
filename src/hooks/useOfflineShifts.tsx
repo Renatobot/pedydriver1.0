@@ -8,6 +8,7 @@ import { addPendingOperation, cacheData } from '@/lib/offlineDB';
 interface CreateShiftData {
   date: string;
   platform_id: string;
+  platform_ids?: string[];
   hours_worked: number;
   km_driven: number;
 }

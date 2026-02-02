@@ -112,15 +112,20 @@ export function useActiveShift() {
       const platformIds = activeShift.platform_ids || 
         (activeShift.platform_id ? [activeShift.platform_id] : []);
       
-      // Create one shift record for EACH platform selected
-      for (const platformId of platformIds) {
-        await createShift.mutateAsync({
-          platform_id: platformId,
-          hours_worked: hoursWorked,
-          km_driven: kmDriven,
-          date: format(startedAt, 'yyyy-MM-dd'),
-        });
-      }
+      // Create ONE shift record with all platforms (not one per platform)
+      const shiftData = {
+        platform_id: platformIds[0], // Keep first for backwards compatibility
+        platform_ids: platformIds,
+        hours_worked: hoursWorked,
+        km_driven: kmDriven,
+        date: format(startedAt, 'yyyy-MM-dd'),
+      };
+      
+      const { error: shiftError } = await supabase
+        .from('shifts')
+        .insert(shiftData as any);
+      
+      if (shiftError) throw shiftError;
       
       // Delete active shift
       const { error } = await supabase
@@ -130,15 +135,12 @@ export function useActiveShift() {
       
       if (error) throw error;
       
-      return { hoursWorked, kmDriven, platformCount: platformIds.length };
+      return { hoursWorked, kmDriven };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['active-shift'] });
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
-      const platformMsg = result.platformCount > 1 
-        ? ` (${result.platformCount} plataformas)` 
-        : '';
-      toast.success(`Turno finalizado! ${result.hoursWorked}h, ${result.kmDriven} km${platformMsg}`);
+      toast.success(`Turno finalizado! ${result.hoursWorked}h, ${result.kmDriven} km`);
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erro ao finalizar turno');
