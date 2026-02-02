@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Play, Navigation, Car, Check, Info } from 'lucide-react';
+import { Play, Navigation, Car, Check, Info, Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { usePlatforms } from '@/hooks/usePlatforms';
 import { useActiveShift } from '@/hooks/useActiveShift';
+import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 
 interface StartShiftModalProps {
@@ -17,16 +17,39 @@ interface StartShiftModalProps {
 export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
   const { data: platforms } = usePlatforms();
   const { startShift, isStarting } = useActiveShift();
+  const { canUsePlatform, limits, isPro } = useSubscriptionContext();
   
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [startKm, setStartKm] = useState('');
 
   const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev => 
-      prev.includes(platformId)
-        ? prev.filter(id => id !== platformId)
-        : [...prev, platformId]
-    );
+    // Se já está selecionada, permite remover
+    if (selectedPlatforms.includes(platformId)) {
+      setSelectedPlatforms(prev => prev.filter(id => id !== platformId));
+      return;
+    }
+    
+    // Se não é Pro e já atingiu o limite de plataformas no turno
+    if (!isPro && selectedPlatforms.length >= limits.maxPlatforms) {
+      return;
+    }
+    
+    // Verifica se pode usar essa plataforma baseado no histórico
+    if (!canUsePlatform(platformId)) {
+      return;
+    }
+    
+    setSelectedPlatforms(prev => [...prev, platformId]);
+  };
+  
+  // Check if platform is locked (can't be used)
+  const isPlatformLocked = (platformId: string): boolean => {
+    if (isPro) return false;
+    if (selectedPlatforms.includes(platformId)) return false;
+    // If already at limit in current selection
+    if (selectedPlatforms.length >= limits.maxPlatforms) return true;
+    // If can't use this platform based on history
+    return !canUsePlatform(platformId);
   };
 
   const handleStart = async () => {
@@ -70,33 +93,58 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
         <div className="space-y-4 py-4">
           {/* Platform Selection - Multiple */}
           <div className="space-y-2">
-            <Label>Plataformas (selecione todas que vai usar)</Label>
+            <Label>
+              {isPro ? 'Plataformas (selecione todas que vai usar)' : `Plataforma (limite: ${limits.maxPlatforms})`}
+            </Label>
+            
+            {!isPro && (
+              <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-2">
+                <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  No plano grátis, você pode usar apenas {limits.maxPlatforms} plataforma por vez. Faça upgrade para usar múltiplas!
+                </p>
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-2">
-              {platforms?.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePlatform(p.id)}
-                  className={cn(
-                    "flex items-center gap-2 p-3 rounded-lg border transition-all touch-feedback",
-                    selectedPlatforms.includes(p.id)
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border bg-card text-muted-foreground hover:border-primary/50"
-                  )}
-                >
-                  <div className={cn(
-                    "w-5 h-5 rounded border flex items-center justify-center transition-colors",
-                    selectedPlatforms.includes(p.id)
-                      ? "bg-primary border-primary"
-                      : "border-muted-foreground/30"
-                  )}>
-                    {selectedPlatforms.includes(p.id) && (
-                      <Check className="w-3 h-3 text-primary-foreground" />
+              {platforms?.map((p) => {
+                const locked = isPlatformLocked(p.id);
+                const selected = selectedPlatforms.includes(p.id);
+                
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => togglePlatform(p.id)}
+                    disabled={locked}
+                    className={cn(
+                      "flex items-center gap-2 p-3 rounded-lg border transition-all",
+                      selected
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : locked
+                          ? "border-border bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60"
+                          : "border-border bg-card text-muted-foreground hover:border-primary/50 touch-feedback"
                     )}
-                  </div>
-                  <span className="text-sm font-medium truncate">{p.name}</span>
-                </button>
-              ))}
+                  >
+                    <div className={cn(
+                      "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                      selected
+                        ? "bg-primary border-primary"
+                        : locked
+                          ? "border-muted-foreground/20 bg-muted"
+                          : "border-muted-foreground/30"
+                    )}>
+                      {selected && (
+                        <Check className="w-3 h-3 text-primary-foreground" />
+                      )}
+                      {locked && !selected && (
+                        <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className="text-sm font-medium truncate">{p.name}</span>
+                  </button>
+                );
+              })}
             </div>
             {selectedPlatforms.length > 0 && (
               <p className="text-xs text-muted-foreground">
