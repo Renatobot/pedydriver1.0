@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { PremiumBadge } from '@/components/subscription/PremiumBadge';
 import { Link } from 'react-router-dom';
 import { SupportForm } from '@/components/support/SupportForm';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 export default function Settings() {
@@ -27,6 +29,7 @@ export default function Settings() {
   const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
   const { canInstall, isInstalled, isDismissed, isIOS, installApp, resetDismiss } = usePWAInstall();
   const { theme, setTheme } = useTheme();
+  const { showOnboarding, completeOnboarding, resetOnboarding } = useOnboarding();
 
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
@@ -374,6 +377,27 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Tutorial / Help Section */}
+        <div className="space-y-2 sm:space-y-3">
+          <Label className="flex items-center gap-2 text-sm sm:text-base">
+            <HelpCircle className="w-4 h-4" />
+            Ajuda
+          </Label>
+          <div className="rounded-xl p-3 sm:p-4 bg-muted/30 border border-border/50">
+            <Button
+              variant="outline"
+              onClick={resetOnboarding}
+              className="w-full h-10 sm:h-11 text-xs sm:text-sm"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Rever Tutorial do App
+            </Button>
+            <p className="text-2xs sm:text-xs text-muted-foreground mt-2 text-center">
+              Veja novamente o passo a passo de como usar o PEDY Driver
+            </p>
+          </div>
+        </div>
+
         {/* Support Section */}
         <div className="space-y-2 sm:space-y-3">
           <Label className="flex items-center gap-2 text-sm sm:text-base">
@@ -405,6 +429,11 @@ export default function Settings() {
         currentVehicleType={vehicleType}
         onApplyCost={(cost) => setCostPerKm(cost.toFixed(2))}
       />
+
+      {/* Onboarding Tutorial */}
+      {showOnboarding && (
+        <OnboardingTutorial onComplete={completeOnboarding} />
+      )}
     </AppLayout>
   );
 }

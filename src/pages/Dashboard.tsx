@@ -16,7 +16,9 @@ import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
 import { PWAInstallBanner } from '@/components/pwa/PWAInstallBanner';
 import { ActiveShiftBanner } from '@/components/shifts/ActiveShiftBanner';
 import { StartShiftModal } from '@/components/shifts/StartShiftModal';
+import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import { useActiveShift } from '@/hooks/useActiveShift';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { Button } from '@/components/ui/button';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import logoWebp from '@/assets/logo-optimized.webp';
@@ -36,6 +38,7 @@ export default function Dashboard() {
   } = useDashboard(range);
   const { user } = useAuth();
   const { hasActiveShift } = useActiveShift();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Motorista';
 
@@ -44,7 +47,13 @@ export default function Dashboard() {
   }, [refetch]);
 
   return (
-    <AppLayout>
+    <>
+      {/* Onboarding Tutorial for new users */}
+      {showOnboarding && (
+        <OnboardingTutorial onComplete={completeOnboarding} />
+      )}
+
+      <AppLayout>
       <PullToRefresh onRefresh={handleRefresh} className="h-full">
         <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto scroll-momentum">
           {/* Header with Logo */}
@@ -216,5 +225,6 @@ export default function Dashboard() {
         onOpenChange={setShowStartShiftModal} 
       />
     </AppLayout>
+    </>
   );
 }
