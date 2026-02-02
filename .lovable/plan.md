@@ -1,116 +1,104 @@
 
-# Plano: Adicionar Categorias de Aluguel de Veículo e Financiamento
+# Suporte a Tipos de Combustível
 
-## Objetivo
-Adicionar duas novas categorias de gasto específicas para motoristas de aplicativo:
-- **Aluguel de Veículo** - Para quem aluga carro/moto semanalmente
-- **Financiamento/Prestação** - Para quem paga parcelas do veículo
+## Resumo
+Adicionar a opção de escolher o tipo de combustível (Gasolina, Etanol, GNV) nas Configurações e na Calculadora de Custo por Km, para que o cálculo reflita o combustível real utilizado pelo motorista.
 
-Isso tornará o cálculo do lucro real muito mais preciso, já que a maioria dos motoristas tem esses custos recorrentes.
+---
 
-## Impacto no Lucro Real
-Atualmente o sistema calcula:
+## O que será implementado
+
+### 1. Seletor de tipo de combustível nas Configurações
+Um novo campo abaixo do modelo do veículo onde o usuário escolhe:
+- **Gasolina** (padrão)
+- **Etanol**
+- **GNV** (Gás Natural Veicular)
+
+Este campo só aparece para veículos a combustão (carros e motos não-elétricos).
+
+### 2. Atualização da Calculadora de Custo
+A calculadora passará a:
+- Mostrar o tipo de combustível selecionado pelo usuário
+- Usar o preço de referência correto para cada tipo
+- Ajustar o consumo automaticamente para etanol (que rende ~30% menos que gasolina)
+
+### 3. Preços de referência por combustível
+| Combustível | Preço Sugerido |
+|-------------|----------------|
+| Gasolina    | R$ 5,89/L     |
+| Etanol      | R$ 3,89/L     |
+| GNV         | R$ 3,99/m³    |
+
+---
+
+## Fluxo do usuário
+
 ```text
-Lucro Real = Receita - Gastos Diretos - Custo por KM - Rateio de Custos Gerais
-```
-
-Com as novas categorias, esses custos fixos do veículo serão automaticamente incluídos no cálculo, mostrando o lucro verdadeiro após pagar o carro/moto.
-
----
-
-## Etapas de Implementação
-
-### 1. Migração do Banco de Dados
-Adicionar dois novos valores ao enum `expense_category`:
-- `aluguel_veiculo` - Aluguel de Veículo
-- `financiamento` - Financiamento/Prestação
-
-**SQL:**
-```sql
-ALTER TYPE expense_category ADD VALUE 'aluguel_veiculo';
-ALTER TYPE expense_category ADD VALUE 'financiamento';
-```
-
-### 2. Atualizar Tipos TypeScript
-Arquivo: `src/types/database.ts`
-
-Adicionar os novos valores ao tipo `ExpenseCategory`:
-```typescript
-export type ExpenseCategory = 
-  'combustivel' | 'manutencao' | 'alimentacao' | 'seguro' | 
-  'aluguel' | 'aluguel_veiculo' | 'financiamento' |
-  'internet' | 'pedagio_estacionamento' | 'outros';
-```
-
-### 3. Atualizar Labels de Categorias
-Arquivo: `src/lib/formatters.ts`
-
-Adicionar os labels em português:
-```typescript
-export const EXPENSE_CATEGORY_LABELS: Record<string, string> = {
-  combustivel: 'Combustível',
-  manutencao: 'Manutenção',
-  alimentacao: 'Alimentação',
-  seguro: 'Seguro',
-  aluguel: 'Aluguel',
-  aluguel_veiculo: 'Aluguel de Veículo',   // NOVO
-  financiamento: 'Financiamento/Prestação', // NOVO
-  internet: 'Internet',
-  pedagio_estacionamento: 'Pedágio/Estac.',
-  outros: 'Outros'
-};
-```
-
-### 4. Atualizar Formulário de Gastos
-Arquivo: `src/components/forms/ExpenseForm.tsx`
-
-Adicionar as novas categorias ao schema Zod:
-```typescript
-category: z.enum([
-  'combustivel', 'manutencao', 'alimentacao', 'seguro', 
-  'aluguel', 'aluguel_veiculo', 'financiamento',
-  'internet', 'pedagio_estacionamento', 'outros'
-] as const)
-```
-
-### 5. Atualizar Modal de Edição de Gastos
-Arquivo: `src/components/history/EditExpenseModal.tsx`
-
-Mesma atualização do schema Zod para incluir as novas categorias.
-
-### 6. Atualizar Gráfico de Categorias
-Arquivo: `src/components/dashboard/ExpenseCategoryChart.tsx`
-
-Adicionar labels e cores para as novas categorias:
-```typescript
-const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  // ... existentes ...
-  aluguel_veiculo: 'Aluguel Veículo',
-  financiamento: 'Financiamento',
-};
-
-// Adicionar mais 2 cores ao array COLORS
+Configurações
+    │
+    ├── Tipo de Veículo: [Carro] [Moto] [Bicicleta] [E-Bike]
+    │
+    ├── Modelo: [Onix 1.0 ▼]
+    │
+    ├── Combustível: [Gasolina ▼]  ← NOVO CAMPO
+    │                  - Gasolina
+    │                  - Etanol
+    │                  - GNV
+    │
+    └── Custo por Km: [0.50]
+            │
+            └── [Calcular meu custo] → Abre calculadora
+                                        com combustível
+                                        pré-selecionado
 ```
 
 ---
 
-## Arquivos a Modificar
+## Detalhes Técnicos
+
+### Banco de Dados
+Adicionar uma nova coluna `fuel_type` na tabela `user_settings`:
+- Tipo: `text`
+- Valores permitidos: `gasolina`, `etanol`, `gnv`, `eletrico`
+- Valor padrão: `gasolina`
+
+### Arquivos a serem modificados
 
 | Arquivo | Alteração |
 |---------|-----------|
-| Migração SQL | Adicionar valores ao enum |
-| `src/types/database.ts` | Adicionar tipos |
-| `src/lib/formatters.ts` | Adicionar labels |
-| `src/components/forms/ExpenseForm.tsx` | Atualizar schema Zod |
-| `src/components/history/EditExpenseModal.tsx` | Atualizar schema Zod |
-| `src/components/dashboard/ExpenseCategoryChart.tsx` | Adicionar labels e cores |
+| `src/types/database.ts` | Novo tipo `FuelType` e campo em `UserSettings` |
+| `src/lib/vehicleData.ts` | Novos preços de referência + fator de ajuste para etanol |
+| `src/pages/Settings.tsx` | Adicionar seletor de combustível |
+| `src/components/settings/VehicleCostCalculator.tsx` | Suporte a tipo de combustível no cálculo |
+
+### Lógica de ajuste de consumo
+O etanol tem eficiência ~30% menor que a gasolina. Isso será considerado no cálculo:
+
+```
+Consumo efetivo (etanol) = consumo_gasolina × 0.70
+```
+
+Para GNV, o consumo é similar à gasolina em termos de km/m³.
+
+### Quando mostrar o seletor
+O campo de combustível só aparece quando:
+- Veículo é **carro** ou **moto**
+- Modelo selecionado **NÃO** é elétrico ou híbrido
 
 ---
 
-## Resultado Esperado
-Após a implementação, os motoristas poderão:
+## Comportamento esperado
 
-1. Registrar gastos de **Aluguel de Veículo** (pagamento semanal/mensal do aluguel do carro/moto)
-2. Registrar gastos de **Financiamento/Prestação** (parcelas do veículo próprio)
-3. Ver esses custos no gráfico de pizza de gastos
-4. Ter um **lucro real mais preciso** que considera todos os custos do veículo
+1. **Usuário seleciona Carro → Onix 1.0**
+   - Aparece seletor de combustível: Gasolina (padrão)
+   
+2. **Usuário muda para Etanol**
+   - Preço de referência muda para R$ 3,89
+   - Ao calcular, sistema aplica fator de 0.70 no consumo
+   
+3. **Usuário seleciona veículo elétrico**
+   - Seletor de combustível fica oculto
+   - Sistema usa preço de energia (R$/kWh)
+
+4. **Configuração persiste**
+   - Ao reabrir Configurações ou Calculadora, combustível escolhido aparece selecionado
