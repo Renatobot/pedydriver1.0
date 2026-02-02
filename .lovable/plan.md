@@ -1,73 +1,30 @@
 
-# Plano: Preço Âncora de R$ 29,90 no PIX
 
-## Resumo
-Atualizar a exibição de preços no card PRO e na seção de pagamento para mostrar o preço "original" de R$ 29,90 riscado, com o preço real de R$ 14,90 em destaque, criando uma percepção de 50% de desconto via PIX.
+# Plano: Ocultar o Badge do Lovable
 
----
+## Objetivo
+Adicionar uma regra CSS global para esconder qualquer elemento com o ID `lovable-badge`.
 
-## Alterações Visuais
+## Alteração
 
-### Card PRO - Seção de Preço (linha 131-139)
-**Antes:**
-```
-R$ 14,90/mês
-ou R$ 99/ano (economize 45%)
-```
+### Arquivo: `src/index.css`
 
-**Depois:**
-```
-~R$ 29,90~ R$ 14,90/mês ← preço riscado + preço real
-ou R$ 149/ano ~R$ 99~ (economize 34%) ← ajustar proporcionalmente
+Adicionar a seguinte regra CSS no final do arquivo (após a media query do scrollbar customizado):
+
+```css
+/* Hide Lovable badge */
+#lovable-badge {
+  display: none !important;
+}
 ```
 
-### Seção de Pagamento (linha 179-184)
-**Antes:**
-```
-💳 Pagamento seguro via PIX ou Cartão
-PIX sem taxa • Cartão com taxa da operadora
-```
+## Detalhes Técnicos
 
-**Depois:**
-```
-💳 Pagamento seguro
+- **Seletor**: `#lovable-badge` - seleciona elementos pelo ID
+- **Propriedade**: `display: none !important` - garante que o elemento seja ocultado mesmo que outras regras tentem sobrescrevê-lo
+- **Localização**: Fora de qualquer `@layer` para garantir maior especificidade
 
-PIX (sem taxa adicional)
-~R$ 29,90~ → R$ 14,90/mês
+## Impacto
+- Nenhum impacto na funcionalidade ou design existente
+- O badge do Lovable será ocultado em todas as páginas do aplicativo
 
-Cartão de crédito
-R$ 14,90/mês + taxa da operadora
-```
-
----
-
-## Estilo Visual
-
-| Elemento | Estilo |
-|----------|--------|
-| R$ 29,90 riscado | `text-muted-foreground line-through text-lg` |
-| R$ 14,90 real | `text-3xl font-bold text-emerald-500` (destaque verde) |
-| Badge PIX | Pequeno badge verde "sem taxa" |
-| Info cartão | Texto neutro, menor, discreto |
-
----
-
-## Arquivo a Modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/Upgrade.tsx` | Atualizar exibição de preços com âncora de R$ 29,90 riscado |
-
----
-
-## Implementação
-
-1. Modificar a seção de preço do card PRO (linhas 131-139) para mostrar:
-   - R$ 29,90 riscado em cinza
-   - R$ 14,90 em destaque verde
-   - Manter info do plano anual
-
-2. Redesenhar a seção de pagamento (linhas 179-184) para:
-   - Separar claramente PIX vs Cartão
-   - Mostrar preço âncora riscado no PIX
-   - Indicar taxa adicional no cartão de forma discreta
