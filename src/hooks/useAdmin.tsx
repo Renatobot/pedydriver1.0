@@ -26,6 +26,7 @@ export interface AdminUser {
   plan_status: 'active' | 'cancelled' | 'expired' | 'trialing';
   plan_started_at: string;
   plan_expires_at: string | null;
+  days_inactive: number;
 }
 
 export interface AdminLog {
@@ -362,6 +363,40 @@ export function useAdminResetPassword() {
         variant: 'destructive',
       });
       console.error('Error resetting password:', error);
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ targetUserId, sendNotification }: { targetUserId: string; sendNotification?: boolean }) => {
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { targetUserId, sendNotification },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
+      toast({
+        title: variables.sendNotification ? 'Notificação enviada' : 'Usuário excluído',
+        description: variables.sendNotification 
+          ? 'O usuário foi notificado sobre a inatividade.'
+          : 'O usuário foi excluído permanentemente.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: 'Falha na operação: ' + error.message,
+        variant: 'destructive',
+      });
+      console.error('Error in user operation:', error);
     },
   });
 }
