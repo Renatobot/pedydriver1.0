@@ -78,7 +78,10 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Profit Card */}
-            <ProfitCard value={metrics.realProfit} />
+            <ProfitCard 
+              value={metrics.realProfit} 
+              secondaryValue={metrics.totalRevenue}
+            />
 
             {/* Main Metrics */}
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
