@@ -32,6 +32,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
 const AdminPendingPayments = lazy(() => import("./pages/admin/AdminPendingPayments"));
 const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
+const AdminSupport = lazy(() => import("./pages/admin/AdminSupport"));
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ function AppRoutes() {
         <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
         <Route path="/admin/payments" element={<ProtectedRoute><AdminPendingPayments /></ProtectedRoute>} />
         <Route path="/admin/logs" element={<ProtectedRoute><AdminLogs /></ProtectedRoute>} />
+        <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

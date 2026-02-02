@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Wallet, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Wallet, Menu, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
@@ -18,6 +18,7 @@ const navItems = [
   { to: '/admin/users', icon: Users, label: 'Usuários' },
   { to: '/admin/subscriptions', icon: CreditCard, label: 'Assinaturas' },
   { to: '/admin/payments', icon: Wallet, label: 'Pagamentos' },
+  { to: '/admin/support', icon: MessageSquare, label: 'Suporte' },
   { to: '/admin/logs', icon: FileText, label: 'Logs' },
 ];
 
