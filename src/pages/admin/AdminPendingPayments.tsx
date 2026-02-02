@@ -60,6 +60,18 @@ export default function AdminPendingPayments() {
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState('');
 
+  // Quick admin guard: if session isn't recognized as admin, RPCs will return empty.
+  const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
+    queryKey: ['admin-check'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('is_admin');
+      if (error) throw error;
+      return Boolean(data);
+    },
+    staleTime: 30_000,
+    retry: 1,
+  });
+
   // Fetch pending payments
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['pending-payments'],
@@ -68,6 +80,7 @@ export default function AdminPendingPayments() {
       if (error) throw error;
       return data as PendingPayment[];
     },
+    enabled: isAdmin === true,
   });
 
   // Fetch users for linking
@@ -78,6 +91,7 @@ export default function AdminPendingPayments() {
       if (error) throw error;
       return data as AdminUser[];
     },
+    enabled: isAdmin === true,
   });
 
   // Link payment mutation
@@ -236,6 +250,27 @@ export default function AdminPendingPayments() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Admin guard */}
+        {isAdminLoading ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">Verificando permissão de admin...</CardContent>
+          </Card>
+        ) : isAdmin === false ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sem permissão de administrador</CardTitle>
+              <CardDescription>
+                Você está logado, mas esta sessão não está com papel <strong>admin</strong> no backend.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p>
+                Dica: confirme que você está no ambiente certo (Preview vs Publicado) e que o usuário tem role <code>admin</code>.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Payments List */}
         {isLoading ? (
