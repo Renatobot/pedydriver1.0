@@ -23,77 +23,106 @@ Deno.serve(async (req) => {
     
     console.log("InfinitePay webhook received:", JSON.stringify(payload, null, 2));
 
-    // InfinitePay can send different event types
-    // Common fields: email, status, amount, transaction_id, etc.
-    // We need to extract the customer email to find our user
+    // InfinitePay webhook format - extract data from their specific structure
+    // The payload contains: invoice_slug, amount, paid_amount, capture_method, items, etc.
     
-    // Try to find email in common InfinitePay payload locations
+    // Try to find email in various payload locations
     const customerEmail = 
       payload.customer?.email || 
       payload.email || 
       payload.payer?.email ||
       payload.buyer?.email ||
       payload.data?.customer?.email ||
-      payload.data?.email;
+      payload.data?.email ||
+      payload.payer_email ||
+      payload.customer_email;
 
+    // InfinitePay uses paid_amount to indicate successful payment
+    // If paid_amount > 0, the payment was successful
+    const paidAmount = payload.paid_amount || 0;
+    const amount = payload.amount || payload.value || payload.data?.amount || 0;
+    
+    // Check if payment was successful by looking at paid_amount or status
     const paymentStatus = 
       payload.status || 
       payload.payment_status ||
       payload.data?.status ||
-      "unknown";
+      (paidAmount > 0 ? "paid" : "unknown");
 
     const transactionId = 
+      payload.invoice_slug ||
+      payload.transaction_nsu ||
+      payload.order_nsu ||
       payload.id ||
       payload.transaction_id ||
       payload.payment_id ||
-      payload.data?.id ||
       `ip_${Date.now()}`;
 
-    const amount = 
-      payload.amount ||
-      payload.value ||
-      payload.data?.amount ||
-      payload.data?.value ||
-      0;
+    const captureMethod = payload.capture_method || "unknown";
+    const invoiceSlug = payload.invoice_slug || null;
 
-    console.log("Parsed data:", { customerEmail, paymentStatus, transactionId, amount });
+    console.log("Parsed data:", { 
+      customerEmail, 
+      paymentStatus, 
+      transactionId, 
+      amount, 
+      paidAmount,
+      captureMethod,
+      invoiceSlug 
+    });
 
-    // Check if payment was successful
+    // Payment is successful if:
+    // 1. paid_amount > 0 (InfinitePay specific)
+    // 2. OR status indicates success
     const successStatuses = ["approved", "paid", "completed", "success", "captured"];
-    const isPaymentSuccessful = successStatuses.some(
+    const isPaymentSuccessful = paidAmount > 0 || successStatuses.some(
       s => paymentStatus.toLowerCase().includes(s)
     );
 
     if (!isPaymentSuccessful) {
-      console.log("Payment not successful, status:", paymentStatus);
+      console.log("Payment not successful, status:", paymentStatus, "paid_amount:", paidAmount);
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: "Webhook received, payment not successful",
-          status: paymentStatus 
+          status: paymentStatus,
+          paid_amount: paidAmount
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Payment confirmed as successful!");
 
   if (!customerEmail) {
-      console.error("No customer email found in payload");
+      console.log("No customer email found in payload - saving for manual linking");
       console.log("Full payload structure:", Object.keys(payload));
       
-      // Save as pending payment without email for manual review
-      await supabase.from("pending_payments").insert({
-        email: "unknown@payment.com",
-        amount: amount,
+      // Get item description for more context
+      const itemDescription = payload.items?.[0]?.description || "Assinatura PRO";
+      
+      // Save as pending payment for manual review with more context
+      const { error: insertError } = await supabase.from("pending_payments").insert({
+        email: `pix_${invoiceSlug || transactionId}@pending.local`,
+        amount: paidAmount || amount,
         transaction_id: transactionId,
         payment_data: payload,
         status: "pending",
       });
+      
+      if (insertError) {
+        console.error("Error saving pending payment:", insertError);
+      }
 
-      // Create admin alert
-      await supabase.from("admin_alerts").insert({
+      // Create admin alert with more details
+      const { error: alertError } = await supabase.from("admin_alerts").insert({
         event_type: "payment_user_not_found",
-        message: `⚠️ Pagamento recebido sem email identificado. Valor: R$ ${(amount / 100).toFixed(2)}. Verifique em Pagamentos Pendentes.`,
+        message: `💰 Pagamento PIX recebido! Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}. Método: ${captureMethod}. Invoice: ${invoiceSlug || 'N/A'}. Vincule manualmente em Pagamentos Pendentes.`,
       });
+      
+      if (alertError) {
+        console.error("Error creating alert:", alertError);
+      }
       
       return new Response(
         JSON.stringify({ 
