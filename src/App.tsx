@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +9,7 @@ import { SyncProvider } from "@/contexts/SyncContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SplashScreen, PageLoader } from "@/components/ui/splash-screen";
 
 // Eager load critical pages
 import Dashboard from "./pages/Dashboard";
@@ -37,15 +38,6 @@ const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
 const AdminSupport = lazy(() => import("./pages/admin/AdminSupport"));
 
 const queryClient = new QueryClient();
-
-// Loading fallback component
-function PageLoader() {
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -105,25 +97,39 @@ function AppRoutes() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <SyncProvider>
-          <SubscriptionProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <SyncStatusIndicator />
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </SubscriptionProvider>
-        </SyncProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash on first visit per session
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    return !hasSeenSplash;
+  });
+
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('hasSeenSplash', 'true');
+    setShowSplash(false);
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+        <AuthProvider>
+          <SyncProvider>
+            <SubscriptionProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <SyncStatusIndicator />
+                <BrowserRouter>
+                  <AppRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </SubscriptionProvider>
+          </SyncProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
