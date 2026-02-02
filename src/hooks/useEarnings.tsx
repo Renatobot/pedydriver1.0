@@ -83,6 +83,43 @@ export function useCreateEarning() {
   });
 }
 
+export function useUpdateEarning() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ id, ...earning }: { id: string } & Partial<CreateEarningData>) => {
+      if (!user) throw new Error('Não autenticado');
+
+      const { data, error } = await supabase
+        .from('earnings')
+        .update(earning)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['earnings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast({
+        title: 'Ganho atualizado!',
+        description: 'Seu ganho foi editado com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao atualizar',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+}
+
 export function useDeleteEarning() {
   const queryClient = useQueryClient();
 

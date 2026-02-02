@@ -79,6 +79,43 @@ export function useCreateShift() {
   });
 }
 
+export function useUpdateShift() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ id, ...shift }: { id: string } & Partial<CreateShiftData>) => {
+      if (!user) throw new Error('Não autenticado');
+
+      const { data, error } = await supabase
+        .from('shifts')
+        .update(shift)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast({
+        title: 'Turno atualizado!',
+        description: 'Seu turno foi editado com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao atualizar',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+}
+
 export function useDeleteShift() {
   const queryClient = useQueryClient();
 
