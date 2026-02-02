@@ -177,9 +177,10 @@ export default function Upgrade() {
         </div>
 
         {/* FAQ or guarantee */}
-        <div className="text-center text-sm text-muted-foreground pt-4">
+        <div className="text-center text-sm text-muted-foreground pt-4 space-y-1">
           <p>💳 Pagamento seguro via PIX ou Cartão</p>
-          <p className="mt-1">Cancele quando quiser, sem complicação</p>
+          <p className="text-xs text-muted-foreground/70">PIX sem taxa • Cartão com taxa da operadora</p>
+          <p className="mt-2">Cancele quando quiser, sem complicação</p>
         </div>
       </div>
 
