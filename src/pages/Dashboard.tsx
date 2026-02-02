@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Clock, Navigation, Banknote, Wallet, CreditCard, Hash, Play, Info, Layers } from 'lucide-react';
+import { Clock, Navigation, Banknote, CreditCard, Hash, Play, Info, Layers } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfitCard } from '@/components/dashboard/ProfitCard';
 import { MetricCard } from '@/components/dashboard/MetricCard';
@@ -8,6 +8,7 @@ import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
 import { ProfitEvolutionChart } from '@/components/dashboard/ProfitEvolutionChart';
 import { PlatformComparisonChart } from '@/components/dashboard/PlatformComparisonChart';
 import { ExpenseCategoryChart } from '@/components/dashboard/ExpenseCategoryChart';
+import { ExpenseDetailCard } from '@/components/dashboard/ExpenseDetailCard';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -124,11 +125,9 @@ export default function Dashboard() {
                   variant="profit"
                   icon={<Banknote className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 />
-                <MetricCard
-                  label="Gastos"
-                  value={metrics.totalExpenses}
-                  variant="expense"
-                  icon={<Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                <ExpenseDetailCard
+                  totalExpenses={metrics.totalExpenses}
+                  expenses={expenses}
                 />
               </div>
 
