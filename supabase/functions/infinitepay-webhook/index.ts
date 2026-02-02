@@ -6,6 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Valores esperados em centavos
+const MONTHLY_AMOUNT = 1490;
+const ANNUAL_AMOUNT = 9900;
+const AMOUNT_THRESHOLD = 9000; // Acima disso é anual
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -23,10 +28,7 @@ Deno.serve(async (req) => {
     
     console.log("InfinitePay webhook received:", JSON.stringify(payload, null, 2));
 
-    // InfinitePay webhook format - extract data from their specific structure
-    // The payload contains: invoice_slug, amount, paid_amount, capture_method, items, etc.
-    
-    // Try to find email in various payload locations
+    // Extract data from InfinitePay payload
     const customerEmail = 
       payload.customer?.email || 
       payload.email || 
@@ -37,12 +39,9 @@ Deno.serve(async (req) => {
       payload.payer_email ||
       payload.customer_email;
 
-    // InfinitePay uses paid_amount to indicate successful payment
-    // If paid_amount > 0, the payment was successful
     const paidAmount = payload.paid_amount || 0;
     const amount = payload.amount || payload.value || payload.data?.amount || 0;
     
-    // Check if payment was successful by looking at paid_amount or status
     const paymentStatus = 
       payload.status || 
       payload.payment_status ||
@@ -71,9 +70,7 @@ Deno.serve(async (req) => {
       invoiceSlug 
     });
 
-    // Payment is successful if:
-    // 1. paid_amount > 0 (InfinitePay specific)
-    // 2. OR status indicates success
+    // Check if payment was successful
     const successStatuses = ["approved", "paid", "completed", "success", "captured"];
     const isPaymentSuccessful = paidAmount > 0 || successStatuses.some(
       s => paymentStatus.toLowerCase().includes(s)
@@ -94,24 +91,36 @@ Deno.serve(async (req) => {
     
     console.log("Payment confirmed as successful!");
 
-    // If no email in payload, try to find a recent payment intent
-    // This happens because InfinitePay doesn't send customer email in webhook
+    // ============================================
+    // SECURITY FIX: Matching seguro por plan_type + FIFO
+    // ============================================
+
+    const actualAmount = paidAmount || amount;
+    
+    // Detectar tipo de plano pelo valor pago
+    const isAnnual = actualAmount >= AMOUNT_THRESHOLD;
+    const expectedPlanType = isAnnual ? 'annual' : 'monthly';
+
+    console.log(`Payment amount: ${actualAmount}, detected plan: ${expectedPlanType}`);
+
+    // Janela de tempo reduzida: 30 minutos (mais seguro)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    
     let userFromIntent = null;
     let intentEmail = customerEmail;
+    let matchedIntent = null;
     
     if (!customerEmail) {
-      console.log("No customer email in payload - looking for recent payment intent...");
+      console.log("No customer email in payload - looking for matching payment intent...");
       
-      // Look for a pending payment intent created in the last 2 hours
-      // We match by timing since InfinitePay doesn't give us a way to link
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-      
+      // Buscar intent pendente com o mesmo tipo de plano (FIFO - primeiro criado)
       const { data: recentIntents, error: intentError } = await supabase
         .from("payment_intents")
         .select("*")
         .eq("status", "pending")
-        .gte("created_at", twoHoursAgo)
-        .order("created_at", { ascending: false })
+        .eq("plan_type", expectedPlanType) // Filtrar por tipo de plano
+        .gte("created_at", thirtyMinutesAgo) // Janela menor
+        .order("created_at", { ascending: true }) // FIFO - primeiro a criar intent
         .limit(1);
       
       if (intentError) {
@@ -120,28 +129,32 @@ Deno.serve(async (req) => {
       
       if (recentIntents && recentIntents.length > 0) {
         const intent = recentIntents[0];
-        console.log("Found recent payment intent:", intent.user_email, intent.plan_type);
+        console.log("Found matching payment intent:", intent.user_email, intent.plan_type, "created:", intent.created_at);
         intentEmail = intent.user_email;
+        matchedIntent = intent;
         userFromIntent = {
           id: intent.user_id,
           email: intent.user_email,
           plan_type: intent.plan_type,
           intent_id: intent.id
         };
+      } else {
+        console.log("No matching intent found for plan_type:", expectedPlanType);
       }
     }
     
-    // If still no email, save as pending for manual review
+    // Se não encontrou email nem intent, salvar como pending para claim posterior
     if (!intentEmail && !userFromIntent) {
-      console.log("No customer email and no recent payment intent - saving for manual linking");
+      console.log("No customer email and no matching payment intent - saving for claim");
       console.log("Full payload structure:", Object.keys(payload));
       
       const { error: insertError } = await supabase.from("pending_payments").insert({
         email: `pix_${invoiceSlug || transactionId}@pending.local`,
-        amount: paidAmount || amount,
+        amount: actualAmount,
         transaction_id: transactionId,
         payment_data: payload,
         status: "pending",
+        // Sem intent_id pois não encontramos match
       });
       
       if (insertError) {
@@ -150,34 +163,33 @@ Deno.serve(async (req) => {
 
       await supabase.from("admin_alerts").insert({
         event_type: "payment_user_not_found",
-        message: `💰 Pagamento PIX recebido! Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}. Método: ${captureMethod}. Invoice: ${invoiceSlug || 'N/A'}. Vincule manualmente em Pagamentos Pendentes.`,
+        message: `💰 Pagamento PIX recebido! Valor: R$ ${(actualAmount / 100).toFixed(2)}. Plano detectado: ${expectedPlanType}. Método: ${captureMethod}. Invoice: ${invoiceSlug || 'N/A'}. Nenhum intent encontrado - aguardando claim.`,
       });
       
       return new Response(
         JSON.stringify({ 
-          success: false, 
-          error: "Customer email not found and no recent payment intent",
-          payload_keys: Object.keys(payload)
+          success: true, 
+          message: "Payment saved as pending - no matching intent found",
+          amount: actualAmount,
+          plan_type: expectedPlanType,
+          status: "pending_claim"
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Use the email we found (either from payload or from intent)
     const finalEmail = intentEmail || customerEmail;
 
-    // If we have a user from intent, use that directly
-    let user = null;
+    // Se temos user do intent, usar diretamente
     let userId = null;
     let userEmail = finalEmail;
     
     if (userFromIntent) {
-      // We already have the user from the payment intent
       userId = userFromIntent.id;
       userEmail = userFromIntent.email;
       console.log("Using user from payment intent:", userId, userEmail);
     } else {
-      // Find user by email in auth.users
+      // Buscar user por email
       const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) {
@@ -185,26 +197,26 @@ Deno.serve(async (req) => {
         throw authError;
       }
 
-      user = authUsers.users.find(
+      const user = authUsers.users.find(
         u => u.email?.toLowerCase() === finalEmail.toLowerCase()
       );
 
       if (!user) {
         console.error("User not found for email:", finalEmail);
         
-        // Save as pending payment for manual linking
+        // Salvar como pending com intent_id se disponível
         await supabase.from("pending_payments").insert({
           email: finalEmail,
-          amount: paidAmount || amount,
+          amount: actualAmount,
           transaction_id: transactionId,
           payment_data: payload,
           status: "pending",
+          intent_id: matchedIntent?.id || null,
         });
 
-        // Create an admin alert for manual review
         await supabase.from("admin_alerts").insert({
           event_type: "payment_user_not_found",
-          message: `⚠️ Pagamento recebido mas usuário não encontrado. Email: ${finalEmail}, Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}. Vincule em Pagamentos Pendentes.`,
+          message: `⚠️ Pagamento recebido mas usuário não encontrado. Email: ${finalEmail}, Valor: R$ ${(actualAmount / 100).toFixed(2)}. Vincule em Pagamentos Pendentes.`,
           user_email: finalEmail,
         });
 
@@ -224,11 +236,7 @@ Deno.serve(async (req) => {
 
     console.log("Processing subscription for user:", userId, userEmail);
 
-    // Calculate expiration date
-    // Use plan_type from intent if available, otherwise detect from amount
-    const intentPlanType = userFromIntent?.plan_type;
-    const isAnnual = intentPlanType === 'annual' || (paidAmount || amount) >= 9000;
-    
+    // Calcular data de expiração
     const expiresAt = new Date();
     if (isAnnual) {
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -236,7 +244,7 @@ Deno.serve(async (req) => {
       expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
 
-    // Update subscription to PRO
+    // Atualizar subscription para PRO
     const { error: updateError } = await supabase
       .from("subscriptions")
       .update({
@@ -256,7 +264,7 @@ Deno.serve(async (req) => {
 
     console.log("Subscription updated successfully for user:", userId);
 
-    // Mark payment intent as completed if we used one
+    // Marcar payment intent como completado
     if (userFromIntent?.intent_id) {
       await supabase
         .from("payment_intents")
@@ -268,20 +276,20 @@ Deno.serve(async (req) => {
       console.log("Payment intent marked as completed:", userFromIntent.intent_id);
     }
 
-    // Get user profile for alert
+    // Buscar perfil para alerta
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
       .eq("user_id", userId)
       .single();
 
-    // Create admin alert for new PRO subscription via InfinitePay
+    // Criar alerta admin
     await supabase.from("admin_alerts").insert({
       event_type: "new_user_pro",
       user_id: userId,
       user_name: profile?.full_name,
       user_email: userEmail,
-      message: `💰 Novo assinante PRO via InfinitePay: ${profile?.full_name || userEmail}. Plano: ${isAnnual ? 'Anual' : 'Mensal'}. Valor: R$ ${((paidAmount || amount) / 100).toFixed(2)}`,
+      message: `💰 Novo assinante PRO via InfinitePay: ${profile?.full_name || userEmail}. Plano: ${isAnnual ? 'Anual' : 'Mensal'}. Valor: R$ ${(actualAmount / 100).toFixed(2)}. Match: ${userFromIntent ? 'intent_' + userFromIntent.intent_id.substring(0, 8) : 'email'}`,
     });
 
     return new Response(
@@ -292,7 +300,8 @@ Deno.serve(async (req) => {
         plan: "pro",
         expires_at: expiresAt.toISOString(),
         is_annual: isAnnual,
-        matched_via: userFromIntent ? "payment_intent" : "email"
+        matched_via: userFromIntent ? "payment_intent" : "email",
+        intent_id: userFromIntent?.intent_id || null
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

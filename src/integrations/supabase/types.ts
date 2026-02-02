@@ -248,6 +248,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          intent_id: string | null
           linked_at: string | null
           linked_by: string | null
           linked_user_id: string | null
@@ -261,6 +262,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          intent_id?: string | null
           linked_at?: string | null
           linked_by?: string | null
           linked_user_id?: string | null
@@ -274,6 +276,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          intent_id?: string | null
           linked_at?: string | null
           linked_by?: string | null
           linked_user_id?: string | null
@@ -282,7 +285,15 @@ export type Database = {
           transaction_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pending_payments_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "payment_intents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platforms: {
         Row: {
