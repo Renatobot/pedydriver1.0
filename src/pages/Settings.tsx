@@ -164,7 +164,10 @@ export default function Settings() {
               </Label>
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
-                  onClick={() => setVehicleType('carro')}
+                  onClick={() => {
+                    setVehicleType('carro');
+                    updateSettings.mutate({ vehicle_type: 'carro' });
+                  }}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'carro'
@@ -176,7 +179,10 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">Carro</span>
                 </button>
                 <button
-                  onClick={() => setVehicleType('moto')}
+                  onClick={() => {
+                    setVehicleType('moto');
+                    updateSettings.mutate({ vehicle_type: 'moto' });
+                  }}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'moto'
@@ -188,7 +194,10 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">Moto</span>
                 </button>
                 <button
-                  onClick={() => setVehicleType('bicicleta')}
+                  onClick={() => {
+                    setVehicleType('bicicleta');
+                    updateSettings.mutate({ vehicle_type: 'bicicleta' });
+                  }}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'bicicleta'
@@ -200,7 +209,10 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">Bicicleta</span>
                 </button>
                 <button
-                  onClick={() => setVehicleType('bicicleta_eletrica')}
+                  onClick={() => {
+                    setVehicleType('bicicleta_eletrica');
+                    updateSettings.mutate({ vehicle_type: 'bicicleta_eletrica' });
+                  }}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'bicicleta_eletrica'
