@@ -40,8 +40,9 @@ export function EarningForm({ onSuccess }: EarningFormProps) {
   const { data: platforms } = usePlatforms();
   const createEarning = useCreateEarningOffline();
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const { canAddEntry, isPro } = useSubscriptionContext();
+  const { canAddEntry, isPro, canUsePlatform, usedPlatformIds, remainingPlatforms } = useSubscriptionContext();
   const [showBlocker, setShowBlocker] = useState(!canAddEntry);
+  const [platformError, setPlatformError] = useState<string | null>(null);
 
   const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -56,11 +57,33 @@ export function EarningForm({ onSuccess }: EarningFormProps) {
   });
 
   const date = watch('date');
+  const selectedPlatformId = watch('platform_id');
   const isBlocked = !canAddEntry && !isPro;
+
+  // Filter platforms based on subscription limits
+  const availablePlatforms = platforms?.filter(p => {
+    if (isPro) return true;
+    // Show platforms that user already used OR if they haven't reached limit
+    return usedPlatformIds.includes(p.id) || remainingPlatforms > 0;
+  });
+
+  const handlePlatformChange = (platformId: string) => {
+    if (!canUsePlatform(platformId)) {
+      setPlatformError('Você atingiu o limite de plataformas do plano gratuito. Faça upgrade para usar mais plataformas.');
+      return;
+    }
+    setPlatformError(null);
+    setValue('platform_id', platformId);
+  };
 
   const onSubmit = async (data: FormData) => {
     if (isBlocked) {
       setShowBlocker(true);
+      return;
+    }
+
+    if (!canUsePlatform(data.platform_id)) {
+      setPlatformError('Você atingiu o limite de plataformas do plano gratuito.');
       return;
     }
     
@@ -75,6 +98,7 @@ export function EarningForm({ onSuccess }: EarningFormProps) {
       notes: data.notes,
     });
     reset();
+    setPlatformError(null);
     onSuccess?.();
   };
 
@@ -118,21 +142,30 @@ export function EarningForm({ onSuccess }: EarningFormProps) {
 
         {/* Platform */}
         <div className="space-y-1.5 sm:space-y-2">
-          <Label className="text-sm sm:text-base">Plataforma</Label>
-          <Select onValueChange={(v) => setValue('platform_id', v)}>
-            <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+          <Label className="text-sm sm:text-base">
+            Plataforma
+            {!isPro && remainingPlatforms === 0 && usedPlatformIds.length > 0 && (
+              <span className="text-xs text-muted-foreground ml-2">(limite atingido)</span>
+            )}
+          </Label>
+          <Select value={selectedPlatformId} onValueChange={handlePlatformChange}>
+            <SelectTrigger className={cn("h-11 sm:h-12 text-sm sm:text-base", platformError && "border-destructive")}>
               <SelectValue placeholder="Selecione" />
             </SelectTrigger>
             <SelectContent>
-              {platforms?.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="py-3">
-                  {p.name}
-                </SelectItem>
-              ))}
+              {availablePlatforms?.map((p) => {
+                const isUsed = usedPlatformIds.includes(p.id);
+                return (
+                  <SelectItem key={p.id} value={p.id} className="py-3">
+                    {p.name}
+                    {!isPro && isUsed && <span className="text-xs text-muted-foreground ml-2">(em uso)</span>}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
-          {errors.platform_id && (
-            <p className="text-2xs sm:text-xs text-destructive">{errors.platform_id.message}</p>
+          {(errors.platform_id || platformError) && (
+            <p className="text-2xs sm:text-xs text-destructive">{platformError || errors.platform_id?.message}</p>
           )}
         </div>
 

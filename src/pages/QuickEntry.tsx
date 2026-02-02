@@ -18,7 +18,7 @@ export default function QuickEntry() {
   const { data: userSettings } = useUserSettings();
   const createEarning = useCreateEarningOffline();
   const createShift = useCreateShiftOffline();
-  const { canAddEntry, isPro } = useSubscriptionContext();
+  const { canAddEntry, isPro, canUsePlatform, usedPlatformIds, remainingPlatforms } = useSubscriptionContext();
 
   const costPerKm = userSettings?.cost_per_km || 0.5;
 
@@ -28,8 +28,24 @@ export default function QuickEntry() {
   const [platformId, setPlatformId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showBlocker, setShowBlocker] = useState(!canAddEntry);
+  const [platformError, setPlatformError] = useState<string | null>(null);
 
   const isBlocked = !canAddEntry && !isPro;
+
+  // Filter platforms based on subscription limits
+  const availablePlatforms = platforms?.filter(p => {
+    if (isPro) return true;
+    return usedPlatformIds.includes(p.id) || remainingPlatforms > 0;
+  });
+
+  const handlePlatformChange = (newPlatformId: string) => {
+    if (!canUsePlatform(newPlatformId)) {
+      setPlatformError('Limite de plataformas atingido. Faça upgrade para usar mais.');
+      return;
+    }
+    setPlatformError(null);
+    setPlatformId(newPlatformId);
+  };
 
   const metrics = useMemo(() => {
     const valueNum = parseFloat(value) || 0;
@@ -57,6 +73,11 @@ export default function QuickEntry() {
   const handleSave = useCallback(async () => {
     if (isBlocked) {
       setShowBlocker(true);
+      return;
+    }
+
+    if (!canUsePlatform(platformId)) {
+      setPlatformError('Limite de plataformas atingido.');
       return;
     }
 
@@ -105,7 +126,7 @@ export default function QuickEntry() {
     } finally {
       setIsSaving(false);
     }
-  }, [isBlocked, value, km, minutes, platformId, createEarning, createShift]);
+  }, [isBlocked, value, km, minutes, platformId, createEarning, createShift, canUsePlatform]);
 
   return (
     <AppLayout>
@@ -142,17 +163,20 @@ export default function QuickEntry() {
           )}
           
           <QuickEntryForm
-            platforms={platforms}
+            platforms={availablePlatforms}
             value={value}
             km={km}
             minutes={minutes}
             platformId={platformId}
             isSaving={isSaving}
             isBlocked={isBlocked}
+            platformError={platformError}
+            usedPlatformIds={usedPlatformIds}
+            isPro={isPro}
             onValueChange={setValue}
             onKmChange={setKm}
             onMinutesChange={setMinutes}
-            onPlatformChange={setPlatformId}
+            onPlatformChange={handlePlatformChange}
             onSave={handleSave}
           />
         </div>

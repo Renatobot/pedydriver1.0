@@ -15,6 +15,9 @@ interface QuickEntryFormProps {
   platformId: string;
   isSaving: boolean;
   isBlocked: boolean;
+  platformError?: string | null;
+  usedPlatformIds?: string[];
+  isPro?: boolean;
   onValueChange: (value: string) => void;
   onKmChange: (value: string) => void;
   onMinutesChange: (value: string) => void;
@@ -30,6 +33,9 @@ export const QuickEntryForm = memo(function QuickEntryForm({
   platformId,
   isSaving,
   isBlocked,
+  platformError,
+  usedPlatformIds = [],
+  isPro = false,
   onValueChange,
   onKmChange,
   onMinutesChange,
@@ -42,17 +48,24 @@ export const QuickEntryForm = memo(function QuickEntryForm({
       <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
         <Label className="text-xs sm:text-sm text-muted-foreground">Plataforma</Label>
         <Select value={platformId} onValueChange={onPlatformChange}>
-          <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+          <SelectTrigger className={cn("h-11 sm:h-12 text-sm sm:text-base", platformError && "border-destructive")}>
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
-            {platforms?.map((p) => (
-              <SelectItem key={p.id} value={p.id} className="py-3">
-                {p.name}
-              </SelectItem>
-            ))}
+            {platforms?.map((p) => {
+              const isUsed = usedPlatformIds.includes(p.id);
+              return (
+                <SelectItem key={p.id} value={p.id} className="py-3">
+                  {p.name}
+                  {!isPro && isUsed && <span className="text-xs text-muted-foreground ml-2">(em uso)</span>}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
+        {platformError && (
+          <p className="text-2xs sm:text-xs text-destructive">{platformError}</p>
+        )}
       </div>
 
       {/* Value - Main input */}
