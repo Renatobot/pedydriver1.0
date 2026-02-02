@@ -89,7 +89,10 @@ export function VehicleCostCalculator({
   const fuelComparison = useMemo((): FuelComparison[] | null => {
     if (!selectedVehicle || isElectric || isBike || !isPro) return null;
 
-    const fuelTypes: FuelType[] = ['gasolina', 'etanol', 'gnv'];
+    // GNV só disponível para carros
+    const fuelTypes: FuelType[] = vehicleType === 'carro' 
+      ? ['gasolina', 'etanol', 'gnv'] 
+      : ['gasolina', 'etanol'];
     const km = mileage ? parseInt(mileage, 10) : undefined;
     const monthlyKm = 1500; // Estimativa média mensal
 
@@ -119,7 +122,7 @@ export function VehicleCostCalculator({
     }
 
     return comparisons;
-  }, [selectedVehicle, isElectric, isBike, isPro, mileage]);
+  }, [selectedVehicle, isElectric, isBike, isPro, mileage, vehicleType]);
 
   // Sincronizar com as props quando o modal abrir
   useEffect(() => {
@@ -481,7 +484,7 @@ export function VehicleCostCalculator({
                 <Fuel className="w-4 h-4" />
                 Tipo de Combustível
               </Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={cn("grid gap-2", vehicleType === 'carro' ? "grid-cols-3" : "grid-cols-2")}>
                 <button
                   type="button"
                   onClick={() => handleFuelTypeChange('gasolina')}
@@ -508,19 +511,22 @@ export function VehicleCostCalculator({
                   <span className="font-medium text-xs sm:text-sm">Etanol</span>
                   <span className="text-2xs text-muted-foreground">R$ 3,89/L</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleFuelTypeChange('gnv')}
-                  className={cn(
-                    'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
-                    fuelType === 'gnv'
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border bg-card text-muted-foreground hover:border-primary/50'
-                  )}
-                >
-                  <span className="font-medium text-xs sm:text-sm">GNV</span>
-                  <span className="text-2xs text-muted-foreground">R$ 3,99/m³</span>
-                </button>
+                {/* GNV só disponível para carros */}
+                {vehicleType === 'carro' && (
+                  <button
+                    type="button"
+                    onClick={() => handleFuelTypeChange('gnv')}
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-0.5 p-2 sm:p-3 rounded-lg border transition-all touch-feedback',
+                      fuelType === 'gnv'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                    )}
+                  >
+                    <span className="font-medium text-xs sm:text-sm">GNV</span>
+                    <span className="text-2xs text-muted-foreground">R$ 3,99/m³</span>
+                  </button>
+                )}
               </div>
               {fuelType === 'etanol' && (
                 <p className="text-2xs text-amber-600 dark:text-amber-400">
