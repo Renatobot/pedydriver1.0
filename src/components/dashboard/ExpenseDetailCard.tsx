@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wallet, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
 import { Expense, ExpenseCategory } from '@/types/database';
 import { EXPENSE_CATEGORY_LABELS } from '@/lib/formatters';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface ExpenseDetailCardProps {
   totalExpenses: number;
@@ -30,8 +29,9 @@ export function ExpenseDetailCard({ totalExpenses, expenses }: ExpenseDetailCard
   return (
     <div 
       className={cn(
-        'rounded-xl bg-card border border-border/50 transition-all overflow-hidden',
-        hasExpenses && 'cursor-pointer hover:border-border active:scale-[0.99]'
+        'rounded-xl bg-card border border-border/50 transition-all duration-200 overflow-hidden',
+        hasExpenses && 'cursor-pointer hover:border-border active:scale-[0.99]',
+        isExpanded && 'border-expense/30'
       )}
       onClick={() => hasExpenses && setIsExpanded(!isExpanded)}
     >
@@ -57,54 +57,51 @@ export function ExpenseDetailCard({ totalExpenses, expenses }: ExpenseDetailCard
             <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </span>
           {hasExpenses && (
-            <span className="text-muted-foreground">
-              {isExpanded ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
+            <span className={cn(
+              'text-muted-foreground transition-transform duration-200',
+              isExpanded && 'rotate-180'
+            )}>
+              <ChevronDown className="w-4 h-4" />
             </span>
           )}
         </div>
       </div>
 
       {/* Detalhamento por categoria */}
-      <AnimatePresence>
-        {isExpanded && hasExpenses && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-border/30 pt-3">
-              <div className="space-y-2">
-                {sortedCategories.map(([category, amount]) => (
-                  <div 
-                    key={category}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-muted-foreground">
-                      {EXPENSE_CATEGORY_LABELS[category] || category}
-                    </span>
-                    <span className="font-mono font-medium text-foreground">
-                      {formatCurrency(amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Total */}
-              <div className="flex items-center justify-between text-sm mt-3 pt-2 border-t border-border/30">
-                <span className="font-medium text-foreground">Total</span>
-                <span className="font-mono font-bold text-expense">
-                  {formatCurrency(totalExpenses)}
-                </span>
-              </div>
-            </div>
-          </motion.div>
+      <div 
+        className={cn(
+          'grid transition-all duration-200 ease-out',
+          isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
-      </AnimatePresence>
+      >
+        <div className="overflow-hidden">
+          <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-border/30 pt-3">
+            <div className="space-y-2">
+              {sortedCategories.map(([category, amount]) => (
+                <div 
+                  key={category}
+                  className="flex items-center justify-between text-sm animate-fade-in"
+                >
+                  <span className="text-muted-foreground">
+                    {EXPENSE_CATEGORY_LABELS[category] || category}
+                  </span>
+                  <span className="font-mono font-medium text-foreground">
+                    {formatCurrency(amount)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Total */}
+            <div className="flex items-center justify-between text-sm mt-3 pt-2 border-t border-border/30">
+              <span className="font-medium text-foreground">Total</span>
+              <span className="font-mono font-bold text-expense">
+                {formatCurrency(totalExpenses)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
