@@ -45,6 +45,22 @@ export function VehicleCostCalculator({
   const isBike = selectedVehicle ? isBicycle(selectedVehicle) : false;
   const showEnergyInput = selectedVehicle ? hasEnergyCost(selectedVehicle) : true;
 
+  // Sincronizar com a prop currentVehicleType quando o modal abrir
+  useEffect(() => {
+    if (open) {
+      setVehicleType(currentVehicleType);
+      setSelectedVehicle(null);
+      setResult(null);
+    }
+  }, [open, currentVehicleType]);
+
+  // Auto-selecionar quando há apenas um veículo disponível para o tipo
+  useEffect(() => {
+    if (vehicles.length === 1 && !selectedVehicle) {
+      setSelectedVehicle(vehicles[0]);
+    }
+  }, [vehicles, selectedVehicle]);
+
   // Atualizar preço padrão quando trocar entre elétrico e combustível
   useEffect(() => {
     if (selectedVehicle) {
