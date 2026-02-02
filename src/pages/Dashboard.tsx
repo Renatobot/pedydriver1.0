@@ -18,6 +18,8 @@ import { ActiveShiftBanner } from '@/components/shifts/ActiveShiftBanner';
 import { StartShiftModal } from '@/components/shifts/StartShiftModal';
 import { useActiveShift } from '@/hooks/useActiveShift';
 import { Button } from '@/components/ui/button';
+import logoWebp from '@/assets/logo-optimized.webp';
+
 export default function Dashboard() {
   const [range, setRange] = useState<DateRange>('day');
   const [showStartShiftModal, setShowStartShiftModal] = useState(false);
@@ -41,9 +43,12 @@ export default function Dashboard() {
         {/* Header with Logo */}
         <div className="flex items-center gap-3 sm:gap-4">
           <img 
-            src="/logo.png" 
+            src={logoWebp} 
             alt="PEDY Driver" 
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl shadow-md"
+            width={56}
+            height={56}
+            loading="eager"
           />
           <div className="space-y-0.5 sm:space-y-1">
             <p className="text-muted-foreground text-xs sm:text-sm">Olá, {firstName}!</p>
