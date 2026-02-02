@@ -115,6 +115,27 @@ export type Database = {
         }
         Relationships: []
       }
+      device_fingerprints: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       earnings: {
         Row: {
           amount: number
@@ -358,6 +379,45 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_device_fingerprint: string | null
+          referred_id: string | null
+          referrer_device_fingerprint: string
+          referrer_id: string
+          rejection_reason: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_device_fingerprint?: string | null
+          referred_id?: string | null
+          referrer_device_fingerprint: string
+          referrer_id: string
+          rejection_reason?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_device_fingerprint?: string | null
+          referred_id?: string | null
+          referrer_device_fingerprint?: string
+          referrer_id?: string
+          rejection_reason?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -696,6 +756,7 @@ export type Database = {
         Returns: boolean
       }
       generate_churn_alerts: { Args: never; Returns: number }
+      generate_referral_code: { Args: never; Returns: string }
       get_admin_alerts: {
         Args: { _limit?: number }
         Returns: {
@@ -738,6 +799,14 @@ export type Database = {
         }[]
       }
       get_email_by_phone: { Args: { _phone: string }; Returns: string }
+      get_or_create_referral_code: {
+        Args: { _device_fingerprint: string }
+        Returns: {
+          pending_referrals: number
+          referral_code: string
+          total_referrals: number
+        }[]
+      }
       get_pending_payments: {
         Args: never
         Returns: {
@@ -754,6 +823,7 @@ export type Database = {
           transaction_id: string
         }[]
       }
+      get_referral_stats: { Args: never; Returns: Json }
       get_support_tickets: {
         Args: { _status?: string }
         Returns: {
@@ -784,6 +854,10 @@ export type Database = {
       notify_subscription_update: {
         Args: { _plan: string; _status: string; _target_user_id: string }
         Returns: boolean
+      }
+      validate_referral: {
+        Args: { _device_fingerprint: string; _referral_code: string }
+        Returns: Json
       }
       verify_user_for_password_reset: {
         Args: { _email: string; _full_name: string; _phone: string }
