@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { SupportForm } from '@/components/support/SupportForm';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
+import { ReferralCard } from '@/components/settings/ReferralCard';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 export default function Settings() {
@@ -144,6 +145,9 @@ export default function Settings() {
             )}
           </div>
         </div>
+
+        {/* Referral Card */}
+        <ReferralCard />
 
         {isLoading ? (
           <div className="space-y-4">

@@ -1,16 +1,20 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, User, Eye, EyeOff, Phone } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Phone, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
 import logo3d from '@/assets/logo-auth.webp';
+
+const REFERRAL_CODE_KEY = 'pedy_referral_code';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
@@ -81,8 +85,44 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Detect referral code from URL
+  const referralCodeFromUrl = useReferralCodeFromUrl();
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const { validateReferral, fingerprint } = useReferral();
+
+  // Store referral code when detected from URL
+  useEffect(() => {
+    const refFromUrl = searchParams.get('ref');
+    if (refFromUrl) {
+      const code = refFromUrl.toUpperCase();
+      setReferralCode(code);
+      localStorage.setItem(REFERRAL_CODE_KEY, code);
+      // Switch to signup mode when coming from referral link
+      setMode('signup');
+    } else {
+      // Check if there's a stored code
+      const storedCode = localStorage.getItem(REFERRAL_CODE_KEY);
+      if (storedCode) {
+        setReferralCode(storedCode);
+      }
+    }
+  }, [searchParams]);
+
+  // Validate referral after successful signup
+  useEffect(() => {
+    const storedCode = localStorage.getItem(REFERRAL_CODE_KEY);
+    if (user && storedCode && fingerprint) {
+      // Small delay to ensure user is fully created
+      const timer = setTimeout(() => {
+        validateReferral();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, fingerprint, validateReferral]);
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -159,6 +199,24 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 safe-top safe-bottom">
+      {/* Referral Banner */}
+      {referralCode && (
+        <div className="w-full max-w-xs sm:max-w-sm mb-4 p-3 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Gift className="w-5 h-5 text-primary flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Você foi indicado!</p>
+              <p className="text-xs text-muted-foreground">
+                Cadastre-se e ganhe <span className="text-primary font-semibold">7 dias de PRO grátis</span>
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="mt-2 text-xs">
+            Código: {referralCode}
+          </Badge>
+        </div>
+      )}
+
       {/* Logo */}
       <div className="mb-6 sm:mb-8 text-center">
         <img src={logo3d} alt="PEDY Driver" className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl mx-auto mb-3 sm:mb-4 shadow-lg" width={96} height={96} loading="eager" />
