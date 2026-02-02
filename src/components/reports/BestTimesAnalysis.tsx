@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Clock, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { Clock, Calendar, TrendingUp, Sparkles, Info } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
@@ -192,6 +192,14 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
             </p>
           )}
         </div>
+      </div>
+
+      {/* Multi-platform warning */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+        <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Turnos com múltiplas plataformas têm horas e km registrados de forma agregada, não sendo possível calcular métricas individuais por plataforma.
+        </p>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, Navigation, Check } from 'lucide-react';
+import { CalendarIcon, Clock, Navigation, Check, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -153,6 +153,14 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
           </div>
           {errors.platform_ids && (
             <p className="text-2xs sm:text-xs text-destructive">{errors.platform_ids.message}</p>
+          )}
+          {selectedPlatforms.length > 1 && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Ao usar múltiplas plataformas simultaneamente, não será possível identificar qual é a mais rentável individualmente nos relatórios.
+              </p>
+            </div>
           )}
         </div>
 
