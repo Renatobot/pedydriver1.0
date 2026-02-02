@@ -69,9 +69,9 @@ export default function History() {
           <img 
             src={logoWebp} 
             alt="PEDY Driver" 
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl shadow-md"
-            width={56}
-            height={56}
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl shadow-lg"
+            width={80}
+            height={80}
             loading="lazy"
           />
           <div className="space-y-0.5 sm:space-y-1">

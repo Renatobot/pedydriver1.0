@@ -103,7 +103,7 @@ export default function AdminAuth() {
         <img 
           src={adminLogo} 
           alt="PEDY Driver Admin" 
-          className="max-w-[280px] sm:max-w-[320px] mx-auto mb-4"
+          className="max-w-[320px] sm:max-w-[380px] mx-auto mb-4"
         />
         <p className="text-muted-foreground text-sm sm:text-base">Painel Administrativo</p>
       </div>

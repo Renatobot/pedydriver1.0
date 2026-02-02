@@ -27,8 +27,8 @@ export function LandingHeader() {
     >
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/landing" className="flex items-center gap-2">
-          <img src={logo} alt="PEDY Driver" className="w-9 h-9 rounded-lg object-cover" />
+        <Link to="/landing" className="flex items-center gap-3">
+          <img src={logo} alt="PEDY Driver" className="w-12 h-12 rounded-xl shadow-md object-cover" />
           <span className="font-bold text-lg">PEDY Driver</span>
         </Link>
         

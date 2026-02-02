@@ -110,7 +110,7 @@ export function OnboardingTutorial({ onComplete }: OnboardingTutorialProps) {
         {/* Header */}
         <div className="relative p-4 flex items-center justify-between border-b border-border shrink-0">
           <div className="flex items-center gap-2">
-            <img src={logoWebp} alt="PEDY" className="w-8 h-8 rounded-lg" />
+            <img src={logoWebp} alt="PEDY" className="w-10 h-10 rounded-xl shadow-md" />
             <span className="font-semibold text-sm">Tutorial</span>
           </div>
           <Button

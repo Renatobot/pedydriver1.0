@@ -24,8 +24,8 @@ export function TrustFooter() {
         
         {/* Brand */}
         <div className="text-center space-y-4">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <img src={logo} alt="PEDY Driver" className="w-8 h-8 rounded-lg object-cover" />
+          <Link to="/" className="inline-flex items-center gap-3">
+            <img src={logo} alt="PEDY Driver" className="w-12 h-12 rounded-xl shadow-md object-cover" />
             <span className="font-bold">PEDY Driver</span>
           </Link>
           
