@@ -20,6 +20,7 @@ export type Database = {
           id: string
           notes: string | null
           platform_id: string | null
+          platform_ids: string[] | null
           start_km: number
           started_at: string
           user_id: string
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           notes?: string | null
           platform_id?: string | null
+          platform_ids?: string[] | null
           start_km?: number
           started_at?: string
           user_id: string
@@ -38,6 +40,7 @@ export type Database = {
           id?: string
           notes?: string | null
           platform_id?: string | null
+          platform_ids?: string[] | null
           start_km?: number
           started_at?: string
           user_id?: string
