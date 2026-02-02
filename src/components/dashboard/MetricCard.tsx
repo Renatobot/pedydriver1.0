@@ -3,11 +3,10 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
 import { Info } from 'lucide-react';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface MetricCardProps {
   label: string;
@@ -73,18 +72,22 @@ export function MetricCard({
             {label}
           </span>
           {secondaryValue !== undefined && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-3 h-3 text-muted-foreground/60 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px] text-xs">
-                  <p className="font-medium mb-1">Líquido vs Bruto</p>
-                  <p><strong>Líquido:</strong> Lucro real após descontar custos (combustível, manutenção)</p>
-                  <p className="mt-1"><strong>Bruto:</strong> Receita total antes dos custos</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button 
+                  type="button"
+                  className="p-0.5 rounded-full hover:bg-muted transition-colors"
+                  aria-label="Ver explicação"
+                >
+                  <Info className="w-3 h-3 text-muted-foreground/60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="top" className="max-w-[220px] text-xs p-3">
+                <p className="font-medium mb-1">Líquido vs Bruto</p>
+                <p><strong>Líquido:</strong> Lucro real após descontar custos (combustível, manutenção)</p>
+                <p className="mt-1"><strong>Bruto:</strong> Receita total antes dos custos</p>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
         {icon && (
