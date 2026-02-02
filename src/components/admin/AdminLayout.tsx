@@ -1,12 +1,13 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Shield, Wallet, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Wallet, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { AdminAlertsBell } from './AdminAlertsBell';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import adminLogo from '@/assets/admin-logo-3d.png';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -133,7 +134,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
               <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-primary" />
+                  <img src={adminLogo} alt="PEDY Admin" className="w-8 h-8 object-contain" />
                   <span className="font-bold text-lg">Admin</span>
                 </div>
               </div>
@@ -141,7 +142,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </SheetContent>
           </Sheet>
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
+            <img src={adminLogo} alt="PEDY Admin" className="w-6 h-6 object-contain" />
             <span className="font-bold text-sm">Admin</span>
           </div>
         </div>
@@ -155,7 +156,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <aside className="hidden lg:flex w-64 fixed top-0 left-0 h-screen bg-card border-r border-border flex-col">
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-2">
-              <Shield className="w-6 h-6 text-primary" />
+              <img src={adminLogo} alt="PEDY Admin" className="w-8 h-8 object-contain" />
               <span className="font-bold text-lg">PEDY Admin</span>
             </div>
           </div>
