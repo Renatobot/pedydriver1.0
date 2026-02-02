@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap, MapPin, Users, RefreshCw } from 'lucide-react';
+import { Calculator, Car, Bike, Fuel, Wrench, TrendingDown, Check, Zap, MapPin, Users, RefreshCw, Crown, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,18 @@ import {
 } from '@/lib/vehicleData';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useFuelPrices } from '@/hooks/useFuelPrices';
+import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { toast } from 'sonner';
+
+// Interface para comparativo de combustíveis
+interface FuelComparison {
+  fuelType: FuelType;
+  label: string;
+  costPerKm: number;
+  monthlyEstimate: number; // Para 1500km/mês
+  savings: number; // Economia em relação ao mais caro
+  isBest: boolean;
+}
 
 interface VehicleCostCalculatorProps {
   open: boolean;
@@ -70,6 +81,45 @@ export function VehicleCostCalculator({
   const isBike = selectedVehicle ? isBicycle(selectedVehicle) : false;
   const showEnergyInput = selectedVehicle ? hasEnergyCost(selectedVehicle) : true;
   const showFuelTypeSelector = selectedVehicle ? supportsFuelChoice(selectedVehicle) : (vehicleType === 'carro' || vehicleType === 'moto');
+
+  // Subscription context para recursos Pro
+  const { isPro } = useSubscriptionContext();
+
+  // Calcular comparativo de combustíveis (Pro feature)
+  const fuelComparison = useMemo((): FuelComparison[] | null => {
+    if (!selectedVehicle || isElectric || isBike || !isPro) return null;
+
+    const fuelTypes: FuelType[] = ['gasolina', 'etanol', 'gnv'];
+    const km = mileage ? parseInt(mileage, 10) : undefined;
+    const monthlyKm = 1500; // Estimativa média mensal
+
+    const comparisons = fuelTypes.map(ft => {
+      const price = FUEL_PRICES[ft];
+      const breakdown = calculateCostPerKm(selectedVehicle, price, km, false, ft);
+      return {
+        fuelType: ft,
+        label: FUEL_LABELS[ft],
+        costPerKm: breakdown.totalCost,
+        monthlyEstimate: breakdown.totalCost * monthlyKm,
+        savings: 0,
+        isBest: false,
+      };
+    });
+
+    // Ordenar por custo (menor primeiro)
+    comparisons.sort((a, b) => a.costPerKm - b.costPerKm);
+    
+    // Marcar o melhor e calcular economia
+    if (comparisons.length > 0) {
+      comparisons[0].isBest = true;
+      const worstCost = comparisons[comparisons.length - 1].monthlyEstimate;
+      comparisons.forEach(c => {
+        c.savings = worstCost - c.monthlyEstimate;
+      });
+    }
+
+    return comparisons;
+  }, [selectedVehicle, isElectric, isBike, isPro, mileage]);
 
   // Sincronizar com as props quando o modal abrir
   useEffect(() => {
@@ -495,6 +545,77 @@ export function VehicleCostCalculator({
                       return `${consumption.city} ${consumption.unit} (cidade) • ${consumption.highway} ${consumption.unit} (estrada)`;
                     })()}
                   </p>
+                </div>
+              )}
+
+              {/* Comparativo de combustíveis - Pro Feature */}
+              {fuelComparison && fuelComparison.length > 0 && (
+                <div className="mt-3 p-3 rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Crown className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-medium text-primary">Comparativo de Combustíveis</span>
+                  </div>
+                  <div className="space-y-2">
+                    {fuelComparison.map((fc, index) => (
+                      <div 
+                        key={fc.fuelType}
+                        className={cn(
+                          'flex items-center justify-between p-2 rounded-lg transition-all',
+                          fc.isBest 
+                            ? 'bg-green-500/10 border border-green-500/30' 
+                            : 'bg-muted/30'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          {fc.isBest && <TrendingUp className="w-3.5 h-3.5 text-green-500" />}
+                          <span className={cn(
+                            'text-xs font-medium',
+                            fc.isBest ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                          )}>
+                            {fc.label}
+                          </span>
+                          {fc.isBest && (
+                            <span className="text-2xs bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full">
+                              Mais econômico
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className={cn(
+                            'text-xs font-mono font-medium',
+                            fc.isBest ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+                          )}>
+                            R$ {fc.costPerKm.toFixed(2)}/km
+                          </p>
+                          {fc.savings > 0 && !fc.isBest && (
+                            <p className="text-2xs text-destructive">
+                              +R$ {fc.savings.toFixed(0)}/mês
+                            </p>
+                          )}
+                          {fc.isBest && fuelComparison.length > 1 && (
+                            <p className="text-2xs text-green-600 dark:text-green-400">
+                              Economiza R$ {(fuelComparison[fuelComparison.length - 1].monthlyEstimate - fc.monthlyEstimate).toFixed(0)}/mês
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-2xs text-muted-foreground mt-2">
+                    * Estimativa baseada em 1.500 km/mês com preços de referência
+                  </p>
+                </div>
+              )}
+
+              {/* Teaser para usuários Free */}
+              {selectedVehicle && !isElectric && !isBike && !isPro && (
+                <div className="mt-3 p-2 rounded-lg bg-muted/50 border border-border">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-2xs text-muted-foreground">
+                      Assine o Pro para ver qual combustível é mais vantajoso
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
