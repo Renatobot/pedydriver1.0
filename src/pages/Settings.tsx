@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, ChevronDown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserSettings, useUpdateUserSettings } from '@/hooks/useUserSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { VehicleType, CostDistributionRule } from '@/types/database';
 import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
 import { WeeklyGoalsSettings } from '@/components/settings/WeeklyGoalsSettings';
@@ -22,6 +22,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import { ReferralCard } from '@/components/settings/ReferralCard';
+import { getVehiclesByType, getConsumptionUnit, isBicycle } from '@/lib/vehicleData';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 export default function Settings() {
@@ -35,14 +36,19 @@ export default function Settings() {
 
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
+  const [vehicleModel, setVehicleModel] = useState<string | null>(null);
   const [distributionRule, setDistributionRule] = useState<CostDistributionRule>('km');
   const [weekStartsOn, setWeekStartsOn] = useState<'domingo' | 'segunda'>('segunda');
   const [showCalculator, setShowCalculator] = useState(false);
+
+  // Lista de modelos disponíveis para o tipo de veículo selecionado
+  const availableModels = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
 
   useEffect(() => {
     if (settings) {
       setCostPerKm(String(settings.cost_per_km));
       setVehicleType(settings.vehicle_type);
+      setVehicleModel(settings.vehicle_model || null);
       setDistributionRule(settings.cost_distribution_rule);
       setWeekStartsOn(settings.week_starts_on as 'domingo' | 'segunda');
     }
@@ -52,9 +58,23 @@ export default function Settings() {
     updateSettings.mutate({
       cost_per_km: parseFloat(costPerKm) || 0.5,
       vehicle_type: vehicleType,
+      vehicle_model: vehicleModel,
       cost_distribution_rule: distributionRule,
       week_starts_on: weekStartsOn,
     });
+  };
+
+  // Handler para mudar tipo de veículo (limpa o modelo ao trocar tipo)
+  const handleVehicleTypeChange = (type: VehicleType) => {
+    setVehicleType(type);
+    setVehicleModel(null); // Limpa o modelo ao trocar de tipo
+    updateSettings.mutate({ vehicle_type: type, vehicle_model: null });
+  };
+
+  // Handler para mudar modelo de veículo
+  const handleVehicleModelChange = (model: string) => {
+    setVehicleModel(model);
+    updateSettings.mutate({ vehicle_model: model });
   };
 
   return (
@@ -164,10 +184,7 @@ export default function Settings() {
               </Label>
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
-                  onClick={() => {
-                    setVehicleType('carro');
-                    updateSettings.mutate({ vehicle_type: 'carro' });
-                  }}
+                  onClick={() => handleVehicleTypeChange('carro')}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'carro'
@@ -179,10 +196,7 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">Carro</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setVehicleType('moto');
-                    updateSettings.mutate({ vehicle_type: 'moto' });
-                  }}
+                  onClick={() => handleVehicleTypeChange('moto')}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'moto'
@@ -194,10 +208,7 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">Moto</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setVehicleType('bicicleta');
-                    updateSettings.mutate({ vehicle_type: 'bicicleta' });
-                  }}
+                  onClick={() => handleVehicleTypeChange('bicicleta')}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'bicicleta'
@@ -209,10 +220,7 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">Bicicleta</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setVehicleType('bicicleta_eletrica');
-                    updateSettings.mutate({ vehicle_type: 'bicicleta_eletrica' });
-                  }}
+                  onClick={() => handleVehicleTypeChange('bicicleta_eletrica')}
                   className={cn(
                     'flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[52px] sm:min-h-[56px]',
                     vehicleType === 'bicicleta_eletrica'
@@ -227,6 +235,38 @@ export default function Settings() {
                   <span className="font-medium text-sm sm:text-base">E-Bike</span>
                 </button>
               </div>
+            </div>
+
+            {/* Vehicle Model Selector */}
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
+                <ChevronDown className="w-4 h-4" />
+                Modelo do Veículo
+              </Label>
+              <Select 
+                value={vehicleModel || ''} 
+                onValueChange={handleVehicleModelChange}
+              >
+                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+                  <SelectValue placeholder="Selecione o modelo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableModels.map((vehicle) => (
+                    <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
+                      {isBicycle(vehicle) 
+                        ? vehicle.name 
+                        : `${vehicle.name} (${vehicle.consumptionCity} ${getConsumptionUnit(vehicle)} cidade)`
+                      }
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {vehicleModel && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-green-500" />
+                  Modelo salvo: <strong>{vehicleModel}</strong>
+                </p>
+              )}
             </div>
 
             {/* Cost per KM */}

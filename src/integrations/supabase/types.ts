@@ -733,6 +733,7 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
+          vehicle_model: string | null
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
           week_starts_on: string
           weekly_goal_earnings: number
@@ -747,6 +748,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
+          vehicle_model?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
           week_starts_on?: string
           weekly_goal_earnings?: number
@@ -761,6 +763,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+          vehicle_model?: string | null
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
           week_starts_on?: string
           weekly_goal_earnings?: number

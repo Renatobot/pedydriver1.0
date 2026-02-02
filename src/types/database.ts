@@ -63,6 +63,7 @@ export interface UserSettings {
   user_id: string;
   cost_per_km: number;
   vehicle_type: VehicleType;
+  vehicle_model: string | null;
   cost_distribution_rule: CostDistributionRule;
   week_starts_on: 'domingo' | 'segunda';
   weekly_goal_earnings: number;
