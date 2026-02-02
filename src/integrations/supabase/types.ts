@@ -584,6 +584,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          intent_id: string
           linked_at: string
           linked_user_email: string
           linked_user_id: string

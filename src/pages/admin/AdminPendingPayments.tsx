@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, Search, UserPlus, Check, X, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { CreditCard, Search, UserPlus, Check, X, Calendar, Clock, AlertCircle, AlertTriangle, Filter } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,10 @@ interface PendingPayment {
   linked_user_name: string | null;
   linked_at: string | null;
   created_at: string;
+  intent_id: string | null;
 }
+
+type FilterType = 'all' | 'pending' | 'orphan' | 'linked';
 
 interface AdminUser {
   user_id: string;
@@ -50,6 +53,7 @@ interface AdminUser {
 export default function AdminPendingPayments() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<FilterType>('all');
   const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isAnnual, setIsAnnual] = useState(false);
@@ -135,10 +139,26 @@ export default function AdminPendingPayments() {
   };
 
   // Filter payments
-  const filteredPayments = payments.filter((p) =>
-    p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPayments = payments.filter((p) => {
+    // Text search filter
+    const matchesSearch = 
+      p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Status/type filter
+    switch (filterType) {
+      case 'pending':
+        return p.status === 'pending';
+      case 'orphan':
+        return p.status === 'pending' && !p.intent_id;
+      case 'linked':
+        return p.status === 'linked';
+      default:
+        return true;
+    }
+  });
 
   // Filter users for search
   const filteredUsers = users.filter((u) =>
@@ -147,6 +167,7 @@ export default function AdminPendingPayments() {
   );
 
   const pendingCount = payments.filter(p => p.status === 'pending').length;
+  const orphanCount = payments.filter(p => p.status === 'pending' && !p.intent_id).length;
 
   const formatAmount = (amount: number) => {
     // Amount might be in cents or reais depending on source
@@ -175,15 +196,45 @@ export default function AdminPendingPayments() {
           )}
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por email ou ID da transação..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search and Filter */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por email ou ID da transação..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filtrar por..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="pending">
+                <span className="flex items-center gap-2">
+                  <Clock className="w-3 h-3" />
+                  Pendentes ({pendingCount})
+                </span>
+              </SelectItem>
+              <SelectItem value="orphan">
+                <span className="flex items-center gap-2">
+                  <AlertTriangle className="w-3 h-3 text-amber-500" />
+                  Órfãos ({orphanCount})
+                </span>
+              </SelectItem>
+              <SelectItem value="linked">
+                <span className="flex items-center gap-2">
+                  <Check className="w-3 h-3" />
+                  Vinculados
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Payments List */}
@@ -214,7 +265,7 @@ export default function AdminPendingPayments() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
-                      <CardTitle className="text-base flex items-center gap-2">
+                      <CardTitle className="text-base flex items-center gap-2 flex-wrap">
                         {payment.email}
                         <Badge
                           variant={
@@ -230,6 +281,12 @@ export default function AdminPendingPayments() {
                           {payment.status === 'linked' && 'Vinculado'}
                           {payment.status === 'cancelled' && 'Cancelado'}
                         </Badge>
+                        {payment.status === 'pending' && !payment.intent_id && (
+                          <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/30">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            Órfão
+                          </Badge>
+                        )}
                       </CardTitle>
                       <CardDescription className="flex flex-wrap gap-x-4 gap-y-1">
                         <span className="font-medium text-foreground">
