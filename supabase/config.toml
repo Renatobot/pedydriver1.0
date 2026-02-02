@@ -2,3 +2,6 @@ project_id = "kfpyfcjukqjowridvyqi"
 
 [functions.infinitepay-webhook]
 verify_jwt = false
+
+[functions.claim-payment]
+verify_jwt = false
