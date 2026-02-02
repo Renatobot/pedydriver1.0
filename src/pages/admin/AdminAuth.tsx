@@ -29,13 +29,20 @@ export default function AdminAuth() {
     const originalFavicon = document.querySelector('link[rel="icon"]')?.getAttribute('href');
     const originalTitle = document.title;
 
+    // Apply immediately
     const faviconLink = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
     if (faviconLink) {
       faviconLink.href = '/icons/admin-icon-512.png';
     }
     document.title = 'PEDY Admin - Login';
 
+    // Also apply after a short delay to ensure it's set after any other effects
+    const timeout = setTimeout(() => {
+      document.title = 'PEDY Admin - Login';
+    }, 100);
+
     return () => {
+      clearTimeout(timeout);
       if (faviconLink && originalFavicon) {
         faviconLink.href = originalFavicon;
       }
