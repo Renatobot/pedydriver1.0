@@ -180,27 +180,10 @@ export const vehicleDatabase: VehicleData[] = [
   { name: 'NIU NQi GTS (Elétrico)', type: 'moto', consumptionCity: 35.0, consumptionHighway: 40.0 },
 
   // =============================================
-  // BICICLETAS COMUNS
+  // BICICLETAS
   // =============================================
-  { name: 'Bicicleta Comum (Simples)', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
-  { name: 'Bicicleta Comum (Com Bag)', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
-  { name: 'Bicicleta Speed/Road', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
-  { name: 'Bicicleta Mountain Bike', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
-  { name: 'Bicicleta Fixa/Single Speed', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
-  { name: 'Bicicleta Cargo/Cargueira', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
-
-  // =============================================
-  // BICICLETAS ELÉTRICAS (consumo em km/kWh)
-  // =============================================
-  { name: 'Caloi E-Vibe City (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 50.0, consumptionHighway: 55.0 },
-  { name: 'Caloi E-Vibe Urbam (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
-  { name: 'Caloi E-Vibe Easy Rider (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 48.0, consumptionHighway: 53.0 },
-  { name: 'Sense Impulse E-Trail (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 40.0, consumptionHighway: 45.0 },
-  { name: 'Oggi Big Wheel 8.3 E-Bike (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 38.0, consumptionHighway: 42.0 },
-  { name: 'Tembici E-Bike (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 55.0, consumptionHighway: 60.0 },
-  { name: 'Muuv Veloster (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 42.0, consumptionHighway: 47.0 },
-  { name: 'Vibe Bikes V1 (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
-  { name: 'E-Bike Genérica (Elétrico)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
+  { name: 'Bicicleta Comum', type: 'bicicleta', consumptionCity: 0, consumptionHighway: 0 },
+  { name: 'Bicicleta Elétrica (E-Bike)', type: 'bicicleta_eletrica', consumptionCity: 45.0, consumptionHighway: 50.0 },
 ];
 
 // Custo de manutenção por tipo de veículo (R$/km)

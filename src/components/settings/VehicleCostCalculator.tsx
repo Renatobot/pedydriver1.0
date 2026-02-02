@@ -219,7 +219,7 @@ export function VehicleCostCalculator({
           {isBike && (
             <div className="rounded-lg p-3 bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400">
               <p className="text-xs sm:text-sm">
-                🚴 Bicicletas comuns não têm custo de energia! O cálculo considera apenas manutenção e desgaste.
+                🚴 <strong>Desgaste físico:</strong> Não há gasto com combustível! O cálculo considera apenas manutenção (pneus, corrente, freios) e desgaste natural da bike.
               </p>
             </div>
           )}
