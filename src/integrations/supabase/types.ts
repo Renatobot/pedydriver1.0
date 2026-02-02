@@ -438,6 +438,45 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          admin_reply: string | null
+          created_at: string
+          id: string
+          message: string
+          replied_at: string | null
+          replied_by: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          replied_at?: string | null
+          replied_by?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reply?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          replied_at?: string | null
+          replied_by?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -501,6 +540,7 @@ export type Database = {
         Args: { _payment_id: string }
         Returns: boolean
       }
+      admin_close_ticket: { Args: { _ticket_id: string }; Returns: boolean }
       admin_get_user_for_reset: {
         Args: { _target_user_id: string }
         Returns: Json
@@ -511,6 +551,10 @@ export type Database = {
           _payment_id: string
           _target_user_id: string
         }
+        Returns: boolean
+      }
+      admin_reply_ticket: {
+        Args: { _reply: string; _ticket_id: string }
         Returns: boolean
       }
       admin_reset_monthly_limit: {
@@ -591,6 +635,21 @@ export type Database = {
           linked_user_name: string
           status: string
           transaction_id: string
+        }[]
+      }
+      get_support_tickets: {
+        Args: { _status?: string }
+        Returns: {
+          admin_reply: string
+          created_at: string
+          id: string
+          message: string
+          replied_at: string
+          status: string
+          subject: string
+          user_email: string
+          user_id: string
+          user_name: string
         }[]
       }
       get_unread_alerts_count: { Args: never; Returns: number }

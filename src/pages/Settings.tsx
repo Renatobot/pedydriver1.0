@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { NotificationSettings } from '@/components/settings/NotificationSettings
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { PremiumBadge } from '@/components/subscription/PremiumBadge';
 import { Link } from 'react-router-dom';
+import { SupportForm } from '@/components/support/SupportForm';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import logoWebp from '@/assets/logo-optimized.webp';
 
@@ -372,6 +373,17 @@ export default function Settings() {
             </Button>
           </div>
         )}
+
+        {/* Support Section */}
+        <div className="space-y-2 sm:space-y-3">
+          <Label className="flex items-center gap-2 text-sm sm:text-base">
+            <MessageSquare className="w-4 h-4" />
+            Suporte
+          </Label>
+          <div className="rounded-xl p-3 sm:p-4 bg-muted/30 border border-border/50">
+            <SupportForm />
+          </div>
+        </div>
 
         {/* Logout */}
         <div className="pt-4 border-t border-border">
