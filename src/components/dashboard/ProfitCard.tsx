@@ -2,11 +2,10 @@ import { TrendingUp, TrendingDown, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/formatters';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface ProfitCardProps {
   value: number;
@@ -34,18 +33,22 @@ export function ProfitCard({
             {label}
           </span>
           {secondaryValue !== undefined && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground/60 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px] text-xs">
-                  <p className="font-semibold mb-1.5">Líquido vs Bruto</p>
-                  <p><strong>Líquido:</strong> Lucro real após descontar custos de combustível e manutenção por km rodado.</p>
-                  <p className="mt-1.5"><strong>Bruto:</strong> Receita total recebida, antes de qualquer desconto.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button 
+                  type="button"
+                  className="p-0.5 rounded-full hover:bg-primary-foreground/10 transition-colors"
+                  aria-label="Ver explicação"
+                >
+                  <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground/60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="top" className="max-w-[240px] text-xs p-3">
+                <p className="font-semibold mb-1.5">Líquido vs Bruto</p>
+                <p><strong>Líquido:</strong> Lucro real após descontar custos de combustível e manutenção por km rodado.</p>
+                <p className="mt-1.5"><strong>Bruto:</strong> Receita total recebida, antes de qualquer desconto.</p>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
         {isPositive ? (
