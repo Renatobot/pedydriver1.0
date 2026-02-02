@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import adminLogo from '@/assets/admin-logo.png';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
@@ -71,15 +72,14 @@ export default function AdminAuth() {
         Login de Usuário
       </Link>
 
-      {/* Admin Logo/Icon */}
+      {/* Admin Logo */}
       <div className="mb-6 sm:mb-8 text-center relative z-10">
-        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl mx-auto mb-4 bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center shadow-2xl shadow-primary/20">
-          <Shield className="w-10 h-10 sm:w-12 sm:h-12 text-primary" />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-          PEDY <span className="text-primary">Admin</span>
-        </h1>
-        <p className="text-muted-foreground text-sm sm:text-base mt-1">Painel Administrativo</p>
+        <img 
+          src={adminLogo} 
+          alt="PEDY Driver Admin" 
+          className="max-w-[280px] sm:max-w-[320px] mx-auto mb-4"
+        />
+        <p className="text-muted-foreground text-sm sm:text-base">Painel Administrativo</p>
       </div>
 
       {/* Form Container */}
