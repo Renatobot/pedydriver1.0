@@ -129,12 +129,13 @@ export default function Upgrade() {
             </div>
 
             <div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">R$ 14,90</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg text-muted-foreground line-through">R$ 29,90</span>
+                <span className="text-3xl font-bold text-emerald-500">R$ 14,90</span>
                 <span className="text-muted-foreground">/mês</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                ou R$ 99/ano (economize 45%)
+                ou <span className="line-through">R$ 149</span> <span className="font-medium text-emerald-600 dark:text-emerald-400">R$ 99/ano</span> (economize 34%)
               </p>
             </div>
 
@@ -176,11 +177,27 @@ export default function Upgrade() {
           </Card>
         </div>
 
-        {/* FAQ or guarantee */}
-        <div className="text-center text-sm text-muted-foreground pt-4 space-y-1">
-          <p>💳 Pagamento seguro via PIX ou Cartão</p>
-          <p className="text-xs text-muted-foreground/70">PIX sem taxa • Cartão com taxa da operadora</p>
-          <p className="mt-2">Cancele quando quiser, sem complicação</p>
+        {/* Payment methods info */}
+        <div className="text-center pt-4 space-y-3">
+          <p className="text-sm font-medium">💳 Pagamento seguro</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center text-sm">
+            {/* PIX option */}
+            <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium">PIX</span>
+              <span className="text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded">sem taxa</span>
+              <span className="text-muted-foreground line-through text-xs">R$ 29,90</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">R$ 14,90</span>
+            </div>
+            
+            {/* Card option */}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span>Cartão</span>
+              <span className="text-xs">R$ 14,90 + taxa da operadora</span>
+            </div>
+          </div>
+          
+          <p className="text-xs text-muted-foreground">Cancele quando quiser, sem complicação</p>
         </div>
       </div>
 
