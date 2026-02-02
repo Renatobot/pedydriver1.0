@@ -16,6 +16,7 @@ import {
   isBicycle,
   hasEnergyCost,
   getConsumptionUnit,
+  getConsumptionByFuelType,
   FUEL_PRICES,
   FUEL_LABELS,
   FUEL_UNITS,
@@ -408,14 +409,17 @@ export function VehicleCostCalculator({
                 <SelectValue placeholder="Selecione o modelo..." />
               </SelectTrigger>
               <SelectContent>
-                {vehicles.map((vehicle) => (
-                  <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
-                    {isBicycle(vehicle) 
-                      ? vehicle.name 
-                      : `${vehicle.name} (${vehicle.consumptionCity} ${getConsumptionUnit(vehicle)} cidade)`
-                    }
-                  </SelectItem>
-                ))}
+                {vehicles.map((vehicle) => {
+                  const consumption = getConsumptionByFuelType(vehicle, fuelType);
+                  return (
+                    <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
+                      {isBicycle(vehicle) 
+                        ? vehicle.name 
+                        : `${vehicle.name} (${consumption.city} ${consumption.unit} cidade)`
+                      }
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -472,6 +476,26 @@ export function VehicleCostCalculator({
                 <p className="text-2xs text-amber-600 dark:text-amber-400">
                   ⚠️ Etanol rende ~30% menos. O cálculo considera isso.
                 </p>
+              )}
+              {fuelType === 'gnv' && (
+                <p className="text-2xs text-green-600 dark:text-green-400">
+                  ✓ GNV rende ~15% mais e é mais barato!
+                </p>
+              )}
+              
+              {/* Mostrar consumo estimado para o combustível selecionado */}
+              {selectedVehicle && !isElectric && !isBike && (
+                <div className="mt-2 p-2 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-2xs text-muted-foreground">
+                    Consumo estimado com {FUEL_LABELS[fuelType]}:
+                  </p>
+                  <p className="text-xs font-medium">
+                    {(() => {
+                      const consumption = getConsumptionByFuelType(selectedVehicle, fuelType);
+                      return `${consumption.city} ${consumption.unit} (cidade) • ${consumption.highway} ${consumption.unit} (estrada)`;
+                    })()}
+                  </p>
+                </div>
               )}
             </div>
           )}
