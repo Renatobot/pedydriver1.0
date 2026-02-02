@@ -1,170 +1,176 @@
 
-# Plano: Sistema de Indicação com Proteção Anti-Fraude
+# Plano: Validação de Indicação Diferida (Anti-Fraude Avançada)
 
 ## Visão Geral
 
-Implementar um programa de indicação ("Indique e Ganhe") onde usuários podem convidar amigos. Para evitar fraudes (mesma pessoa criando várias contas), usaremos **fingerprinting de dispositivo** para detectar e bloquear indicações suspeitas.
+Ao invés de validar a indicação imediatamente no cadastro, o sistema vai:
+1. Registrar a indicação como "pendente" quando o usuário se cadastra
+2. Monitorar se o usuário faz ações reais no app (configura veículo, registra ganhos, etc.)
+3. Validar a indicação automaticamente após critérios serem cumpridos
+4. Mostrar o card "Indique Amigos" apenas 2 dias após o cadastro
 
 ---
 
-## Como Funciona
+## Por Que Isso Melhora a Segurança?
 
-### Fluxo do Usuário
-
-1. **Indicador** acessa "Indique Amigos" nas Configurações
-2. Copia seu código/link único de indicação
-3. **Indicado** se cadastra usando o link/código
-4. Sistema valida que são dispositivos diferentes
-5. Ambos recebem recompensa (ex: 7 dias PRO grátis)
-
-### Proteção Anti-Fraude
-
-O sistema gera uma "impressão digital" do dispositivo usando:
-- Resolução de tela
-- Fuso horário
-- Idioma do navegador
-- Número de cores
-- Plataforma (mobile/desktop)
-- Canvas fingerprint (forma como o navegador renderiza gráficos)
-
-Isso cria um hash único que identifica o dispositivo sem coletar dados pessoais.
+| Antes | Depois |
+|-------|--------|
+| Usuário cria conta → ganha PRO imediato | Usuário cria conta → precisa usar o app → ganha PRO |
+| Fraudador cria 10 contas = 70 dias PRO | Fraudador teria que usar 10 contas por dias = muito trabalho |
+| Fingerprint era a única proteção | Fingerprint + atividade + tempo = 3 camadas |
 
 ---
 
-## Regras de Validação
+## Critérios para Validar a Indicação
 
-| Situação | Ação |
-|----------|------|
-| Dispositivo novo + código válido | Indicação aceita |
-| Mesmo dispositivo do indicador | Indicação rejeitada |
-| Dispositivo já registrou outra conta | Indicação rejeitada |
-| Código expirado ou inválido | Indicação rejeitada |
+O usuário indicado precisa cumprir **pelo menos 2** destes critérios:
+
+| Critério | Tabela | Verificação |
+|----------|--------|-------------|
+| Configurou veículo | `user_settings` | `vehicle_type` foi alterado (não é o default) |
+| Registrou 1+ ganho | `earnings` | Existe pelo menos 1 registro |
+| Registrou 1+ despesa | `expenses` | Existe pelo menos 1 registro |
+| Completou 1+ turno | `shifts` | Existe pelo menos 1 registro |
+
+**E** o cadastro deve ter pelo menos **24 horas**.
 
 ---
 
-## Recompensas Sugeridas
+## Mostrar Card de Indicação
 
-| Quem | Recompensa |
-|------|------------|
-| Indicador | 7 dias PRO grátis (acumula) |
-| Indicado | 7 dias PRO grátis |
+O card "Indique e Ganhe" nas Configurações só aparece se:
+- Conta tem mais de **48 horas** (2 dias)
+- OU o usuário já indicou alguém com sucesso antes
+
+Isso evita que fraudadores vejam/usem o sistema de indicação cedo demais.
+
+---
+
+## Fluxo Atualizado
+
+```text
+1. Indicado acessa ?ref=ABC123
+          │
+          ▼
+2. Faz cadastro normal
+          │
+          ▼
+3. Sistema armazena indicação como "PENDENTE"
+   (não valida, não dá bônus ainda)
+          │
+          ▼
+4. Usuário usa o app normalmente
+   - Configura veículo
+   - Registra ganhos/despesas
+          │
+          ▼
+5. Após 24h, sistema verifica automaticamente:
+   - 2+ critérios cumpridos?
+   - Fingerprint ainda diferente?
+          │
+   ├─── SIM → Indicação validada ✓
+   │         Ambos ganham 7 dias PRO
+   │
+   └─── NÃO → Mantém pendente
+              (verifica novamente depois)
+          │
+          ▼
+6. Após 48h, card "Indique Amigos" aparece
+```
 
 ---
 
 ## Alterações Técnicas
 
-### 1. Nova Tabela: `referrals`
+### 1. Nova Tabela: Tracking de Progresso da Indicação
 
 ```sql
-CREATE TABLE referrals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  referrer_id UUID NOT NULL REFERENCES auth.users(id),
-  referred_id UUID REFERENCES auth.users(id),
-  referral_code TEXT UNIQUE NOT NULL,
-  status TEXT DEFAULT 'pending', -- pending, completed, rejected
-  referrer_device_fingerprint TEXT NOT NULL,
-  referred_device_fingerprint TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  completed_at TIMESTAMPTZ
-);
+ALTER TABLE referrals ADD COLUMN 
+  validation_criteria_met JSONB DEFAULT '{}';
+
+-- Exemplo: {"vehicle_set": true, "earnings_count": 3, "checked_at": "2026-02-03"}
 ```
 
-### 2. Nova Tabela: `device_fingerprints`
+### 2. Modificar: `Auth.tsx`
 
-```sql
-CREATE TABLE device_fingerprints (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id),
-  fingerprint TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, fingerprint)
-);
-```
+- Remover validação automática imediata
+- Apenas armazenar o código e fingerprint
+- Criar registro "pendente" sem dar bônus
 
-### 3. Novo Hook: `useDeviceFingerprint.tsx`
+### 3. Nova Função SQL: `check_pending_referrals()`
 
-Gera o fingerprint do dispositivo usando:
-- Canvas fingerprint
-- Screen resolution
-- Timezone
-- Language
-- Color depth
+Função que:
+1. Busca indicações pendentes com mais de 24h
+2. Verifica critérios de atividade para cada uma
+3. Se critérios cumpridos → valida e aplica bônus
+4. Pode ser chamada via CRON ou ao fazer login
 
-### 4. Modificar: `Auth.tsx`
+### 4. Modificar: `ReferralCard.tsx`
 
-- Detectar código de indicação na URL (`?ref=CODIGO`)
-- Salvar no localStorage antes do cadastro
-- Após cadastro, validar e registrar indicação
+- Adicionar verificação de tempo desde cadastro
+- Ocultar se conta tem menos de 48h
+- Mostrar mensagem explicativa se indicação está pendente
 
-### 5. Nova Seção em: `Settings.tsx`
+### 5. Modificar: `useReferral.tsx`
 
-- Card "Indique Amigos"
-- Mostrar código único do usuário
-- Botão para copiar link
-- Contador de indicações bem-sucedidas
-- Lista de recompensas ganhas
+- Remover validação imediata no cadastro
+- Adicionar função para verificar status da indicação
+- Mostrar progresso para o indicado ("Faltam 2 ações para ativar sua indicação")
 
-### 6. Lógica de Validação no Backend
+### 6. Novo: Banner de progresso para indicados
 
-Função RPC ou Edge Function que:
-1. Verifica se o código existe
-2. Compara fingerprints (indicador vs indicado)
-3. Verifica se o dispositivo já foi usado
-4. Se válido, marca indicação como completada
-5. Aplica bônus de dias PRO para ambos
+Se o usuário foi indicado mas ainda não validou:
+- Mostrar progresso das ações necessárias
+- "Complete 2 ações para ativar seu bônus de 7 dias PRO!"
 
 ---
 
-## Arquivos a Criar/Modificar
+## Arquivos a Modificar
 
-| Arquivo | Ação |
-|---------|------|
-| `src/hooks/useDeviceFingerprint.tsx` | Criar - gera fingerprint |
-| `src/hooks/useReferral.tsx` | Criar - gerencia indicações |
-| `src/components/settings/ReferralCard.tsx` | Criar - UI de indicação |
-| `src/pages/Auth.tsx` | Modificar - detectar código na URL |
-| `src/pages/Settings.tsx` | Modificar - adicionar card de indicação |
-| Migração SQL | Criar tabelas `referrals` e `device_fingerprints` |
-
----
-
-## Fluxo de Segurança
-
-```text
-Indicado acessa ?ref=ABC123
-        │
-        ▼
-Gera fingerprint do dispositivo
-        │
-        ▼
-Usuário se cadastra
-        │
-        ▼
-Sistema compara fingerprints
-        │
-        ├─── Diferentes → Indicação aceita ✓
-        │                  Aplica 7 dias PRO
-        │
-        └─── Iguais/Suspeito → Indicação rejeitada ✗
-                               Cadastro continua normal
-                               (sem bônus)
-```
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/pages/Auth.tsx` | Remover validação imediata, criar referral pendente |
+| `src/hooks/useReferral.tsx` | Adicionar lógica de verificação diferida e progresso |
+| `src/hooks/useAuth.tsx` | Chamar verificação de indicação pendente ao fazer login |
+| `src/components/settings/ReferralCard.tsx` | Ocultar card se conta < 48h |
+| `supabase/migrations/...` | Adicionar função `check_pending_referrals` e `register_pending_referral` |
 
 ---
 
-## Limitações Conhecidas
+## Experiência do Usuário Indicado
 
-1. **Não é 100% infalível**: Usuário pode usar dispositivo diferente para fraudar
-2. **Navegadores diferentes**: Mesmo dispositivo com Chrome vs Safari terá fingerprints diferentes
-3. **Modo anônimo**: Pode afetar alguns componentes do fingerprint
+### No Cadastro
+- Continua vendo o banner "Você foi indicado! Ganhe 7 dias PRO"
+- Cadastra normalmente
 
-**Mitigação**: Combinar fingerprint com análise de IP e comportamento (fase futura)
+### Nos Primeiros 2 Dias
+- Não vê o card "Indique Amigos"
+- Vê mini-banner: "Complete ações para ativar seu bônus de indicação"
+  - ✅ Configurou veículo
+  - ⬜ Registre 1 ganho
+  - ⬜ Registre 1 despesa ou turno
+
+### Após Validação
+- Toast: "🎉 Indicação confirmada! 7 dias de PRO ativados!"
+- Notificação para o indicador também
+
+### Após 48h
+- Card "Indique Amigos" aparece normalmente
+
+---
+
+## Vantagens desta Abordagem
+
+1. **Mais difícil fraudar**: Criar conta fake não basta, precisa usar o app
+2. **Usuários reais beneficiados**: Quem realmente usa ganha o bônus
+3. **Sem fricção extra**: Não precisa confirmar email/SMS
+4. **Transparente**: Usuário vê o progresso e sabe o que fazer
+5. **Combinação de proteções**: Tempo + Fingerprint + Atividade
 
 ---
 
 ## Resultado Esperado
 
-- Interface simples para compartilhar código
-- Proteção razoável contra fraude básica
-- Incentivo para usuários indicarem amigos reais
-- Crescimento orgânico da base de usuários
+- Fraudadores desistirão (muito trabalho para pouco ganho)
+- Usuários legítimos ganham bônus após 1-2 dias de uso normal
+- Sistema de indicação funciona de forma justa e sustentável
