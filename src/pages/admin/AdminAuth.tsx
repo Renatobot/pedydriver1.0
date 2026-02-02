@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import adminLogo from '@/assets/admin-logo-3d.png';
+import adminLogo from '@/assets/admin-logo-optimized.png';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
