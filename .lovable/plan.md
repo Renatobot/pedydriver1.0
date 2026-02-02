@@ -1,90 +1,140 @@
 
-# Plano: Corrigir Ícone PWA do Painel Admin
 
-## Problema Identificado
-Quando você instala o PWA do painel administrativo, o ícone que aparece é o "PD" (logo dos usuários) em vez do escudo com cadeado (logo do admin). Isso acontece porque:
+# Plano: Corrigir Ativação Automática do Plano PRO
 
-1. O `index.html` carrega o `manifest.json` padrão antes do React trocar para o `admin-manifest.json`
-2. Navegadores (especialmente iOS) capturam o manifest e apple-touch-icon no carregamento inicial da página
-3. A troca dinâmica via JavaScript não é detectada para fins de instalação PWA
+## Problemas Identificados
 
-## Solução Proposta
-Criar um ponto de entrada HTML separado para o admin (`/admin/index.html`) que já carrega as configurações corretas desde o início.
-
-## Etapas de Implementação
-
-### 1. Criar HTML dedicado para Admin
-Criar `public/admin/index.html` com:
-- Referência direta ao `admin-manifest.json`
-- Apple-touch-icon apontando para `admin-icon-512.png`
-- Favicon do admin
-- Meta tags específicas do admin (título, descrição)
-
-### 2. Atualizar Configuração do Vite
-Modificar `vite.config.ts` para:
-- Incluir o novo HTML do admin como entrada adicional
-- Garantir que `/admin/*` sirva o HTML do admin
-
-### 3. Adicionar Redirecionamento
-Configurar para que acessos a `/admin` e `/admin/*` usem o HTML dedicado do admin, permitindo que o PWA seja instalado com os ícones corretos.
+1. **URL de redirecionamento errada no InfinitePay**: O checkout está redirecionando para `/dashboard` ao invés de `/payment-success`
+2. **Webhook não consegue vincular pagamento**: O InfinitePay não envia email do cliente no webhook, então depende de encontrar um `payment_intent` recente
+3. **Nova aba quebra o fluxo**: O checkout abre em nova aba (`window.open`), então quando o usuário volta, precisa de um mecanismo para verificar e vincular o pagamento
 
 ---
 
-## Detalhes Técnicos
+## Solução Proposta
 
-### Arquivo: `public/admin/index.html`
-```html
-<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0..." />
-    <meta name="theme-color" content="#0f1419" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="PEDY Admin" />
-    
-    <!-- Admin-specific manifest and icons -->
-    <link rel="manifest" href="/admin-manifest.json" />
-    <link rel="apple-touch-icon" href="/icons/admin-icon-512.png" />
-    <link rel="icon" type="image/png" href="/icons/admin-icon-512.png" />
-    
-    <title>PEDY Admin - Painel Administrativo</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+Implementar um sistema de **"claim" (reivindicação)** de pagamento que funciona assim:
+
+```text
+Usuario clica "Assinar"
+        ↓
+Cria payment_intent (user_id, email, plan_type)
+        ↓
+Abre checkout InfinitePay (nova aba)
+        ↓
+    [Pagamento feito]
+        ↓
+    ┌─────────────────────────────────────────────┐
+    │ Webhook recebe pagamento                    │
+    │   → Tenta encontrar payment_intent recente  │
+    │   → Se encontrar: ativa automaticamente     │
+    │   → Se não: salva em pending_payments       │
+    └─────────────────────────────────────────────┘
+        ↓
+Usuário é redirecionado para /payment-success
+        ↓
+    ┌─────────────────────────────────────────────┐
+    │ Página payment-success tenta "claim"        │
+    │   → Chama edge function claim-payment       │
+    │   → Verifica pending_payments recentes      │
+    │   → Vincula ao usuário logado               │
+    │   → Ativa plano PRO                         │
+    └─────────────────────────────────────────────┘
 ```
 
-### Arquivo: `vite.config.ts`
-Adicionar configuração de entrada múltipla:
+---
+
+## Etapas de Implementação
+
+### Etapa 1: Configuração no InfinitePay
+
+**Ação do usuário (você):**
+- No painel da InfinitePay, configure a URL de retorno/sucesso dos dois checkouts para:
+
+  `https://pedydriver.lovable.app/payment-success`
+
+---
+
+### Etapa 2: Criar Edge Function `claim-payment`
+
+Nova função que permite ao usuário "reivindicar" um pagamento pendente:
+
+- Recebe o token JWT do usuário logado
+- Busca pagamentos em `pending_payments` das últimas 2 horas
+- Filtra por valor (R$ 14,90 = mensal, R$ 99 = anual)
+- Vincula ao usuário e ativa o plano PRO
+- Retorna sucesso ou "pagamento não encontrado"
+
+---
+
+### Etapa 3: Atualizar PaymentSuccess.tsx
+
+Modificar a página para:
+
+1. **Ao carregar**, chamar a função `claim-payment`
+2. Se o pagamento for vinculado com sucesso, mostrar "Plano ativado!"
+3. Se não encontrar pagamento, continuar fazendo polling da subscription
+4. Após 30 segundos sem ativação, mostrar mensagem para contatar suporte
+
+---
+
+### Etapa 4: Melhorar o Webhook
+
+Ajustar o webhook para:
+
+1. Aumentar janela de busca de payment_intent para 2 horas
+2. Melhorar matching por valor do pagamento
+3. Criar log mais detalhado para debug
+
+---
+
+## Seção Técnica
+
+### Edge Function: claim-payment
+
 ```typescript
-build: {
-  rollupOptions: {
-    input: {
-      main: 'index.html',
-      admin: 'public/admin/index.html'
+// supabase/functions/claim-payment/index.ts
+// Busca pending_payments das últimas 2h
+// Verifica se já não foi vinculado
+// Atualiza subscriptions para plan='pro'
+// Marca pending_payment como 'claimed'
+```
+
+### PaymentSuccess.tsx - Lógica de Claim
+
+```typescript
+useEffect(() => {
+  const claimPayment = async () => {
+    // Primeiro tenta chamar claim-payment
+    const { data } = await supabase.functions.invoke('claim-payment');
+    
+    if (data?.success) {
+      setIsActivated(true);
+      // Invalidar cache do react-query
     }
-  }
-}
+  };
+  
+  claimPayment();
+}, [user]);
 ```
 
-### Arquivo: `vercel.json` ou `_redirects`
-Configurar rewrite para servir o HTML correto:
-```json
-{
-  "rewrites": [
-    { "source": "/admin/:path*", "destination": "/admin/index.html" }
-  ]
-}
-```
+### Arquivos a serem modificados/criados
 
-## Resultado Esperado
-- Ao instalar o PWA de `/admin`, o ícone será o escudo verde com cadeado
-- O PWA do app principal continuará usando o logo "PD"
-- Cada PWA terá seu próprio nome e configuração
+| Arquivo | Ação |
+|---------|------|
+| `supabase/functions/claim-payment/index.ts` | Criar |
+| `supabase/config.toml` | Adicionar nova função |
+| `src/pages/PaymentSuccess.tsx` | Modificar para chamar claim |
+| `supabase/functions/infinitepay-webhook/index.ts` | Ajustar janela de tempo |
 
-## Notas
-- Pode ser necessário desinstalar o PWA antigo e reinstalar para ver as mudanças
-- Cache do navegador pode precisar ser limpo
+---
+
+## Ação Necessária do Usuário
+
+Antes de aprovar este plano, você precisa:
+
+1. **Acessar o painel da InfinitePay**
+2. **Editar os dois checkouts** (mensal e anual)
+3. **Configurar a URL de retorno** para: `https://pedydriver.lovable.app/payment-success`
+
+Depois de fazer isso, clique em "Approve" para eu implementar as mudanças no código.
+
