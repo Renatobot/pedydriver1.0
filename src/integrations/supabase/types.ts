@@ -891,6 +891,8 @@ export type Database = {
         | "internet"
         | "pedagio_estacionamento"
         | "outros"
+        | "aluguel_veiculo"
+        | "financiamento"
       payment_type: "imediato" | "app"
       service_type: "corrida" | "entrega" | "outro"
       subscription_plan: "free" | "pro"
@@ -1035,6 +1037,8 @@ export const Constants = {
         "internet",
         "pedagio_estacionamento",
         "outros",
+        "aluguel_veiculo",
+        "financiamento",
       ],
       payment_type: ["imediato", "app"],
       service_type: ["corrida", "entrega", "outro"],
