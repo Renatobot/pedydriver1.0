@@ -1,1 +1,4 @@
 project_id = "kfpyfcjukqjowridvyqi"
+
+[functions.infinitepay-webhook]
+verify_jwt = false
