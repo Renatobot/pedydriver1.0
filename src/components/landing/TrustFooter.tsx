@@ -1,5 +1,6 @@
-import { Shield, Settings, XCircle, Car } from 'lucide-react';
+import { Shield, Settings, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import logo from '@/assets/logo.png';
 
 const trustSignals = [
   { icon: Shield, text: 'Seus dados são privados' },
@@ -24,9 +25,7 @@ export function TrustFooter() {
         {/* Brand */}
         <div className="text-center space-y-4">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-profit flex items-center justify-center">
-              <Car className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="PEDY Driver" className="w-8 h-8 rounded-lg object-cover" />
             <span className="font-bold">PEDY Driver</span>
           </Link>
           
