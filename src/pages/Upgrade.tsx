@@ -35,7 +35,10 @@ const PRO_FEATURES = [
   { text: 'Registros ilimitados', icon: Infinity },
 ];
 
-const CHECKOUT_URL = 'https://checkout.infinitepay.io/pedy-solucoes_digitais/1nb3d1a9Fx';
+const CHECKOUT_URLS = {
+  monthly: 'https://checkout.infinitepay.io/pedy-solucoes_digitais/1nb3d1a9Fx',
+  yearly: 'https://checkout.infinitepay.io/pedy-solucoes_digitais/7COTmR04E5',
+};
 
 export default function Upgrade() {
   const { isPro, plan } = useSubscriptionContext();
@@ -50,8 +53,8 @@ export default function Upgrade() {
 
   const handleConfirmCheckout = () => {
     setShowEmailModal(false);
-    // Open InfinitePay checkout in a new tab
-    window.open(CHECKOUT_URL, '_blank');
+    // Open correct InfinitePay checkout based on selected plan
+    window.open(CHECKOUT_URLS[selectedPlan], '_blank');
   };
 
   const userEmail = user?.email || '';
