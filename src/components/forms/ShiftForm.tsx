@@ -34,9 +34,8 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const { canAddEntry, isPro } = useSubscriptionContext();
   const [showBlocker, setShowBlocker] = useState(!canAddEntry);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors }, reset } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       date: new Date(),
@@ -49,6 +48,9 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
   const date = watch('date');
   const selectedPlatforms = watch('platform_ids') || [];
   const isBlocked = !canAddEntry && !isPro;
+  
+  // Use mutation state to prevent double submissions
+  const isBusy = isSubmitting || createShift.isPending;
 
   const togglePlatform = (platformId: string) => {
     const current = selectedPlatforms;
@@ -64,23 +66,23 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
       return;
     }
     
-    setIsSubmitting(true);
-    try {
-      // Create ONE shift with all platforms selected
-      const shiftData = {
-        platform_id: data.platform_ids[0], // First for backwards compatibility
-        platform_ids: data.platform_ids,
-        hours_worked: data.hours_worked,
-        km_driven: data.km_driven,
-        date: format(data.date, 'yyyy-MM-dd'),
-      };
-      
-      await createShift.mutateAsync(shiftData);
-      reset();
-      onSuccess?.();
-    } finally {
-      setIsSubmitting(false);
+    // Prevent double submission
+    if (createShift.isPending) {
+      return;
     }
+    
+    // Create ONE shift with all platforms selected
+    const shiftData = {
+      platform_id: data.platform_ids[0], // First for backwards compatibility
+      platform_ids: data.platform_ids,
+      hours_worked: data.hours_worked,
+      km_driven: data.km_driven,
+      date: format(data.date, 'yyyy-MM-dd'),
+    };
+    
+    await createShift.mutateAsync(shiftData);
+    reset();
+    onSuccess?.();
   };
 
   return (
@@ -199,9 +201,9 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
         <Button 
           type="submit" 
           className="w-full h-11 sm:h-12 text-sm sm:text-base touch-feedback" 
-          disabled={isSubmitting || isBlocked}
+          disabled={isBusy || isBlocked}
         >
-          {isSubmitting ? 'Salvando...' : 'Registrar Turno'}
+          {isBusy ? 'Salvando...' : 'Registrar Turno'}
         </Button>
       </form>
     </div>
