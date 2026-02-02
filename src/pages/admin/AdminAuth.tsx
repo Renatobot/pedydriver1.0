@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import adminLogo from '@/assets/admin-logo.png';
+import adminLogo from '@/assets/admin-logo-optimized.png';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
@@ -23,6 +23,25 @@ export default function AdminAuth() {
   const [error, setError] = useState<string | null>(null);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  // Set admin-specific favicon and title
+  useEffect(() => {
+    const originalFavicon = document.querySelector('link[rel="icon"]')?.getAttribute('href');
+    const originalTitle = document.title;
+
+    const faviconLink = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    if (faviconLink) {
+      faviconLink.href = '/icons/admin-icon-512.png';
+    }
+    document.title = 'PEDY Admin - Login';
+
+    return () => {
+      if (faviconLink && originalFavicon) {
+        faviconLink.href = originalFavicon;
+      }
+      document.title = originalTitle;
+    };
+  }, []);
 
   const loginForm = useForm<LoginData>({
     resolver: zodResolver(loginSchema),

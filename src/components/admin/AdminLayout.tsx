@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Shield, Wallet, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -72,6 +72,40 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { user } = useAuth();
   const { data: isAdmin, isLoading } = useIsAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Set admin-specific favicon and manifest
+  useEffect(() => {
+    // Store original values
+    const originalFavicon = document.querySelector('link[rel="icon"]')?.getAttribute('href');
+    const originalManifest = document.querySelector('link[rel="manifest"]')?.getAttribute('href');
+    const originalTitle = document.title;
+
+    // Update favicon
+    const faviconLink = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    if (faviconLink) {
+      faviconLink.href = '/icons/admin-icon-512.png';
+    }
+
+    // Update manifest
+    const manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement;
+    if (manifestLink) {
+      manifestLink.href = '/admin-manifest.json';
+    }
+
+    // Update title
+    document.title = 'PEDY Admin - Painel Administrativo';
+
+    // Cleanup: restore original values when leaving admin
+    return () => {
+      if (faviconLink && originalFavicon) {
+        faviconLink.href = originalFavicon;
+      }
+      if (manifestLink && originalManifest) {
+        manifestLink.href = originalManifest;
+      }
+      document.title = originalTitle;
+    };
+  }, []);
 
   if (isLoading) {
     return (
