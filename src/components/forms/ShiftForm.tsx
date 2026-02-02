@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, Navigation, Check, Info } from 'lucide-react';
+import { CalendarIcon, Clock, Navigation, Check, Info, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +32,7 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
   const { data: platforms } = usePlatforms();
   const createShift = useCreateShiftOffline();
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const { canAddEntry, isPro } = useSubscriptionContext();
+  const { canAddEntry, isPro, limits, canUsePlatform } = useSubscriptionContext();
   const [showBlocker, setShowBlocker] = useState(!canAddEntry);
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
@@ -54,10 +54,32 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
 
   const togglePlatform = (platformId: string) => {
     const current = selectedPlatforms;
-    const updated = current.includes(platformId)
-      ? current.filter(id => id !== platformId)
-      : [...current, platformId];
-    setValue('platform_ids', updated);
+    
+    // Se já está selecionada, permite remover
+    if (current.includes(platformId)) {
+      setValue('platform_ids', current.filter(id => id !== platformId));
+      return;
+    }
+    
+    // Se não é Pro e já atingiu o limite de plataformas
+    if (!isPro && current.length >= limits.maxPlatforms) {
+      return;
+    }
+    
+    // Verifica se pode usar essa plataforma baseado no histórico
+    if (!canUsePlatform(platformId)) {
+      return;
+    }
+    
+    setValue('platform_ids', [...current, platformId]);
+  };
+  
+  // Check if platform is locked
+  const isPlatformLocked = (platformId: string): boolean => {
+    if (isPro) return false;
+    if (selectedPlatforms.includes(platformId)) return false;
+    if (selectedPlatforms.length >= limits.maxPlatforms) return true;
+    return !canUsePlatform(platformId);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -125,33 +147,58 @@ export function ShiftForm({ onSuccess }: ShiftFormProps) {
 
         {/* Platform - Multiple Selection */}
         <div className="space-y-1.5 sm:space-y-2">
-          <Label className="text-sm sm:text-base">Plataformas (selecione todas que usou)</Label>
+          <Label className="text-sm sm:text-base">
+            {isPro ? 'Plataformas (selecione todas que usou)' : `Plataforma (limite: ${limits.maxPlatforms})`}
+          </Label>
+          
+          {!isPro && (
+            <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-2">
+              <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                No plano grátis, você pode usar apenas {limits.maxPlatforms} plataforma. Faça upgrade para usar múltiplas!
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-2 gap-2">
-            {platforms?.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => togglePlatform(p.id)}
-                className={cn(
-                  "flex items-center gap-2 p-3 rounded-lg border transition-all touch-feedback",
-                  selectedPlatforms.includes(p.id)
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/50"
-                )}
-              >
-                <div className={cn(
-                  "w-5 h-5 rounded border flex items-center justify-center transition-colors",
-                  selectedPlatforms.includes(p.id)
-                    ? "bg-primary border-primary"
-                    : "border-muted-foreground/30"
-                )}>
-                  {selectedPlatforms.includes(p.id) && (
-                    <Check className="w-3 h-3 text-primary-foreground" />
+            {platforms?.map((p) => {
+              const locked = isPlatformLocked(p.id);
+              const selected = selectedPlatforms.includes(p.id);
+              
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => togglePlatform(p.id)}
+                  disabled={locked}
+                  className={cn(
+                    "flex items-center gap-2 p-3 rounded-lg border transition-all",
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : locked
+                        ? "border-border bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/50 touch-feedback"
                   )}
-                </div>
-                <span className="text-sm font-medium truncate">{p.name}</span>
-              </button>
-            ))}
+                >
+                  <div className={cn(
+                    "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                    selected
+                      ? "bg-primary border-primary"
+                      : locked
+                        ? "border-muted-foreground/20 bg-muted"
+                        : "border-muted-foreground/30"
+                  )}>
+                    {selected && (
+                      <Check className="w-3 h-3 text-primary-foreground" />
+                    )}
+                    {locked && !selected && (
+                      <Lock className="w-2.5 h-2.5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-sm font-medium truncate">{p.name}</span>
+                </button>
+              );
+            })}
           </div>
           {errors.platform_ids && (
             <p className="text-2xs sm:text-xs text-destructive">{errors.platform_ids.message}</p>
