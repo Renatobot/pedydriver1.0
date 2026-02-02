@@ -53,10 +53,17 @@ export default function Settings() {
   return (
     <AppLayout>
       <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto scroll-momentum">
-        {/* Header */}
-        <div className="space-y-0.5 sm:space-y-1">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Configurações</h1>
-          <p className="text-muted-foreground text-xs sm:text-sm">Personalize sua experiência</p>
+        {/* Header with Logo */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          <img 
+            src="/logo.png" 
+            alt="PEDY Driver" 
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl shadow-md"
+          />
+          <div className="space-y-0.5 sm:space-y-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Configurações</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Personalize sua experiência</p>
+          </div>
         </div>
 
         {/* User Info */}
