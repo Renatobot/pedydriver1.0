@@ -293,9 +293,11 @@ export function getVehiclesByType(type: VehicleType): VehicleData[] {
   return vehicleDatabase.filter(v => v.type === type);
 }
 
-// Obter unidade de consumo baseado no tipo de veículo
-export function getConsumptionUnit(vehicle: VehicleData): string {
-  return isElectricVehicle(vehicle) ? 'km/kWh' : 'km/l';
+// Obter unidade de consumo baseado no tipo de veículo e combustível
+export function getConsumptionUnit(vehicle: VehicleData, fuelType?: FuelType): string {
+  if (isElectricVehicle(vehicle)) return 'km/kWh';
+  if (fuelType === 'gnv') return 'km/m³';
+  return 'km/L';
 }
 
 // Obter label de energia baseado no tipo de veículo
@@ -303,9 +305,66 @@ export function getEnergyLabel(vehicle: VehicleData): string {
   return isElectricVehicle(vehicle) ? 'Energia' : 'Combustível';
 }
 
-// Obter label de preço baseado no tipo de veículo
-export function getEnergyPriceLabel(vehicle: VehicleData): string {
-  return isElectricVehicle(vehicle) ? 'R$/kWh' : 'R$/L';
+// Obter label de preço baseado no tipo de veículo e combustível
+export function getEnergyPriceLabel(vehicle: VehicleData, fuelType?: FuelType): string {
+  if (isElectricVehicle(vehicle)) return 'R$/kWh';
+  if (fuelType === 'gnv') return 'R$/m³';
+  return 'R$/L';
+}
+
+// Calcular consumo ajustado para cada tipo de combustível
+export interface FuelConsumption {
+  city: number;
+  highway: number;
+  average: number;
+  unit: string;
+}
+
+export function getConsumptionByFuelType(
+  vehicle: VehicleData,
+  fuelType: FuelType
+): FuelConsumption {
+  // Para veículos elétricos, retorna o consumo em km/kWh
+  if (isElectricVehicle(vehicle)) {
+    return {
+      city: vehicle.consumptionCity,
+      highway: vehicle.consumptionHighway,
+      average: (vehicle.consumptionCity + vehicle.consumptionHighway) / 2,
+      unit: 'km/kWh',
+    };
+  }
+
+  // Para bicicletas, não há consumo de combustível
+  if (isBicycle(vehicle)) {
+    return {
+      city: 0,
+      highway: 0,
+      average: 0,
+      unit: 'km/L',
+    };
+  }
+
+  // Aplicar fator de eficiência por tipo de combustível
+  const factor = FUEL_EFFICIENCY_FACTOR[fuelType];
+  const cityConsumption = vehicle.consumptionCity * factor;
+  const highwayConsumption = vehicle.consumptionHighway * factor;
+
+  return {
+    city: Math.round(cityConsumption * 10) / 10,
+    highway: Math.round(highwayConsumption * 10) / 10,
+    average: Math.round(((cityConsumption + highwayConsumption) / 2) * 10) / 10,
+    unit: fuelType === 'gnv' ? 'km/m³' : 'km/L',
+  };
+}
+
+// Obter resumo de consumo para todos os tipos de combustível
+export function getAllFuelConsumptions(vehicle: VehicleData): Record<FuelType, FuelConsumption> {
+  return {
+    gasolina: getConsumptionByFuelType(vehicle, 'gasolina'),
+    etanol: getConsumptionByFuelType(vehicle, 'etanol'),
+    gnv: getConsumptionByFuelType(vehicle, 'gnv'),
+    eletrico: getConsumptionByFuelType(vehicle, 'eletrico'),
+  };
 }
 
 // Calcular custo por km
