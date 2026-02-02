@@ -1,83 +1,76 @@
 
-# Plano: Correção do Nome/Logo e Valor Bruto no ProfitCard
+# Plano: Alternância entre Tema Claro e Escuro
 
-## Problema 1: Nome e Logo do PWA
-
-### Diagnóstico
-Os arquivos de configuração (`manifest.json`, `index.html`) já estão corretos com o nome "PEDY Driver". O problema está nos **ícones do PWA** que provavelmente ainda são os ícones padrão do Lovable:
-
-- `public/icons/icon-192.png`
-- `public/icons/icon-512.png`
-
-### Solução
-Substituir os ícones por novos ícones personalizados do PEDY Driver. O design seguirá o estilo do favicon.svg existente:
-- Fundo escuro (#0f1419)
-- Gradiente verde (#10b981 → #059669)
-- Símbolo de check/dinheiro
-
-### Arquivos a modificar
-| Arquivo | Ação |
-|---------|------|
-| `public/icons/icon-192.png` | Substituir por ícone PEDY Driver |
-| `public/icons/icon-512.png` | Substituir por ícone PEDY Driver |
+## Resumo
+Permitir que o usuário alterne entre modo claro e escuro diretamente nas configurações do app, utilizando a biblioteca `next-themes` que já está instalada no projeto.
 
 ---
 
-## Problema 2: ProfitCard sem Valor Bruto
+## O que será implementado
 
-### Diagnóstico
-O componente `ProfitCard.tsx` mostra apenas o lucro líquido:
-```typescript
-<ProfitCard value={metrics.realProfit} />
-```
+### 1. Nova seção "Aparência" na página de Configurações
+- Toggle visual com ícones de Sol/Lua para alternar entre temas
+- Três opções: Claro, Escuro e Automático (segue o sistema)
+- Botões estilizados seguindo o padrão visual existente (como o seletor de veículo)
 
-O usuário quer ver também o valor bruto (receita total) para comparação.
+### 2. Tema Claro
+O app atualmente só tem cores configuradas para o modo escuro. Será criado um conjunto completo de cores para o modo claro:
+- Fundo claro profissional (branco/cinza suave)
+- Cards com sombras sutis
+- Textos escuros para boa legibilidade
+- Mantém a identidade visual (verde primário para lucros, vermelho para despesas)
 
-### Solução
-Atualizar o `ProfitCard` para aceitar e exibir um valor secundário (bruto), similar ao que foi implementado no `MetricCard`. Isso inclui:
-1. Adicionar prop `secondaryValue` opcional
-2. Exibir o valor bruto abaixo do líquido
-3. Adicionar tooltip explicativo
-
-### Arquivos a modificar
-| Arquivo | Ação |
-|---------|------|
-| `src/components/dashboard/ProfitCard.tsx` | Adicionar suporte a valor bruto |
-| `src/pages/Dashboard.tsx` | Passar `totalRevenue` como valor secundário |
+### 3. Persistência automática
+O `next-themes` automaticamente salva a preferência do usuário no `localStorage`, então a escolha será lembrada entre sessões.
 
 ---
 
-## Implementação Detalhada
+## Arquivos que serão modificados/criados
 
-### ProfitCard Atualizado
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/theme-provider.tsx` | **NOVO** - Wrapper do ThemeProvider |
+| `src/App.tsx` | Adicionar ThemeProvider envolvendo todo o app |
+| `src/index.css` | Adicionar variáveis CSS para tema claro (`:root` sem `.dark`) |
+| `src/pages/Settings.tsx` | Adicionar seção "Aparência" com toggle de tema |
+| `index.html` | Remover `class="dark"` fixo do `<html>` (será gerenciado dinamicamente) |
 
-O card principal mostrará:
-- **Valor grande**: Lucro Real (líquido)
-- **Valor secundário**: Receita Bruta (para comparação)
-- **Tooltip**: Explicação da diferença
+---
 
-Layout visual:
+## Detalhes Técnicos
+
+### Componente ThemeProvider (novo)
 ```text
-+--------------------------------------------------+
-| LUCRO REAL                              [↑/↓]    |
-|                                                  |
-|            R$ 450,00    (líquido)                |
-|            R$ 680,00 bruto                       |
-+--------------------------------------------------+
+src/components/theme-provider.tsx
 ```
+- Cria um wrapper reutilizável do next-themes
+- Configurado com `attribute="class"` para funcionar com Tailwind
+- `defaultTheme="dark"` mantém o comportamento atual como padrão
+- `enableSystem` permite opção automática
 
-### Uso no Dashboard
+### Variáveis CSS para tema claro
+Cores profissionais que mantêm a identidade:
+- Background: `#fafafa` (cinza muito claro)
+- Cards: `#ffffff` (branco puro)
+- Textos: tons de cinza escuro
+- Primary (verde): mantido igual
+- Destructive (vermelho): mantido igual
 
-```typescript
-<ProfitCard 
-  value={metrics.realProfit}           // Líquido (principal)
-  secondaryValue={metrics.totalRevenue} // Bruto (secundário)
-/>
-```
+### UI na página de Configurações
+Nova seção "Aparência" com 3 botões:
+- **Sol** = Modo Claro
+- **Lua** = Modo Escuro  
+- **Monitor** = Automático (segue sistema)
+
+Estilo similar aos botões de "Tipo de Veículo" já existentes.
 
 ---
 
-## Resultado Final
+## Fluxo de Implementação
 
-1. **PWA**: Ícones personalizados PEDY Driver aparecerão quando o usuário instalar o app
-2. **Dashboard**: Card principal mostrará lucro líquido E receita bruta para fácil comparação
+1. Criar arquivo `theme-provider.tsx`
+2. Envolver app com ThemeProvider
+3. Adicionar variáveis CSS do tema claro
+4. Atualizar `index.html` removendo classe fixa
+5. Adicionar controle de tema em Settings
+6. Testar transições e persistência
