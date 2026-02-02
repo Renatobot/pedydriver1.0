@@ -733,6 +733,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      admin_notify_inactivity_warning: {
+        Args: { _target_user_id: string }
+        Returns: boolean
+      }
       admin_reply_ticket: {
         Args: { _reply: string; _ticket_id: string }
         Returns: boolean
@@ -790,6 +794,7 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          days_inactive: number
           email: string
           full_name: string
           is_blocked: boolean

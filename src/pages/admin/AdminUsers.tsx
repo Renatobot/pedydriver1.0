@@ -28,8 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, AdminUser } from '@/hooks/useAdmin';
-import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound } from 'lucide-react';
+import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, useDeleteUser, AdminUser } from '@/hooks/useAdmin';
+import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound, Trash2, Bell, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -40,17 +40,23 @@ export default function AdminUsers() {
   const toggleUserBlock = useToggleUserBlock();
   const resetMonthlyLimit = useResetMonthlyLimit();
   const adminResetPassword = useAdminResetPassword();
+  const deleteUser = useDeleteUser();
   
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [dialogType, setDialogType] = useState<'view' | 'block' | 'unblock' | 'pro' | 'free' | 'reset' | 'password' | null>(null);
+  const [dialogType, setDialogType] = useState<'view' | 'block' | 'unblock' | 'pro' | 'free' | 'reset' | 'password' | 'delete' | 'notify_inactive' | null>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [filterInactive, setFilterInactive] = useState(false);
 
-  const filteredUsers = users?.filter(user => 
-    user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    user.email?.toLowerCase().includes(search.toLowerCase()) ||
-    user.phone?.includes(search)
-  ) ?? [];
+  const filteredUsers = users?.filter(user => {
+    const matchesSearch = user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      user.email?.toLowerCase().includes(search.toLowerCase()) ||
+      user.phone?.includes(search);
+    
+    const matchesInactiveFilter = !filterInactive || user.days_inactive >= 30;
+    
+    return matchesSearch && matchesInactiveFilter;
+  }) ?? [];
 
   const handleAction = () => {
     if (!selectedUser) return;
@@ -89,6 +95,12 @@ export default function AdminUsers() {
           });
           setNewPassword('');
         }
+        break;
+      case 'delete':
+        deleteUser.mutate({ targetUserId: selectedUser.user_id });
+        break;
+      case 'notify_inactive':
+        deleteUser.mutate({ targetUserId: selectedUser.user_id, sendNotification: true });
         break;
     }
     setDialogType(null);
@@ -144,6 +156,18 @@ export default function AdminUsers() {
           description: `Definir uma nova senha para ${selectedUser?.full_name || selectedUser?.email}`,
           action: 'Alterar Senha',
         };
+      case 'delete':
+        return {
+          title: '⚠️ Excluir Usuário Permanentemente',
+          description: `ATENÇÃO: Esta ação é IRREVERSÍVEL! Todos os dados de ${selectedUser?.full_name || selectedUser?.email} serão excluídos permanentemente, incluindo ganhos, despesas, turnos e configurações.`,
+          action: 'Excluir Permanentemente',
+        };
+      case 'notify_inactive':
+        return {
+          title: 'Enviar Aviso de Inatividade',
+          description: `Enviar notificação para ${selectedUser?.full_name || selectedUser?.email} avisando sobre a inatividade da conta?`,
+          action: 'Enviar Notificação',
+        };
       default:
         return { title: '', description: '', action: null };
     }
@@ -161,16 +185,34 @@ export default function AdminUsers() {
 
         <Card>
           <CardHeader className="pb-3 sm:pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg sm:text-xl">Lista de Usuários</CardTitle>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar usuário..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 h-10"
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardTitle className="text-lg sm:text-xl">Lista de Usuários</CardTitle>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar usuário..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 h-10"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={filterInactive ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterInactive(!filterInactive)}
+                  className="gap-2"
+                >
+                  <Clock className="h-4 w-4" />
+                  Inativos 30+ dias
+                  {filterInactive && users && (
+                    <Badge variant="secondary" className="ml-1">
+                      {users.filter(u => u.days_inactive >= 30).length}
+                    </Badge>
+                  )}
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -292,6 +334,28 @@ export default function AdminUsers() {
                                   Bloquear
                                 </DropdownMenuItem>
                               )}
+                              {user.days_inactive >= 30 && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setDialogType('notify_inactive');
+                                  }}
+                                >
+                                  <Bell className="w-4 h-4 mr-2" />
+                                  Enviar Aviso de Inatividade
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setDialogType('delete');
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Excluir Usuário
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -308,6 +372,12 @@ export default function AdminUsers() {
                           ) : (
                             <Badge variant="outline" className="text-xs text-green-600 border-green-600">
                               Ativo
+                            </Badge>
+                          )}
+                          {user.days_inactive >= 30 && (
+                            <Badge variant="outline" className="text-xs text-orange-600 border-orange-600">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {user.days_inactive}d inativo
                             </Badge>
                           )}
                           <span className="text-xs text-muted-foreground ml-auto">
@@ -376,13 +446,21 @@ export default function AdminUsers() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {user.is_blocked ? (
-                                <Badge variant="destructive">Bloqueado</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-green-600 border-green-600">
-                                  Ativo
-                                </Badge>
-                              )}
+                              <div className="flex gap-1 flex-wrap">
+                                {user.is_blocked ? (
+                                  <Badge variant="destructive">Bloqueado</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-green-600 border-green-600">
+                                    Ativo
+                                  </Badge>
+                                )}
+                                {user.days_inactive >= 30 && (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {user.days_inactive}d
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <DropdownMenu>
@@ -466,6 +544,28 @@ export default function AdminUsers() {
                                       Bloquear
                                     </DropdownMenuItem>
                                   )}
+                                  {user.days_inactive >= 30 && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedUser(user);
+                                        setDialogType('notify_inactive');
+                                      }}
+                                    >
+                                      <Bell className="w-4 h-4 mr-2" />
+                                      Enviar Aviso de Inatividade
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setDialogType('delete');
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Excluir Usuário
+                                  </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </TableCell>
@@ -574,13 +674,14 @@ export default function AdminUsers() {
                   Cancelar
                 </Button>
                 <Button
-                  variant={dialogType === 'block' ? 'destructive' : 'default'}
+                  variant={dialogType === 'block' || dialogType === 'delete' ? 'destructive' : 'default'}
                   onClick={handleAction}
                   disabled={
                     updateSubscription.isPending ||
                     toggleUserBlock.isPending ||
                     resetMonthlyLimit.isPending ||
                     adminResetPassword.isPending ||
+                    deleteUser.isPending ||
                     (dialogType === 'password' && newPassword.length < 6)
                   }
                 >
