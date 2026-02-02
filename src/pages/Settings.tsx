@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, ChevronDown, Fuel } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, Fuel } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import { ReferralCard } from '@/components/settings/ReferralCard';
-import { getVehiclesByType, getConsumptionUnit, isBicycle, isElectricVehicle, FUEL_LABELS, vehicleDatabase } from '@/lib/vehicleData';
+import { isElectricVehicle, FUEL_LABELS, vehicleDatabase } from '@/lib/vehicleData';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 export default function Settings() {
@@ -42,17 +42,14 @@ export default function Settings() {
   const [weekStartsOn, setWeekStartsOn] = useState<'domingo' | 'segunda'>('segunda');
   const [showCalculator, setShowCalculator] = useState(false);
 
-  // Lista de modelos disponíveis para o tipo de veículo selecionado
-  const availableModels = useMemo(() => getVehiclesByType(vehicleType), [vehicleType]);
-  
-  // Verificar se o modelo selecionado é elétrico (para esconder seletor de combustível)
+  // Verificar se o modelo selecionado é elétrico (para mostrar info de combustível)
   const selectedVehicleData = useMemo(() => {
     if (!vehicleModel) return null;
     return vehicleDatabase.find(v => v.name === vehicleModel) || null;
   }, [vehicleModel]);
   
-  const showFuelSelector = useMemo(() => {
-    // Mostrar seletor apenas para carro/moto não-elétricos
+  const showFuelInfo = useMemo(() => {
+    // Mostrar info de combustível apenas para carro/moto não-elétricos
     if (vehicleType === 'bicicleta' || vehicleType === 'bicicleta_eletrica') return false;
     if (selectedVehicleData && isElectricVehicle(selectedVehicleData)) return false;
     return true;
@@ -69,49 +66,19 @@ export default function Settings() {
     }
   }, [settings]);
 
-  const handleSave = () => {
-    updateSettings.mutate({
-      cost_per_km: parseFloat(costPerKm) || 0.5,
-      vehicle_type: vehicleType,
-      vehicle_model: vehicleModel,
-      fuel_type: fuelType,
-      cost_distribution_rule: distributionRule,
-      week_starts_on: weekStartsOn,
-    });
-  };
-
-  // Handler para mudar tipo de veículo (limpa o modelo ao trocar tipo)
+  // Handler para mudar tipo de veículo - abre calculadora para selecionar modelo
   const handleVehicleTypeChange = (type: VehicleType) => {
     setVehicleType(type);
-    setVehicleModel(null); // Limpa o modelo ao trocar de tipo
-    // Se for bicicleta, resetar combustível para gasolina (não será usado)
+    setVehicleModel(null);
+    // Se for bicicleta, resetar combustível
     if (type === 'bicicleta' || type === 'bicicleta_eletrica') {
       setFuelType('gasolina');
       updateSettings.mutate({ vehicle_type: type, vehicle_model: null, fuel_type: 'gasolina' });
     } else {
       updateSettings.mutate({ vehicle_type: type, vehicle_model: null });
     }
-  };
-
-  // Handler para mudar modelo de veículo
-  const handleVehicleModelChange = (model: string) => {
-    setVehicleModel(model);
-    // Se o modelo for elétrico, atualizar fuel_type para 'eletrico'
-    const modelData = vehicleDatabase.find(v => v.name === model);
-    if (modelData && isElectricVehicle(modelData)) {
-      setFuelType('eletrico');
-      updateSettings.mutate({ vehicle_model: model, fuel_type: 'eletrico' });
-    } else {
-      updateSettings.mutate({ vehicle_model: model });
-    }
-    // Abrir calculadora automaticamente ao selecionar um modelo
+    // Abrir calculadora para selecionar modelo
     setShowCalculator(true);
-  };
-
-  // Handler para mudar tipo de combustível
-  const handleFuelTypeChange = (fuel: FuelType) => {
-    setFuelType(fuel);
-    updateSettings.mutate({ fuel_type: fuel });
   };
 
   return (
@@ -274,120 +241,82 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Vehicle Model Selector */}
-            <div className="space-y-2 sm:space-y-3">
-              <Label className="flex items-center gap-2 text-sm sm:text-base">
-                <ChevronDown className="w-4 h-4" />
-                Modelo do Veículo
-              </Label>
-              <Select 
-                value={vehicleModel || ''} 
-                onValueChange={handleVehicleModelChange}
-              >
-                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
-                  <SelectValue placeholder="Selecione o modelo..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((vehicle) => (
-                    <SelectItem key={vehicle.name} value={vehicle.name} className="py-3">
-                      {isBicycle(vehicle) 
-                        ? vehicle.name 
-                        : `${vehicle.name} (${vehicle.consumptionCity} ${getConsumptionUnit(vehicle)} cidade)`
-                      }
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {vehicleModel && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-green-500" />
-                  Modelo salvo: <strong>{vehicleModel}</strong>
-                </p>
-              )}
-            </div>
-
-            {/* Fuel Type Selector - only for combustion vehicles */}
-            {showFuelSelector && (
-              <div className="space-y-2 sm:space-y-3">
-                <Label className="flex items-center gap-2 text-sm sm:text-base">
-                  <Fuel className="w-4 h-4" />
-                  Tipo de Combustível
-                </Label>
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  <button
-                    onClick={() => handleFuelTypeChange('gasolina')}
-                    className={cn(
-                      'flex flex-col items-center justify-center gap-1 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[64px] sm:min-h-[72px]',
-                      fuelType === 'gasolina'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
-                    )}
+            {/* Vehicle Summary Card - Mostra veículo configurado */}
+            {vehicleModel && (
+              <div className="rounded-xl p-3 sm:p-4 bg-muted/50 border border-border/50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {vehicleType === 'carro' && <Car className="w-4 h-4 text-primary" />}
+                    {vehicleType === 'moto' && <Bike className="w-4 h-4 text-primary" />}
+                    {(vehicleType === 'bicicleta' || vehicleType === 'bicicleta_eletrica') && <Bike className="w-4 h-4 text-primary" />}
+                    <span className="text-sm font-medium">{vehicleModel}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCalculator(true)}
+                    className="h-8 text-xs text-primary"
                   >
-                    <span className="font-medium text-xs sm:text-sm">Gasolina</span>
-                    <span className="text-2xs text-muted-foreground">R$ 5,89/L</span>
-                  </button>
-                  <button
-                    onClick={() => handleFuelTypeChange('etanol')}
-                    className={cn(
-                      'flex flex-col items-center justify-center gap-1 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[64px] sm:min-h-[72px]',
-                      fuelType === 'etanol'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
-                    )}
-                  >
-                    <span className="font-medium text-xs sm:text-sm">Etanol</span>
-                    <span className="text-2xs text-muted-foreground">R$ 3,89/L</span>
-                  </button>
-                  <button
-                    onClick={() => handleFuelTypeChange('gnv')}
-                    className={cn(
-                      'flex flex-col items-center justify-center gap-1 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[64px] sm:min-h-[72px]',
-                      fuelType === 'gnv'
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
-                    )}
-                  >
-                    <span className="font-medium text-xs sm:text-sm">GNV</span>
-                    <span className="text-2xs text-muted-foreground">R$ 3,99/m³</span>
-                  </button>
+                    Alterar
+                  </Button>
                 </div>
-                {fuelType === 'etanol' && (
-                  <p className="text-2xs sm:text-xs text-amber-600 dark:text-amber-400">
-                    ⚠️ Etanol rende ~30% menos que gasolina. O cálculo já considera isso.
-                  </p>
+                {showFuelInfo && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Fuel className="w-3 h-3" />
+                    <span>Combustível: <strong className="text-foreground">{FUEL_LABELS[fuelType]}</strong></span>
+                  </div>
                 )}
               </div>
             )}
-
-            {/* Cost per KM */}
-            <div className="space-y-2 sm:space-y-3">
-              <Label className="flex items-center gap-2 text-sm sm:text-base">
-                <Gauge className="w-4 h-4" />
-                Custo por Km (R$)
-              </Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={costPerKm}
-                onChange={(e) => setCostPerKm(e.target.value)}
-                className="h-11 sm:h-12 font-mono text-sm sm:text-base"
-                placeholder="0.50"
-              />
+            
+            {/* Botão para configurar veículo se ainda não configurou */}
+            {!vehicleModel && (
               <Button
-                type="button"
                 variant="outline"
-                size="sm"
                 onClick={() => setShowCalculator(true)}
-                className="w-full h-10 sm:h-11 text-muted-foreground hover:text-foreground text-xs sm:text-sm touch-feedback"
+                className="w-full h-12 text-sm touch-feedback"
               >
                 <Calculator className="w-4 h-4 mr-2" />
-                Não sabe? Calcular meu custo
+                Configurar meu veículo
               </Button>
-              <p className="text-2xs sm:text-xs text-muted-foreground">
-                Custo estimado de combustível + desgaste por quilômetro
-              </p>
-            </div>
+            )}
+
+            {/* Cost per KM - Show only if vehicle is configured */}
+            {vehicleModel && (
+              <div className="space-y-2 sm:space-y-3">
+                <Label className="flex items-center gap-2 text-sm sm:text-base">
+                  <Gauge className="w-4 h-4" />
+                  Custo por Km (R$)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={costPerKm}
+                    onChange={(e) => {
+                      setCostPerKm(e.target.value);
+                      updateSettings.mutate({ cost_per_km: parseFloat(e.target.value) || 0.5 });
+                    }}
+                    className="h-11 sm:h-12 font-mono text-sm sm:text-base flex-1"
+                    placeholder="0.50"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowCalculator(true)}
+                    className="h-11 sm:h-12 w-11 sm:w-12 touch-feedback"
+                    title="Recalcular custo"
+                  >
+                    <Calculator className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-2xs sm:text-xs text-muted-foreground">
+                  Custo de combustível + manutenção + desgaste
+                </p>
+              </div>
+            )}
 
             {/* Cost Distribution Rule */}
             <div className="space-y-2 sm:space-y-3">
@@ -543,14 +472,6 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Save Button */}
-            <Button
-              onClick={handleSave}
-              className="w-full h-12 sm:h-14 text-sm sm:text-base font-semibold touch-feedback"
-              disabled={updateSettings.isPending}
-            >
-              {updateSettings.isPending ? 'Salvando...' : 'Salvar Configurações'}
-            </Button>
           </div>
         )}
 
@@ -606,7 +527,20 @@ export default function Settings() {
         currentVehicleType={vehicleType}
         currentVehicleModel={vehicleModel}
         currentFuelType={fuelType}
-        onApplyCost={(cost) => setCostPerKm(cost.toFixed(2))}
+        onApplyCost={(cost, newVehicleType, newVehicleModel, newFuelType) => {
+          // Atualizar estado local
+          setCostPerKm(cost.toFixed(2));
+          setVehicleType(newVehicleType);
+          setVehicleModel(newVehicleModel);
+          setFuelType(newFuelType);
+          // Salvar tudo no banco
+          updateSettings.mutate({
+            cost_per_km: cost,
+            vehicle_type: newVehicleType,
+            vehicle_model: newVehicleModel,
+            fuel_type: newFuelType,
+          });
+        }}
       />
 
       {/* Onboarding Tutorial */}

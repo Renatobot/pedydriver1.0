@@ -43,7 +43,7 @@ interface VehicleCostCalculatorProps {
   currentVehicleType: VehicleType;
   currentVehicleModel?: string | null;
   currentFuelType?: FuelType;
-  onApplyCost: (cost: number) => void;
+  onApplyCost: (cost: number, vehicleType: VehicleType, vehicleModel: string | null, fuelType: FuelType) => void;
 }
 
 export function VehicleCostCalculator({ 
@@ -261,8 +261,8 @@ export function VehicleCostCalculator({
   };
 
   const handleApply = () => {
-    if (result) {
-      onApplyCost(result.totalCost);
+    if (result && selectedVehicle) {
+      onApplyCost(result.totalCost, vehicleType, selectedVehicle.name, fuelType);
       onOpenChange(false);
     }
   };
