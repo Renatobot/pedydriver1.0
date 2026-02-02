@@ -13,7 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
-const EVENT_CONFIG: Record<AdminAlert['event_type'], { label: string; icon: React.ReactNode; color: string; category: 'user' | 'churn' | 'error' }> = {
+const EVENT_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; category: 'user' | 'churn' | 'error' | 'payment' }> = {
   new_user_free: {
     label: 'Novo Usuário',
     icon: <UserPlus className="w-4 h-4" />,
@@ -37,6 +37,12 @@ const EVENT_CONFIG: Record<AdminAlert['event_type'], { label: string; icon: Reac
     icon: <AlertTriangle className="w-4 h-4" />,
     color: 'text-orange-500',
     category: 'error',
+  },
+  payment_user_not_found: {
+    label: '⚠️ Pagamento Pendente',
+    icon: <CreditCard className="w-4 h-4" />,
+    color: 'text-purple-500',
+    category: 'payment',
   },
   churn_inactive_pro: {
     label: 'PRO Inativo',
@@ -128,7 +134,8 @@ export function AdminAlertsBell() {
                     className={cn(
                       'p-3 hover:bg-accent/50 transition-colors',
                       !alert.is_read && 'bg-primary/5',
-                      isChurn && !alert.is_read && 'bg-amber-500/10'
+                      isChurn && !alert.is_read && 'bg-amber-500/10',
+                      config.category === 'payment' && !alert.is_read && 'bg-purple-500/10 border-l-4 border-purple-500'
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -138,14 +145,25 @@ export function AdminAlertsBell() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge 
-                            variant={isChurn ? "outline" : "secondary"} 
+                            variant={isChurn ? "outline" : config.category === 'payment' ? "outline" : "secondary"} 
                             className={cn(
                               "text-xs",
-                              isChurn && "border-amber-500 text-amber-600"
+                              isChurn && "border-amber-500 text-amber-600",
+                              config.category === 'payment' && "border-purple-500 text-purple-600 bg-purple-50 dark:bg-purple-950"
                             )}
                           >
                             {config.label}
                           </Badge>
+                          {isChurn && (
+                            <Badge variant="destructive" className="text-xs">
+                              Churn
+                            </Badge>
+                          )}
+                          {config.category === 'payment' && (
+                            <Badge variant="outline" className="text-xs border-purple-400 text-purple-500">
+                              Ação necessária
+                            </Badge>
+                          )}
                           {isChurn && (
                             <Badge variant="destructive" className="text-xs">
                               Churn
