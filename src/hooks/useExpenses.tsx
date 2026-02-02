@@ -80,6 +80,43 @@ export function useCreateExpense() {
   });
 }
 
+export function useUpdateExpense() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ id, ...expense }: { id: string } & Partial<CreateExpenseData>) => {
+      if (!user) throw new Error('Não autenticado');
+
+      const { data, error } = await supabase
+        .from('expenses')
+        .update(expense)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      toast({
+        title: 'Gasto atualizado!',
+        description: 'Seu gasto foi editado com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro ao atualizar',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+}
+
 export function useDeleteExpense() {
   const queryClient = useQueryClient();
 

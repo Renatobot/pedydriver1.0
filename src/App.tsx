@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 const Add = lazy(() => import("./pages/Add"));
 const QuickEntry = lazy(() => import("./pages/QuickEntry"));
 const Reports = lazy(() => import("./pages/Reports"));
+const History = lazy(() => import("./pages/History"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Settings = lazy(() => import("./pages/Settings"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
@@ -85,6 +86,7 @@ function AppRoutes() {
         <Route path="/quick" element={<ProtectedRoute><QuickEntry /></ProtectedRoute>} />
         <Route path="/add" element={<ProtectedRoute><Add /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />

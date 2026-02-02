@@ -1,4 +1,4 @@
-import { Home, Plus, BarChart3, Settings, Zap } from 'lucide-react';
+import { Home, Plus, BarChart3, Settings, Zap, History } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -6,7 +6,7 @@ const navItems = [
   { to: '/', icon: Home, label: 'Resumo' },
   { to: '/quick', icon: Zap, label: 'Rápido' },
   { to: '/add', icon: Plus, label: 'Lançar' },
-  { to: '/reports', icon: BarChart3, label: 'Relatórios' },
+  { to: '/history', icon: History, label: 'Histórico' },
   { to: '/settings', icon: Settings, label: 'Config' },
 ];
 
