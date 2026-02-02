@@ -114,7 +114,7 @@ export function useMonthlyEntryCount() {
   });
 }
 
-// Hook to check platform count
+// Hook to check how many DIFFERENT platforms the user has used in earnings
 export function useUserPlatformCount() {
   const { user } = useAuth();
 
@@ -123,13 +123,41 @@ export function useUserPlatformCount() {
     queryFn: async (): Promise<number> => {
       if (!user) return 0;
       
-      const { count } = await supabase
-        .from('platforms')
-        .select('*', { count: 'exact', head: true })
+      // Count distinct platforms used in earnings (not platforms created)
+      const { data } = await supabase
+        .from('earnings')
+        .select('platform_id')
         .eq('user_id', user.id)
-        .eq('is_default', false);
+        .not('platform_id', 'is', null);
       
-      return count || 0;
+      if (!data) return 0;
+      
+      // Get unique platform IDs
+      const uniquePlatforms = new Set(data.map(e => e.platform_id));
+      return uniquePlatforms.size;
+    },
+    enabled: !!user
+  });
+}
+
+// Hook to get the list of platforms the user has already used
+export function useUsedPlatformIds() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['usedPlatformIds', user?.id],
+    queryFn: async (): Promise<string[]> => {
+      if (!user) return [];
+      
+      const { data } = await supabase
+        .from('earnings')
+        .select('platform_id')
+        .eq('user_id', user.id)
+        .not('platform_id', 'is', null);
+      
+      if (!data) return [];
+      
+      return [...new Set(data.map(e => e.platform_id).filter(Boolean))] as string[];
     },
     enabled: !!user
   });

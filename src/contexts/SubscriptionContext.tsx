@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useSubscription, useMonthlyEntryCount, useUserPlatformCount } from '@/hooks/useSubscription';
+import { useSubscription, useMonthlyEntryCount, useUserPlatformCount, useUsedPlatformIds } from '@/hooks/useSubscription';
 import { Subscription, SubscriptionLimits, PremiumFeature } from '@/types/subscription';
 
 interface SubscriptionContextType {
@@ -12,8 +12,10 @@ interface SubscriptionContextType {
   getHistoryStartDate: () => string;
   monthlyEntryCount: number;
   userPlatformCount: number;
+  usedPlatformIds: string[];
   canAddEntry: boolean;
   canAddPlatform: boolean;
+  canUsePlatform: (platformId: string) => boolean;
   remainingEntries: number;
   remainingPlatforms: number;
 }
@@ -33,9 +35,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   
   const { data: monthlyEntryCount = 0 } = useMonthlyEntryCount();
   const { data: userPlatformCount = 0 } = useUserPlatformCount();
+  const { data: usedPlatformIds = [] } = useUsedPlatformIds();
 
   const canAddEntry = isPro || monthlyEntryCount < limits.maxEntriesPerMonth;
   const canAddPlatform = isPro || userPlatformCount < limits.maxPlatforms;
+  
+  // Check if a specific platform can be used
+  const canUsePlatform = (platformId: string): boolean => {
+    if (isPro) return true;
+    // If user already used this platform, they can continue using it
+    if (usedPlatformIds.includes(platformId)) return true;
+    // If user hasn't reached the limit, they can use a new platform
+    return userPlatformCount < limits.maxPlatforms;
+  };
   
   const remainingEntries = isPro 
     ? Infinity 
@@ -57,8 +69,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         getHistoryStartDate,
         monthlyEntryCount,
         userPlatformCount,
+        usedPlatformIds,
         canAddEntry,
         canAddPlatform,
+        canUsePlatform,
         remainingEntries,
         remainingPlatforms,
       }}
