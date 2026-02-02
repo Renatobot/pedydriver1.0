@@ -104,6 +104,8 @@ export default function Settings() {
     } else {
       updateSettings.mutate({ vehicle_model: model });
     }
+    // Abrir calculadora automaticamente ao selecionar um modelo
+    setShowCalculator(true);
   };
 
   // Handler para mudar tipo de combustível
