@@ -7,7 +7,7 @@ import { useIsAdmin } from '@/hooks/useAdmin';
 import { Button } from '@/components/ui/button';
 import { AdminAlertsBell } from './AdminAlertsBell';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import adminLogo from '@/assets/admin-logo-3d.png';
+import adminLogo from '@/assets/admin-logo-optimized.png';
 
 interface AdminLayoutProps {
   children: ReactNode;
