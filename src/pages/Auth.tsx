@@ -51,6 +51,13 @@ const translateAuthError = (message: string): string => {
     return 'A senha deve ter no mínimo 6 caracteres';
   if (msg.includes('password is too weak')) 
     return 'Sua senha é muito fraca. Use letras, números e símbolos.';
+  // Supabase/HaveIBeenPwned style message
+  if (
+    msg.includes('known to be weak and easy to guess') ||
+    msg.includes('password is known to be weak') ||
+    msg.includes('pwned')
+  )
+    return 'Essa senha é considerada fraca (muito comum). Escolha uma senha mais forte.';
   if (msg.includes('most common passwords')) 
     return 'Esta senha é muito comum. Escolha outra mais segura.';
   if (msg.includes('contain at least one character of each')) 
