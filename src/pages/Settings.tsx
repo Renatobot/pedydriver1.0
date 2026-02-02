@@ -1,4 +1,5 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2 } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ export default function Settings() {
   const updateSettings = useUpdateUserSettings();
   const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
   const { canInstall, isInstalled, isDismissed, isIOS, installApp, resetDismiss } = usePWAInstall();
+  const { theme, setTheme } = useTheme();
 
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
@@ -234,6 +236,55 @@ export default function Settings() {
                   <SelectItem value="domingo" className="py-3">Domingo</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Theme Selector */}
+            <div className="space-y-2 sm:space-y-3">
+              <Label className="flex items-center gap-2 text-sm sm:text-base">
+                <Sun className="w-4 h-4" />
+                Aparência
+              </Label>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-1.5 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[72px] sm:min-h-[80px]',
+                    theme === 'light'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                  )}
+                >
+                  <Sun className="w-5 h-5" />
+                  <span className="font-medium text-xs sm:text-sm">Claro</span>
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-1.5 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[72px] sm:min-h-[80px]',
+                    theme === 'dark'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                  )}
+                >
+                  <Moon className="w-5 h-5" />
+                  <span className="font-medium text-xs sm:text-sm">Escuro</span>
+                </button>
+                <button
+                  onClick={() => setTheme('system')}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-1.5 p-3 sm:p-4 rounded-xl border transition-all touch-feedback min-h-[72px] sm:min-h-[80px]',
+                    theme === 'system'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-card text-muted-foreground hover:border-primary/50 active:border-primary/50'
+                  )}
+                >
+                  <Monitor className="w-5 h-5" />
+                  <span className="font-medium text-xs sm:text-sm">Auto</span>
+                </button>
+              </div>
+              <p className="text-2xs sm:text-xs text-muted-foreground">
+                "Auto" segue a configuração do seu dispositivo
+              </p>
             </div>
 
             {/* Notifications */}
