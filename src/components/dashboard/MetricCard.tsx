@@ -1,6 +1,13 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { formatCurrency, formatNumber } from '@/lib/formatters';
+import { Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface MetricCardProps {
   label: string;
@@ -61,9 +68,25 @@ export function MetricCard({
       className
     )}>
       <div className="flex items-start justify-between mb-1.5 sm:mb-2">
-        <span className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          {label}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-2xs sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {label}
+          </span>
+          {secondaryValue !== undefined && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-3 h-3 text-muted-foreground/60 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                  <p className="font-medium mb-1">Líquido vs Bruto</p>
+                  <p><strong>Líquido:</strong> Lucro real após descontar custos (combustível, manutenção)</p>
+                  <p className="mt-1"><strong>Bruto:</strong> Receita total antes dos custos</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         {icon && (
           <span className={cn('text-muted-foreground', variant === 'profit' && 'text-profit', variant === 'expense' && 'text-expense')}>
             {icon}
