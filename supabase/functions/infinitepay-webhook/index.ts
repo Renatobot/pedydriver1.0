@@ -102,15 +102,15 @@ Deno.serve(async (req) => {
     if (!customerEmail) {
       console.log("No customer email in payload - looking for recent payment intent...");
       
-      // Look for a pending payment intent created in the last hour
+      // Look for a pending payment intent created in the last 2 hours
       // We match by timing since InfinitePay doesn't give us a way to link
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
       
       const { data: recentIntents, error: intentError } = await supabase
         .from("payment_intents")
         .select("*")
         .eq("status", "pending")
-        .gte("created_at", oneHourAgo)
+        .gte("created_at", twoHoursAgo)
         .order("created_at", { ascending: false })
         .limit(1);
       
