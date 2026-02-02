@@ -7,6 +7,7 @@ import { ShiftForm } from '@/components/forms/ShiftForm';
 import { cn } from '@/lib/utils';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
+import logoWebp from '@/assets/logo-optimized.webp';
 
 type FormType = 'earning' | 'expense' | 'shift';
 
@@ -26,9 +27,12 @@ export default function Add() {
         {/* Header with Logo */}
         <div className="flex items-center gap-3 sm:gap-4">
           <img 
-            src="/logo.png" 
+            src={logoWebp} 
             alt="PEDY Driver" 
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl shadow-md"
+            width={56}
+            height={56}
+            loading="lazy"
           />
           <div className="space-y-0.5 sm:space-y-1">
             <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lançar</h1>

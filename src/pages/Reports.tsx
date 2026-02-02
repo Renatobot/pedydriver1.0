@@ -14,6 +14,7 @@ import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, subMonths } f
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { BestTimesAnalysis } from '@/components/reports/BestTimesAnalysis';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
+import logoWebp from '@/assets/logo-optimized.webp';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   combustivel: Fuel,
@@ -62,9 +63,12 @@ export default function Reports() {
         {/* Header with Logo */}
         <div className="flex items-center gap-3 sm:gap-4">
           <img 
-            src="/logo.png" 
+            src={logoWebp} 
             alt="PEDY Driver" 
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl shadow-md"
+            width={56}
+            height={56}
+            loading="lazy"
           />
           <div className="space-y-0.5 sm:space-y-1">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Relatórios</h1>

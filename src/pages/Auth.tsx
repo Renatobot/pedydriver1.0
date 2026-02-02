@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.png';
+import logoWebp from '@/assets/logo-optimized.webp';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
@@ -128,7 +128,7 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 safe-top safe-bottom">
       {/* Logo */}
       <div className="mb-6 sm:mb-8 text-center">
-        <img src={logo} alt="PEDY Driver" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl mx-auto mb-3 sm:mb-4 shadow-lg" />
+        <img src={logoWebp} alt="PEDY Driver" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl mx-auto mb-3 sm:mb-4 shadow-lg" width={80} height={80} loading="eager" />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">PEDY Driver</h1>
         <p className="text-muted-foreground text-sm sm:text-base mt-1">Controle seus ganhos como motorista de aplicativo</p>
       </div>
