@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
-import logo3d from '@/assets/logo-auth-small.webp';
+import logo3d from '@/assets/logo-auth-tiny.webp';
 
 const REFERRAL_CODE_KEY = 'pedy_referral_code';
 
