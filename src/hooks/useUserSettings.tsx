@@ -33,10 +33,17 @@ export function useUpdateUserSettings() {
     mutationFn: async (settings: Partial<Omit<UserSettings, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) => {
       if (!user) throw new Error('Não autenticado');
 
+      // Use UPSERT to ensure the row exists (create on first save) and to avoid
+      // silent failures when the user_settings row hasn't been created yet.
       const { data, error } = await supabase
         .from('user_settings')
-        .update(settings)
-        .eq('user_id', user.id)
+        .upsert(
+          {
+            user_id: user.id,
+            ...settings,
+          },
+          { onConflict: 'user_id' }
+        )
         .select()
         .single();
       
