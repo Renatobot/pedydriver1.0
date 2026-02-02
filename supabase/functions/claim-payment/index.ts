@@ -48,6 +48,16 @@ Deno.serve(async (req) => {
 
     console.log("Claim payment request from user:", userId, userEmail);
 
+    // Parse request body for intent_id (passed from frontend)
+    let requestIntentId: string | null = null;
+    try {
+      const body = await req.json();
+      requestIntentId = body?.intent_id || null;
+      console.log("Intent ID from request:", requestIntentId);
+    } catch {
+      // No body or invalid JSON - that's ok
+    }
+
     // First check if user already has PRO
     const { data: currentSub } = await supabase
       .from("subscriptions")
@@ -68,27 +78,52 @@ Deno.serve(async (req) => {
     }
 
     // ============================================
-    // SECURITY FIX: Buscar payment_intent DO PRÓPRIO USUÁRIO primeiro
+    // SECURITY FIX: Buscar payment_intent DO PRÓPRIO USUÁRIO
+    // Se frontend enviou intent_id, usar esse (vínculo 100% garantido)
     // ============================================
     
-    // Janela de tempo reduzida: 30 minutos (mais seguro que 2h)
+    // Janela de tempo: 30 minutos para intents, 2h para pending payments
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
     console.log("Looking for user's payment intent since:", thirtyMinutesAgo);
 
-    // 1. Primeiro buscar o payment_intent do próprio usuário
-    const { data: userIntent, error: intentError } = await supabase
-      .from("payment_intents")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("status", "pending")
-      .gte("created_at", thirtyMinutesAgo)
-      .order("created_at", { ascending: false })
-      .limit(1);
+    let userIntent = null;
 
-    if (intentError) {
-      console.error("Error fetching user's payment intent:", intentError);
+    // Se temos intent_id do frontend, buscar diretamente (vínculo 100% garantido)
+    if (requestIntentId) {
+      const { data: specificIntent, error: specificError } = await supabase
+        .from("payment_intents")
+        .select("*")
+        .eq("id", requestIntentId)
+        .eq("user_id", userId) // IMPORTANTE: validar que pertence ao usuário
+        .single();
+
+      if (specificError) {
+        console.log("Intent not found or doesn't belong to user:", requestIntentId);
+      } else if (specificIntent) {
+        userIntent = [specificIntent];
+        console.log("Found specific intent from request:", specificIntent.id, specificIntent.plan_type);
+      }
     }
+
+    // Se não encontrou via intent_id específico, buscar o mais recente do usuário
+    if (!userIntent) {
+      const { data: recentIntent, error: intentError } = await supabase
+        .from("payment_intents")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "pending")
+        .gte("created_at", thirtyMinutesAgo)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (intentError) {
+        console.error("Error fetching user's payment intent:", intentError);
+      }
+      userIntent = recentIntent;
+    }
+
+    // Verificar se há intent completado recentemente (já ativado via webhook)
 
     // Se encontrou intent completado recentemente, verificar subscription
     const { data: completedIntent } = await supabase

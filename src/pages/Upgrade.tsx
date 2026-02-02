@@ -64,20 +64,39 @@ export default function Upgrade() {
     
     try {
       // Create payment intent to track this payment attempt
-      const { error } = await supabase.from('payment_intents').insert({
-        user_id: user.id,
-        user_email: user.email,
-        plan_type: selectedPlan === 'yearly' ? 'annual' : 'monthly',
-      });
+      // SECURITY FIX: Capturar o ID do intent para passar na redirect_url
+      const { data: intentData, error } = await supabase
+        .from('payment_intents')
+        .insert({
+          user_id: user.id,
+          user_email: user.email,
+          plan_type: selectedPlan === 'yearly' ? 'annual' : 'monthly',
+        })
+        .select('id')
+        .single();
 
       if (error) {
         console.error('Error creating payment intent:', error);
-        // Don't block payment, just log the error
+        toast.error('Erro ao preparar pagamento. Tente novamente.');
+        setIsProcessing(false);
+        return;
       }
 
+      const intentId = intentData?.id;
+      console.log('Created payment intent:', intentId);
+
       setShowEmailModal(false);
+      
       // Open correct InfinitePay checkout based on selected plan
+      // O intent_id será usado na página de sucesso para vínculo garantido
       window.open(CHECKOUT_URLS[selectedPlan], '_blank');
+      
+      // Salvar intent_id no localStorage para usar na página de sucesso
+      if (intentId) {
+        localStorage.setItem('pending_intent_id', intentId);
+        localStorage.setItem('pending_intent_plan', selectedPlan === 'yearly' ? 'annual' : 'monthly');
+        localStorage.setItem('pending_intent_time', Date.now().toString());
+      }
     } catch (err) {
       console.error('Error in checkout:', err);
       toast.error('Erro ao processar. Tente novamente.');
