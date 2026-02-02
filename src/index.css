@@ -325,3 +325,8 @@
     background: hsl(var(--muted-foreground));
   }
 }
+
+/* Hide Lovable badge */
+#lovable-badge {
+  display: none !important;
+}
