@@ -130,13 +130,16 @@ export function useDashboard(range: DateRange = 'week') {
 
       const platformEarnings = earnings.filter(e => e.platform_id === platformId);
       const platformExpenses = expenses.filter(e => e.platform_id === platformId);
-      const platformShifts = shifts.filter(s => s.platform_id === platformId);
 
       const revenue = platformEarnings.reduce((sum, e) => sum + Number(e.amount), 0);
       const directExpenses = platformExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
       const services = platformEarnings.reduce((sum, e) => sum + e.service_count, 0);
-      const hours = platformShifts.reduce((sum, s) => sum + Number(s.hours_worked), 0);
-      const km = platformShifts.reduce((sum, s) => sum + Number(s.km_driven), 0);
+      
+      // Distribuir horas e KMs proporcionalmente pela receita
+      // Se ganhou 70% da receita nesta plataforma, provavelmente rodou 70% do tempo/km nela
+      const revenueShare = totalRevenue > 0 ? revenue / totalRevenue : 0;
+      const hours = totalHours * revenueShare;
+      const km = totalKm * revenueShare;
 
       // Calculate shared expenses based on distribution rule
       let sharedExpenses = 0;
