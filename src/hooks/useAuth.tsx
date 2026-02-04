@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const queryClient = useQueryClient();
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
@@ -115,6 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     setIsAdmin(null);
+    // Clear React Query cache to prevent data leakage between users
+    queryClient.clear();
+    // Clear any localStorage data that might be user-specific
+    localStorage.removeItem('onboarding_completed');
     await supabase.auth.signOut();
   };
 
