@@ -2,7 +2,7 @@
   "name": "PEDY Admin - Painel Administrativo",
   "short_name": "PEDY Admin",
   "description": "Painel administrativo do PEDY Driver",
-  "start_url": "/admin",
+  "start_url": "/auth",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0f1419",

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
+import { useIsAdmin } from '@/hooks/useAdmin';
 // Using optimized WebP icon for better performance
 import logo3d from '@/assets/logo-optimized.webp';
 
@@ -137,13 +138,27 @@ export default function Auth() {
     resolver: zodResolver(phoneLoginSchema),
   });
 
+  // Check admin status and redirect accordingly
+  const checkAdminAndRedirect = useCallback(async () => {
+    try {
+      const { data: isAdmin } = await supabase.rpc('is_admin');
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch {
+      navigate('/');
+    }
+  }, [navigate]);
+
   const handleLogin = async (data: LoginData) => {
     setError(null);
     const { error } = await signIn(data.email, data.password);
     if (error) {
       setError(translateAuthError(error.message));
     } else {
-      navigate('/');
+      await checkAdminAndRedirect();
     }
   };
 
@@ -154,6 +169,7 @@ export default function Auth() {
     if (error) {
       setError(translateAuthError(error.message));
     } else {
+      // After signup, always go to user dashboard (new users are never admins)
       navigate('/');
     }
   };
@@ -188,7 +204,7 @@ export default function Auth() {
       if (signInError) {
         setError(translateAuthError(signInError.message));
       } else {
-        navigate('/');
+        await checkAdminAndRedirect();
       }
       
     } catch (err) {

@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +10,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
+import { supabase } from "@/integrations/supabase/client";
 
 // Lazy load all pages for better code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -29,7 +30,6 @@ const Landing = lazy(() => import("./pages/Landing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load admin pages
-const AdminAuth = lazy(() => import("./pages/admin/AdminAuth"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
@@ -53,15 +53,33 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Smart public route that redirects logged-in users based on their role
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checkingAdmin, setCheckingAdmin] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (user && !checkingAdmin) {
+      setCheckingAdmin(true);
+      supabase.rpc('is_admin').then(({ data, error }) => {
+        if (error) {
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(data === true);
+        }
+        setCheckingAdmin(false);
+      });
+    }
+  }, [user, checkingAdmin]);
+
+  if (loading || (user && isAdmin === null)) {
     return <PageLoader />;
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    // Redirect to admin panel if user is admin, otherwise to dashboard
+    return <Navigate to={isAdmin ? "/admin" : "/"} replace />;
   }
 
   return <>{children}</>;
@@ -84,7 +102,7 @@ function AppRoutes() {
         <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         {/* Admin Routes - protection handled by AdminLayout */}
-        <Route path="/admin/login" element={<AdminAuth />} />
+        <Route path="/admin/login" element={<Navigate to="/auth" replace />} />
         <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
         <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
