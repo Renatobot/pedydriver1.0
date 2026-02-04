@@ -20,8 +20,7 @@ import { PremiumBadge } from '@/components/subscription/PremiumBadge';
 import { Link } from 'react-router-dom';
 import { SupportForm } from '@/components/support/SupportForm';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { useOnboarding } from '@/hooks/useOnboarding';
-import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
+import { useGuidedTour } from '@/hooks/useGuidedTour';
 import { ReferralCard } from '@/components/settings/ReferralCard';
 import { EditProfileModal } from '@/components/settings/EditProfileModal';
 import { isElectricVehicle, FUEL_LABELS, vehicleDatabase } from '@/lib/vehicleData';
@@ -36,7 +35,7 @@ export default function Settings() {
   const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
   const { canInstall, isInstalled, isDismissed, isIOS, installApp, resetDismiss } = usePWAInstall();
   const { theme, setTheme } = useTheme();
-  const { showOnboarding, completeOnboarding, resetOnboarding } = useOnboarding();
+  const { resetTour } = useGuidedTour();
   const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [costPerKm, setCostPerKm] = useState('0.50');
@@ -526,7 +525,7 @@ export default function Settings() {
           <div className="rounded-xl p-3 sm:p-4 bg-muted/30 border border-border/50">
             <Button
               variant="outline"
-              onClick={resetOnboarding}
+              onClick={resetTour}
               className="w-full h-10 sm:h-11 text-xs sm:text-sm"
             >
               <HelpCircle className="w-4 h-4 mr-2" />
@@ -585,10 +584,6 @@ export default function Settings() {
         }}
       />
 
-      {/* Onboarding Tutorial */}
-      {showOnboarding && (
-        <OnboardingTutorial onComplete={completeOnboarding} />
-      )}
     </AppLayout>
   );
 }
