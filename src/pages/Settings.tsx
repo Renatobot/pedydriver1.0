@@ -20,7 +20,7 @@ import { PremiumBadge } from '@/components/subscription/PremiumBadge';
 import { Link } from 'react-router-dom';
 import { SupportForm } from '@/components/support/SupportForm';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { useGuidedTour } from '@/hooks/useGuidedTour';
+import { useGuidedTourContext } from '@/contexts/GuidedTourContext';
 import { ReferralCard } from '@/components/settings/ReferralCard';
 import { EditProfileModal } from '@/components/settings/EditProfileModal';
 import { isElectricVehicle, FUEL_LABELS, vehicleDatabase } from '@/lib/vehicleData';
@@ -35,7 +35,7 @@ export default function Settings() {
   const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
   const { canInstall, isInstalled, isDismissed, isIOS, installApp, resetDismiss } = usePWAInstall();
   const { theme, setTheme } = useTheme();
-  const { resetTour } = useGuidedTour();
+  const { resetTour } = useGuidedTourContext();
   const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [costPerKm, setCostPerKm] = useState('0.50');

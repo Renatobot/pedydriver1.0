@@ -5,7 +5,7 @@ import { NotificationBell } from './NotificationBell';
 import { EntryLimitIndicator } from '@/components/subscription/EntryLimitBanner';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { GuidedTour } from '@/components/onboarding/GuidedTour';
-import { useGuidedTour } from '@/hooks/useGuidedTour';
+import { useGuidedTourContext } from '@/contexts/GuidedTourContext';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -13,7 +13,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { isPro } = useSubscriptionContext();
-  const { showTour, completeTour } = useGuidedTour();
+  const { showTour, completeTour } = useGuidedTourContext();
 
   return (
     <div className="min-h-screen bg-background">
