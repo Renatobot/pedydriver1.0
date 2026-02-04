@@ -396,6 +396,58 @@ Deno.serve(async (req) => {
 
     console.log(`[send-admin-notification] Sent ${successCount}/${recipients.length}, failed ${failedCount}`);
 
+    // Also save to user_notifications (in-app notifications for users without push)
+    // Get all unique user IDs from recipients AND users who match criteria but don't have push
+    const { data: allTargetUsers } = await supabase.rpc('get_push_recipients', {
+      _target_type: targetType,
+      _target_user_id: targetUserId || null,
+      _inactive_days: inactiveDays || null
+    });
+
+    // Get unique user IDs
+    const userIds = new Set<string>();
+    if (allTargetUsers) {
+      for (const u of allTargetUsers) {
+        userIds.add(u.user_id);
+      }
+    }
+
+    // For "all" target type, also get users without push subscriptions
+    if (targetType === 'all' || targetType === 'pro' || targetType === 'free') {
+      let query = supabase.from('subscriptions').select('user_id');
+      
+      if (targetType === 'pro') {
+        query = query.eq('plan', 'pro').eq('status', 'active');
+      } else if (targetType === 'free') {
+        query = query.eq('plan', 'free');
+      }
+      
+      const { data: allUsers } = await query;
+      if (allUsers) {
+        for (const u of allUsers) {
+          userIds.add(u.user_id);
+        }
+      }
+    }
+
+    // Insert in-app notifications for all target users
+    if (userIds.size > 0) {
+      const notifications = Array.from(userIds).map(userId => ({
+        user_id: userId,
+        title,
+        message: notifBody,
+        type: 'admin_push',
+        is_read: false
+      }));
+
+      const { error: notifError } = await supabase.from('user_notifications').insert(notifications);
+      if (notifError) {
+        console.error('[send-admin-notification] Error saving in-app notifications:', notifError);
+      } else {
+        console.log(`[send-admin-notification] Saved ${notifications.length} in-app notifications`);
+      }
+    }
+
     // Log the send
     await supabase.from('push_send_logs').insert({
       notification_id: scheduledId || null,
