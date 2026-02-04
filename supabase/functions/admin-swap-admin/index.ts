@@ -11,7 +11,13 @@ type SwapAdminBody = {
   newPassword: string;
   newFullName?: string;
   newPhone?: string | null;
+  /**
+   * Dangerous operation: only supported when explicitly confirmed.
+   * Keeping this optional but guarded to avoid accidental lockouts/data loss.
+   */
   deleteOldAdminUserId?: string | null;
+  /** Must be exactly "DELETE_OLD_ADMIN" to proceed with deletion */
+  deleteConfirm?: string | null;
 };
 
 serve(async (req) => {
@@ -117,8 +123,10 @@ serve(async (req) => {
     }
 
     // Optionally delete the old admin (hard delete + cleanup)
+    // SAFETY: requires explicit confirm string to avoid accidental deletion.
     const deleteOldAdminUserId = body.deleteOldAdminUserId ?? null;
-    if (deleteOldAdminUserId) {
+    const deleteConfirm = body.deleteConfirm ?? null;
+    if (deleteOldAdminUserId && deleteConfirm === "DELETE_OLD_ADMIN") {
       const tablesToClean = [
         "active_shifts",
         "earnings",
@@ -156,6 +164,11 @@ serve(async (req) => {
           }
         );
       }
+    } else if (deleteOldAdminUserId) {
+      console.log(
+        "Deletion requested but not confirmed. Skipping deletion for user_id:",
+        deleteOldAdminUserId
+      );
     }
 
     // Log the swap (do NOT log passwords)
@@ -166,7 +179,10 @@ serve(async (req) => {
       target_user_id: newUserId,
       details: {
         new_admin_email: newEmail,
-        deleted_old_admin_user_id: deleteOldAdminUserId,
+        deleted_old_admin_user_id:
+          deleteOldAdminUserId && deleteConfirm === "DELETE_OLD_ADMIN"
+            ? deleteOldAdminUserId
+            : null,
         created_at: new Date().toISOString(),
       },
     });
@@ -176,7 +192,10 @@ serve(async (req) => {
         success: true,
         newUserId,
         newEmail,
-        deletedOldAdminUserId: deleteOldAdminUserId,
+        deletedOldAdminUserId:
+          deleteOldAdminUserId && deleteConfirm === "DELETE_OLD_ADMIN"
+            ? deleteOldAdminUserId
+            : null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
