@@ -215,7 +215,7 @@ export default function TermsOfUse() {
             <section className="pt-6 border-t">
               <p className="text-sm text-muted-foreground">
                 PEDY Soluções Digitais<br />
-                CNPJ: [A ser preenchido]<br />
+                CNPJ: 22.001.596/0001-87<br />
                 Brasil
               </p>
             </section>
