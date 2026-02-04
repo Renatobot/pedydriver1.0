@@ -157,7 +157,7 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
               <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
                 <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                  Ao usar múltiplas plataformas simultaneamente, não será possível identificar qual é a mais rentável individualmente nos relatórios.
+                  Ao usar múltiplas plataformas, horas e km serão distribuídos proporcionalmente pela receita de cada uma. O sistema não conseguirá identificar qual é mais rentável. Para análise individual, registre os ganhos de cada plataforma separadamente.
                 </p>
               </div>
             )}
