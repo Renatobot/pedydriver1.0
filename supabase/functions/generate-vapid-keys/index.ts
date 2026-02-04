@@ -41,9 +41,8 @@ Deno.serve(async (req) => {
       ['sign', 'verify']
     );
 
-    // Export private key as raw bytes (32 bytes for P-256)
+    // Export private key as JWK (includes d, x, y - needed for signing)
     const privateKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-    const privateKeyBase64Url = privateKeyJwk.d!; // The 'd' parameter is the private key
 
     // Export public key as raw uncompressed format (65 bytes: 0x04 + x + y)
     const publicKeyRaw = await crypto.subtle.exportKey('raw', keyPair.publicKey);
@@ -51,9 +50,8 @@ Deno.serve(async (req) => {
 
     console.log('[generate-vapid-keys] Keys generated successfully');
     console.log('[generate-vapid-keys] Public key length:', publicKeyBase64Url.length);
-    console.log('[generate-vapid-keys] Private key length:', privateKeyBase64Url.length);
 
-    // Store keys in system_config using upsert
+    // Store public key separately for frontend use
     const { error: publicError } = await supabase
       .from('system_config')
       .upsert(
@@ -66,16 +64,22 @@ Deno.serve(async (req) => {
       throw new Error('Failed to store public key');
     }
 
-    const { error: privateError } = await supabase
+    // Store the full JWK for server-side signing (includes d, x, y coordinates)
+    const vapidKeysJwk = {
+      publicKey: publicKeyBase64Url,
+      privateKeyJwk: privateKeyJwk
+    };
+
+    const { error: jwkError } = await supabase
       .from('system_config')
       .upsert(
-        { key: 'vapid_private_key', value: privateKeyBase64Url },
+        { key: 'vapid_keys_jwk', value: JSON.stringify(vapidKeysJwk) },
         { onConflict: 'key' }
       );
 
-    if (privateError) {
-      console.error('[generate-vapid-keys] Error storing private key:', privateError);
-      throw new Error('Failed to store private key');
+    if (jwkError) {
+      console.error('[generate-vapid-keys] Error storing JWK:', jwkError);
+      throw new Error('Failed to store JWK');
     }
 
     console.log('[generate-vapid-keys] Keys stored successfully in system_config');
