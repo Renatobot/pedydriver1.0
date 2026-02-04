@@ -41,27 +41,53 @@ async function createJWT(vapidPrivateKey: string, endpoint: string): Promise<str
   const encodedPayload = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
-  // Import the private key
+  // Import the private key using JWK format for ECDSA signing
   const privateKeyBytes = base64UrlToUint8Array(vapidPrivateKey);
   
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    privateKeyBytes.buffer as ArrayBuffer,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  );
+  // Convert raw 32-byte private key to JWK format
+  const jwk = {
+    kty: 'EC',
+    crv: 'P-256',
+    d: vapidPrivateKey, // Private key component
+    x: '', // Will be computed
+    y: '', // Will be computed
+  };
 
-  const signature = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
-    cryptoKey,
-    new TextEncoder().encode(unsignedToken)
-  );
+  // We need to derive x,y from the private key, but since we stored them together
+  // Let's use a different approach - import as PKCS8 or use web-push library pattern
+  
+  // Actually, for ECDSA P-256, we need the full key. Let's use the raw key approach
+  // but with the correct key format
+  
+  try {
+    const cryptoKey = await crypto.subtle.importKey(
+      'jwk',
+      {
+        kty: 'EC',
+        crv: 'P-256',
+        d: vapidPrivateKey,
+        // We need x and y coordinates - but we only stored d
+        // This is the issue - we need to store the full JWK or compute x,y
+      },
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
 
-  const signatureBytes = new Uint8Array(signature);
-  const encodedSignature = uint8ArrayToBase64Url(signatureBytes);
+    const signature = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      cryptoKey,
+      new TextEncoder().encode(unsignedToken)
+    );
 
-  return `${unsignedToken}.${encodedSignature}`;
+    const signatureBytes = new Uint8Array(signature);
+    const encodedSignature = uint8ArrayToBase64Url(signatureBytes);
+
+    return `${unsignedToken}.${encodedSignature}`;
+  } catch (error) {
+    console.error('[createJWT] Error importing key:', error);
+    throw error;
+  }
 }
 
 async function sendPushNotification(
@@ -115,29 +141,46 @@ Deno.serve(async (req) => {
 
     console.log('[send-user-reminders] Starting reminder check...');
 
-    // Get VAPID keys from system_config
-    const { data: vapidPublicRow } = await supabase
+    // Get VAPID keys from system_config (stored as full JWK)
+    const { data: vapidRow } = await supabase
       .from('system_config')
       .select('value')
-      .eq('key', 'vapid_public_key')
+      .eq('key', 'vapid_keys_jwk')
       .single();
 
-    const { data: vapidPrivateRow } = await supabase
-      .from('system_config')
-      .select('value')
-      .eq('key', 'vapid_private_key')
-      .single();
+    if (!vapidRow) {
+      // Fallback to old format
+      const { data: vapidPublicRow } = await supabase
+        .from('system_config')
+        .select('value')
+        .eq('key', 'vapid_public_key')
+        .single();
 
-    if (!vapidPublicRow || !vapidPrivateRow) {
-      console.error('VAPID keys not found in system_config');
-      return new Response(JSON.stringify({ error: 'VAPID keys not configured' }), {
+      const { data: vapidPrivateRow } = await supabase
+        .from('system_config')
+        .select('value')
+        .eq('key', 'vapid_private_key')
+        .single();
+
+      if (!vapidPublicRow || !vapidPrivateRow) {
+        console.error('VAPID keys not found in system_config');
+        return new Response(JSON.stringify({ error: 'VAPID keys not configured' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Old keys exist but won't work properly - need regeneration
+      console.error('Old VAPID key format detected - please regenerate keys');
+      return new Response(JSON.stringify({ error: 'VAPID keys need regeneration' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const vapidPublicKey = vapidPublicRow.value;
-    const vapidPrivateKey = vapidPrivateRow.value;
+    const vapidKeys = JSON.parse(vapidRow.value);
+    const vapidPublicKey = vapidKeys.publicKey;
+    const vapidPrivateKeyJwk = vapidKeys.privateKeyJwk;
 
     // Get users who are due for a reminder
     const { data: usersToRemind, error: queryError } = await supabase.rpc('get_users_due_for_reminder');
@@ -159,7 +202,7 @@ Deno.serve(async (req) => {
 
     console.log(`[send-user-reminders] Found ${usersToRemind.length} users to remind`);
 
-    const payload = {
+    const pushPayload = {
       title: '🚗 Hora de registrar!',
       body: 'Não esqueça de registrar seus ganhos de hoje no PEDY Driver.',
       icon: '/icons/icon-192.png',
@@ -177,16 +220,66 @@ Deno.serve(async (req) => {
         auth: user.auth
       };
 
-      const success = await sendPushNotification(subscription, payload, vapidPublicKey, vapidPrivateKey);
-      
-      if (success) {
-        successCount++;
+      try {
+        // Create JWT for this endpoint
+        const audience = new URL(subscription.endpoint).origin;
         
-        // Mark as sent for this user (only once per user, even if they have multiple subscriptions)
-        if (!processedUsers.has(user.user_id)) {
-          await supabase.rpc('mark_reminder_sent', { target_user_id: user.user_id });
-          processedUsers.add(user.user_id);
+        const header = { typ: 'JWT', alg: 'ES256' };
+        const now = Math.floor(Date.now() / 1000);
+        const jwtPayload = {
+          aud: audience,
+          exp: now + 12 * 60 * 60,
+          sub: 'mailto:suporte@pedydriver.com'
+        };
+
+        const encodedHeader = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(header)));
+        const encodedPayload = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(jwtPayload)));
+        const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+        // Import private key from JWK
+        const cryptoKey = await crypto.subtle.importKey(
+          'jwk',
+          vapidPrivateKeyJwk,
+          { name: 'ECDSA', namedCurve: 'P-256' },
+          false,
+          ['sign']
+        );
+
+        const signature = await crypto.subtle.sign(
+          { name: 'ECDSA', hash: 'SHA-256' },
+          cryptoKey,
+          new TextEncoder().encode(unsignedToken)
+        );
+
+        const encodedSignature = uint8ArrayToBase64Url(new Uint8Array(signature));
+        const jwt = `${unsignedToken}.${encodedSignature}`;
+
+        // Send push notification
+        const response = await fetch(subscription.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'TTL': '86400',
+            'Authorization': `vapid t=${jwt}, k=${vapidPublicKey}`,
+            'Urgency': 'normal'
+          },
+          body: JSON.stringify(pushPayload)
+        });
+
+        if (response.ok || response.status === 201) {
+          console.log(`[send-user-reminders] Push sent to user ${user.user_id}`);
+          successCount++;
+          
+          if (!processedUsers.has(user.user_id)) {
+            await supabase.rpc('mark_reminder_sent', { target_user_id: user.user_id });
+            processedUsers.add(user.user_id);
+          }
+        } else {
+          const text = await response.text();
+          console.error(`[send-user-reminders] Push failed for ${user.user_id}: ${response.status} - ${text}`);
         }
+      } catch (error) {
+        console.error(`[send-user-reminders] Error sending to user ${user.user_id}:`, error);
       }
     }
 
