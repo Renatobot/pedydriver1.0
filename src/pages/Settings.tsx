@@ -22,17 +22,21 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingTutorial } from '@/components/onboarding/OnboardingTutorial';
 import { ReferralCard } from '@/components/settings/ReferralCard';
+import { EditProfileModal } from '@/components/settings/EditProfileModal';
 import { isElectricVehicle, FUEL_LABELS, vehicleDatabase } from '@/lib/vehicleData';
+import { useProfile } from '@/hooks/useProfile';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { data: settings, isLoading } = useUserSettings();
+  const { data: profile } = useProfile();
   const updateSettings = useUpdateUserSettings();
   const { isPro, plan, limits, monthlyEntryCount, userPlatformCount } = useSubscriptionContext();
   const { canInstall, isInstalled, isDismissed, isIOS, installApp, resetDismiss } = usePWAInstall();
   const { theme, setTheme } = useTheme();
   const { showOnboarding, completeOnboarding, resetOnboarding } = useOnboarding();
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [costPerKm, setCostPerKm] = useState('0.50');
   const [vehicleType, setVehicleType] = useState<VehicleType>('carro');
@@ -108,13 +112,33 @@ export default function Settings() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <p className="font-medium text-sm sm:text-base text-foreground truncate">
-                {user?.user_metadata?.full_name || 'Usuário'}
+                {profile?.full_name || user?.user_metadata?.full_name || 'Usuário'}
               </p>
               {isPro && <PremiumBadge size="sm" variant="pill" />}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground truncate">{user?.email}</p>
+            {profile?.phone && (
+              <p className="text-xs text-muted-foreground truncate">{profile.phone}</p>
+            )}
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowEditProfile(true)}
+            className="text-primary hover:bg-primary/10 flex-shrink-0"
+          >
+            Editar
+          </Button>
         </div>
+
+        {/* Edit Profile Modal */}
+        <EditProfileModal
+          open={showEditProfile}
+          onOpenChange={setShowEditProfile}
+          currentName={profile?.full_name || user?.user_metadata?.full_name || ''}
+          currentPhone={profile?.phone || null}
+          email={user?.email || ''}
+        />
 
         {/* Subscription Card */}
         <div className={cn(
