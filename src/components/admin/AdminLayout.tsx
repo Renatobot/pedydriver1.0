@@ -1,9 +1,10 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Wallet, Menu, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
+import { useAdminPWAMeta } from '@/hooks/useAdminPWAMeta';
 import { Button } from '@/components/ui/button';
 import { AdminAlertsBell } from './AdminAlertsBell';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -75,39 +76,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { data: isAdmin, isLoading } = useIsAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Set admin-specific favicon and manifest
-  useEffect(() => {
-    // Store original values
-    const originalFavicon = document.querySelector('link[rel="icon"]')?.getAttribute('href');
-    const originalManifest = document.querySelector('link[rel="manifest"]')?.getAttribute('href');
-    const originalTitle = document.title;
-
-    // Update favicon
-    const faviconLink = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-    if (faviconLink) {
-      faviconLink.href = '/icons/admin-icon-512.png';
-    }
-
-    // Update manifest
-    const manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement;
-    if (manifestLink) {
-      manifestLink.href = '/admin-manifest.json';
-    }
-
-    // Update title
-    document.title = 'PEDY Admin - Painel Administrativo';
-
-    // Cleanup: restore original values when leaving admin
-    return () => {
-      if (faviconLink && originalFavicon) {
-        faviconLink.href = originalFavicon;
-      }
-      if (manifestLink && originalManifest) {
-        manifestLink.href = originalManifest;
-      }
-      document.title = originalTitle;
-    };
-  }, []);
+  // Inject admin-specific PWA meta tags for iOS installation
+  useAdminPWAMeta();
 
   if (isLoading) {
     return (
