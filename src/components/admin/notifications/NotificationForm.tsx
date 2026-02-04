@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Send, Clock, Repeat, X } from 'lucide-react';
+import { Loader2, Send, Clock, Repeat, X, Eye, EyeOff } from 'lucide-react';
 import { 
   useRecipientCounts, 
   useSendNotification, 
@@ -15,6 +15,7 @@ import {
   useCreateRecurring 
 } from '@/hooks/useAdminNotifications';
 import { format } from 'date-fns';
+import { NotificationPreview } from './NotificationPreview';
 
 interface NotificationFormProps {
   initialValues?: {
@@ -63,6 +64,7 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
   const [timeOfDay, setTimeOfDay] = useState('20:00');
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [showPreview, setShowPreview] = useState(true);
 
   useEffect(() => {
     if (initialValues) {
@@ -143,19 +145,31 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Compor Notificação</CardTitle>
-          {initialValues && (
-            <Button variant="ghost" size="sm" onClick={onClearTemplate}>
-              <X className="w-4 h-4 mr-1" />
-              Limpar
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6">
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Compor Notificação</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowPreview(!showPreview)}
+                className="lg:hidden"
+              >
+                {showPreview ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+                Preview
+              </Button>
+              {initialValues && (
+                <Button variant="ghost" size="sm" onClick={onClearTemplate}>
+                  <X className="w-4 h-4 mr-1" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
         {/* Title & Body */}
         <div className="space-y-2">
           <Label htmlFor="title">Título</Label>
@@ -412,7 +426,21 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
             </>
           )}
         </Button>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Preview Panel */}
+      <div className={`${showPreview ? 'block' : 'hidden'} lg:block`}>
+        <Card className="sticky top-4">
+          <CardContent className="pt-6">
+            <NotificationPreview 
+              title={title}
+              body={body}
+              icon={icon}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
