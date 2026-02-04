@@ -1,104 +1,94 @@
 
-# Suporte a Tipos de Combustível
+# Plano: Adicionar Ganhos e Gastos ao Finalizar Turno
 
-## Resumo
-Adicionar a opção de escolher o tipo de combustível (Gasolina, Etanol, GNV) nas Configurações e na Calculadora de Custo por Km, para que o cálculo reflita o combustível real utilizado pelo motorista.
+## Contexto
+Atualmente, quando o motorista finaliza um turno, o sistema apenas salva o registro de horas e km rodados, mas não oferece a opção de registrar os ganhos e gastos daquele período de trabalho. Isso não faz sentido porque o principal objetivo do turno é acompanhar a rentabilidade.
 
----
-
-## O que será implementado
-
-### 1. Seletor de tipo de combustível nas Configurações
-Um novo campo abaixo do modelo do veículo onde o usuário escolhe:
-- **Gasolina** (padrão)
-- **Etanol**
-- **GNV** (Gás Natural Veicular)
-
-Este campo só aparece para veículos a combustão (carros e motos não-elétricos).
-
-### 2. Atualização da Calculadora de Custo
-A calculadora passará a:
-- Mostrar o tipo de combustível selecionado pelo usuário
-- Usar o preço de referência correto para cada tipo
-- Ajustar o consumo automaticamente para etanol (que rende ~30% menos que gasolina)
-
-### 3. Preços de referência por combustível
-| Combustível | Preço Sugerido |
-|-------------|----------------|
-| Gasolina    | R$ 5,89/L     |
-| Etanol      | R$ 3,89/L     |
-| GNV         | R$ 3,99/m³    |
-
----
-
-## Fluxo do usuário
+## Solução Proposta
+Transformar o modal de "Finalizar Turno" em um fluxo de 2 etapas:
 
 ```text
-Configurações
-    │
-    ├── Tipo de Veículo: [Carro] [Moto] [Bicicleta] [E-Bike]
-    │
-    ├── Modelo: [Onix 1.0 ▼]
-    │
-    ├── Combustível: [Gasolina ▼]  ← NOVO CAMPO
-    │                  - Gasolina
-    │                  - Etanol
-    │                  - GNV
-    │
-    └── Custo por Km: [0.50]
-            │
-            └── [Calcular meu custo] → Abre calculadora
-                                        com combustível
-                                        pré-selecionado
++------------------+     +------------------------+     +-----------------------+
+|  ETAPA 1         | --> |  ETAPA 2               | --> |  RESUMO FINAL         |
+|  Km Final        |     |  Adicionar Ganhos/     |     |  (Toast com totais)   |
+|                  |     |  Gastos (opcional)     |     |                       |
++------------------+     +------------------------+     +-----------------------+
 ```
 
----
+## O que o motorista verá
+
+### Etapa 1 - Km Final (como está hoje)
+- Informar o km final do odômetro
+- Ver o resumo de duração e km inicial
+- Botão "Continuar" ao invés de "Finalizar"
+
+### Etapa 2 - Registrar Ganhos e Gastos
+- Card com resumo do turno (duração, km rodados, plataformas)
+- Seção para adicionar ganhos rápidos:
+  - Campo de valor
+  - Quantidade de serviços
+  - Já vem com a plataforma do turno selecionada
+  - Botão "+ Adicionar Ganho"
+  - Lista dos ganhos já adicionados nesse turno
+- Seção para adicionar gastos rápidos:
+  - Campo de valor
+  - Categoria (combustível, alimentação, etc)
+  - Botão "+ Adicionar Gasto"
+  - Lista dos gastos já adicionados nesse turno
+- Botão "Pular" para quem não quer adicionar nada
+- Botão "Finalizar Turno" para salvar tudo
+
+### Resumo Final
+- Toast mostrando: "Turno finalizado! X horas, Y km, R$ Z em ganhos, R$ W em gastos"
+
+## Arquivos a serem modificados
+
+### 1. `src/components/shifts/EndShiftModal.tsx`
+- Adicionar estado para controlar a etapa atual (`step: 1 | 2`)
+- Adicionar estados para lista de ganhos e gastos temporários
+- Criar interface simplificada para adicionar ganhos/gastos
+- Modificar botão "Finalizar" da etapa 1 para "Continuar"
+- Adicionar etapa 2 com formulários simplificados
+
+### 2. `src/hooks/useActiveShift.tsx`
+- Modificar `endShiftMutation` para aceitar lista de ganhos e gastos opcionais
+- Salvar todos os registros juntos (turno + ganhos + gastos)
+- Retornar totais no resultado para exibir no toast
 
 ## Detalhes Técnicos
 
-### Banco de Dados
-Adicionar uma nova coluna `fuel_type` na tabela `user_settings`:
-- Tipo: `text`
-- Valores permitidos: `gasolina`, `etanol`, `gnv`, `eletrico`
-- Valor padrão: `gasolina`
+### Estrutura dos dados temporários
+```typescript
+interface TempEarning {
+  id: string; // UUID temporário para remover da lista
+  amount: number;
+  service_count: number;
+  platform_id: string;
+}
 
-### Arquivos a serem modificados
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/types/database.ts` | Novo tipo `FuelType` e campo em `UserSettings` |
-| `src/lib/vehicleData.ts` | Novos preços de referência + fator de ajuste para etanol |
-| `src/pages/Settings.tsx` | Adicionar seletor de combustível |
-| `src/components/settings/VehicleCostCalculator.tsx` | Suporte a tipo de combustível no cálculo |
-
-### Lógica de ajuste de consumo
-O etanol tem eficiência ~30% menor que a gasolina. Isso será considerado no cálculo:
-
-```
-Consumo efetivo (etanol) = consumo_gasolina × 0.70
+interface TempExpense {
+  id: string;
+  amount: number;
+  category: ExpenseCategory;
+}
 ```
 
-Para GNV, o consumo é similar à gasolina em termos de km/m³.
+### Fluxo de dados
+1. Usuário preenche km final na etapa 1
+2. Clica "Continuar" → vai para etapa 2
+3. Pode adicionar múltiplos ganhos e gastos
+4. Clica "Finalizar Turno" ou "Pular"
+5. Hook salva tudo no banco:
+   - Cria registro do turno (shifts)
+   - Cria cada ganho (earnings) com data do turno
+   - Cria cada gasto (expenses) com data do turno
+6. Deleta o turno ativo (active_shifts)
+7. Toast com resumo completo
 
-### Quando mostrar o seletor
-O campo de combustível só aparece quando:
-- Veículo é **carro** ou **moto**
-- Modelo selecionado **NÃO** é elétrico ou híbrido
-
----
-
-## Comportamento esperado
-
-1. **Usuário seleciona Carro → Onix 1.0**
-   - Aparece seletor de combustível: Gasolina (padrão)
-   
-2. **Usuário muda para Etanol**
-   - Preço de referência muda para R$ 3,89
-   - Ao calcular, sistema aplica fator de 0.70 no consumo
-   
-3. **Usuário seleciona veículo elétrico**
-   - Seletor de combustível fica oculto
-   - Sistema usa preço de energia (R$/kWh)
-
-4. **Configuração persiste**
-   - Ao reabrir Configurações ou Calculadora, combustível escolhido aparece selecionado
+### Considerações de UX
+- Plataformas do turno já vêm pré-selecionadas nos ganhos
+- Data já vem preenchida com a data do turno
+- Formulário simplificado (apenas campos essenciais)
+- Pode adicionar vários ganhos de uma vez
+- Lista mostra o que já foi adicionado com opção de remover
+- Botão "Pular" visível para quem quer finalizar rápido
