@@ -202,8 +202,51 @@ async function createVapidJwt(
     new TextEncoder().encode(unsignedToken)
   );
   
+  // WebCrypto returns DER format, we need IEEE P1363 (raw 64 bytes for ES256)
   const rawSignature = new Uint8Array(signature);
-  const encodedSignature = base64UrlEncode(rawSignature);
+  let r: Uint8Array;
+  let s: Uint8Array;
+  
+  // Check if signature is in DER format (starts with 0x30)
+  if (rawSignature[0] === 0x30) {
+    // Parse DER format
+    const rLen = rawSignature[3];
+    const rStart = 4;
+    const rEnd = rStart + rLen;
+    const sLen = rawSignature[rEnd + 1];
+    const sStart = rEnd + 2;
+    
+    // Extract r and s, removing leading zeros if present
+    let rBytes = rawSignature.slice(rStart, rEnd);
+    let sBytes = rawSignature.slice(sStart, sStart + sLen);
+    
+    // Ensure exactly 32 bytes for each
+    r = new Uint8Array(32);
+    s = new Uint8Array(32);
+    
+    if (rBytes.length > 32) {
+      rBytes = rBytes.slice(rBytes.length - 32);
+    }
+    if (sBytes.length > 32) {
+      sBytes = sBytes.slice(sBytes.length - 32);
+    }
+    
+    r.set(rBytes, 32 - rBytes.length);
+    s.set(sBytes, 32 - sBytes.length);
+  } else if (rawSignature.length === 64) {
+    // Already in IEEE P1363 format
+    r = rawSignature.slice(0, 32);
+    s = rawSignature.slice(32, 64);
+  } else {
+    throw new Error(`Unexpected signature format: length=${rawSignature.length}`);
+  }
+  
+  // Combine into IEEE P1363 format (exactly 64 bytes)
+  const ieeeSignature = new Uint8Array(64);
+  ieeeSignature.set(r, 0);
+  ieeeSignature.set(s, 32);
+  
+  const encodedSignature = base64UrlEncode(ieeeSignature);
   
   return `${unsignedToken}.${encodedSignature}`;
 }
@@ -241,6 +284,9 @@ async function sendPushNotification(
     const audience = new URL(endpoint).origin;
     const jwt = await createVapidJwt(vapidPrivateKeyJwk, audience);
     
+    console.log(`[send-push] Sending to endpoint: ${endpoint.substring(0, 80)}...`);
+    console.log(`[send-push] Payload size: ${payloadString.length}, body size: ${body.length}`);
+    
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -249,18 +295,22 @@ async function sendPushNotification(
         'Content-Length': body.length.toString(),
         'TTL': '86400',
         'Authorization': `vapid t=${jwt}, k=${vapidPublicKey}`,
-        'Urgency': 'normal'
+        'Urgency': 'high'
       },
       body: body
     });
+    
+    console.log(`[send-push] Response status: ${response.status}`);
     
     if (response.ok || response.status === 201) {
       return { success: true, status: response.status };
     }
     
     const text = await response.text();
+    console.error(`[send-push] Error response: ${text}`);
     return { success: false, status: response.status, error: text };
   } catch (error) {
+    console.error(`[send-push] Exception:`, error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
