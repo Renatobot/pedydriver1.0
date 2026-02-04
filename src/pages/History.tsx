@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { format, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { DollarSign, Wallet, Clock, Pencil, Trash2, ChevronDown, ChevronUp, Layers } from 'lucide-react';
+import { DollarSign, Wallet, Clock, Pencil, Trash2, ChevronDown, ChevronUp, Layers, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DateRangeSelector } from '@/components/dashboard/DateRangeSelector';
 import { useEarnings, useDeleteEarning } from '@/hooks/useEarnings';
@@ -118,9 +119,20 @@ export default function History() {
             {/* Earnings List */}
             {activeTab === 'earnings' && (
               earnings?.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <DollarSign className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum ganho registrado no período</p>
+                <div className="text-center py-12 px-4">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-profit/10 flex items-center justify-center">
+                    <DollarSign className="w-8 h-8 text-profit" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">Nenhum ganho registrado</h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Registre suas corridas para acompanhar seus ganhos
+                  </p>
+                  <Button asChild className="bg-gradient-profit">
+                    <Link to="/quick-entry">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Registrar Corrida
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 earnings?.map((earning) => (
@@ -218,9 +230,20 @@ export default function History() {
             {/* Expenses List */}
             {activeTab === 'expenses' && (
               expenses?.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Wallet className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum gasto registrado no período</p>
+                <div className="text-center py-12 px-4">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-expense/10 flex items-center justify-center">
+                    <Wallet className="w-8 h-8 text-expense" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">Nenhum gasto registrado</h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Registre seus gastos para calcular o lucro real
+                  </p>
+                  <Button asChild variant="outline">
+                    <Link to="/add">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Gasto
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 expenses?.map((expense) => (
@@ -311,9 +334,20 @@ export default function History() {
             {/* Shifts List */}
             {activeTab === 'shifts' && (
               shifts?.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum turno registrado no período</p>
+                <div className="text-center py-12 px-4">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Clock className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">Nenhum turno registrado</h3>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Registre seus turnos para analisar produtividade
+                  </p>
+                  <Button asChild variant="outline">
+                    <Link to="/add">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Adicionar Turno
+                    </Link>
+                  </Button>
                 </div>
               ) : (
                 shifts?.map((shift) => {
