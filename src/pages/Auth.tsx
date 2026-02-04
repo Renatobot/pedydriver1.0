@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
-import { useIsAdmin } from '@/hooks/useAdmin';
 // Using optimized WebP icon for better performance
 import logo3d from '@/assets/logo-optimized.webp';
 
@@ -87,7 +86,8 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const [pendingRedirect, setPendingRedirect] = useState(false);
+  const { signIn, signUp, user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -95,6 +95,16 @@ export default function Auth() {
   const referralCodeFromUrl = useReferralCodeFromUrl();
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const { registerPendingReferral, fingerprint } = useReferral();
+
+  // Handle redirect after login when isAdmin is determined
+  useEffect(() => {
+    if (pendingRedirect && user && isAdmin !== null) {
+      console.log('[Auth] Redirecting based on isAdmin:', isAdmin);
+      navigate(isAdmin ? '/admin' : '/', { replace: true });
+      setPendingRedirect(false);
+      setIsLoading(false);
+    }
+  }, [pendingRedirect, user, isAdmin, navigate]);
 
   // Store referral code when detected from URL
   useEffect(() => {
@@ -138,25 +148,6 @@ export default function Auth() {
     resolver: zodResolver(phoneLoginSchema),
   });
 
-  // Check admin status and redirect accordingly
-  const checkAdminAndRedirect = useCallback(async () => {
-    try {
-      console.log('[Auth] Checking admin status...');
-      const { data: isAdmin, error } = await supabase.rpc('is_admin');
-      console.log('[Auth] is_admin result:', isAdmin, 'error:', error);
-      if (isAdmin === true) {
-        console.log('[Auth] Redirecting to /admin');
-        navigate('/admin', { replace: true });
-      } else {
-        console.log('[Auth] Redirecting to /');
-        navigate('/', { replace: true });
-      }
-    } catch (err) {
-      console.error('[Auth] Error checking admin:', err);
-      navigate('/', { replace: true });
-    }
-  }, [navigate]);
-
   const handleLogin = async (data: LoginData) => {
     setError(null);
     setIsLoading(true);
@@ -164,12 +155,12 @@ export default function Auth() {
       const { error } = await signIn(data.email, data.password);
       if (error) {
         setError(translateAuthError(error.message));
+        setIsLoading(false);
       } else {
-        // Important: wait for session to be established before checking admin
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await checkAdminAndRedirect();
+        // Set pending redirect - will navigate once isAdmin is determined by context
+        setPendingRedirect(true);
       }
-    } finally {
+    } catch {
       setIsLoading(false);
     }
   };
@@ -202,11 +193,13 @@ export default function Auth() {
       
       if (lookupError) {
         setError('Erro ao buscar telefone. Tente novamente.');
+        setIsLoading(false);
         return;
       }
       
       if (!email) {
         setError('Telefone não encontrado. Verifique o número ou cadastre-se.');
+        setIsLoading(false);
         return;
       }
       
@@ -215,13 +208,14 @@ export default function Auth() {
       
       if (signInError) {
         setError(translateAuthError(signInError.message));
+        setIsLoading(false);
       } else {
-        await checkAdminAndRedirect();
+        // Set pending redirect - will navigate once isAdmin is determined by context
+        setPendingRedirect(true);
       }
       
     } catch (err) {
       setError('Erro ao fazer login. Tente novamente.');
-    } finally {
       setIsLoading(false);
     }
   };

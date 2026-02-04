@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,7 +10,6 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
-import { supabase } from "@/integrations/supabase/client";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 
 // Lazy load all pages for better code splitting
@@ -55,35 +54,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Smart public route - only redirects if user is already logged in when first loading the page
-// Does NOT redirect during the login process (Auth.tsx handles that)
+// Smart public route - redirects logged-in users based on their role
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [initialCheck, setInitialCheck] = useState(true);
+  const { user, loading, isAdmin } = useAuth();
 
-  useEffect(() => {
-    // Only check on initial mount if user is already logged in
-    if (!loading && user && initialCheck) {
-      supabase.rpc('is_admin').then(({ data, error }) => {
-        if (error) {
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data === true);
-        }
-        setInitialCheck(false);
-      });
-    } else if (!loading && !user) {
-      setInitialCheck(false);
-    }
-  }, [user, loading, initialCheck]);
-
-  if (loading || (user && initialCheck)) {
+  if (loading) {
     return <PageLoader />;
   }
 
-  // Only redirect if user was ALREADY logged in when component mounted
-  if (user && !initialCheck && isAdmin !== null) {
+  // Only redirect if user is logged in AND we know their role
+  if (user && isAdmin !== null) {
     return <Navigate to={isAdmin ? "/admin" : "/"} replace />;
   }
 
