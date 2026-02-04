@@ -59,7 +59,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-muted-foreground">Visão geral do sistema</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            {isSupported && (
+            {isSupported ? (
               <Button
                 variant={isSubscribed ? "default" : "outline"}
                 size="sm"
@@ -78,6 +78,17 @@ export default function AdminDashboard() {
                     Ativar Push
                   </>
                 )}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                className="gap-2 w-full sm:w-auto opacity-60"
+                title="Push não suportado neste navegador/dispositivo"
+              >
+                <BellOff className="h-4 w-4" />
+                Push Indisponível
               </Button>
             )}
             <Button
