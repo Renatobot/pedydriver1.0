@@ -114,6 +114,7 @@ export function useActiveShift() {
       
       // Create ONE shift record with all platforms (not one per platform)
       const shiftData = {
+        user_id: user.id, // Required for RLS policy
         platform_id: platformIds[0], // Keep first for backwards compatibility
         platform_ids: platformIds,
         hours_worked: hoursWorked,
