@@ -17,6 +17,7 @@ import {
 import { format } from 'date-fns';
 import { NotificationPreview } from './NotificationPreview';
 import { UserSearchCombobox } from './UserSearchCombobox';
+import { SendAllConfirmModal } from './SendAllConfirmModal';
 
 interface NotificationFormProps {
   initialValues?: {
@@ -68,6 +69,7 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [dayOfMonth, setDayOfMonth] = useState(1);
   const [showPreview, setShowPreview] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     if (initialValues) {
@@ -89,6 +91,18 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
   const handleSubmit = async () => {
     if (!title || !body) return;
 
+    // Show confirmation modal for bulk sends (all, pro, free)
+    if (sendMode === 'now' && (targetType === 'all' || targetType === 'pro' || targetType === 'free')) {
+      setShowConfirmModal(true);
+      return;
+    }
+
+    await executeSend();
+  };
+
+  const executeSend = async () => {
+    setShowConfirmModal(false);
+    
     if (sendMode === 'now') {
       await sendNotification.mutateAsync({
         title,
@@ -476,6 +490,15 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirmation Modal for bulk sends */}
+      <SendAllConfirmModal
+        open={showConfirmModal}
+        onOpenChange={setShowConfirmModal}
+        recipientCount={getRecipientCount() as number}
+        onConfirm={executeSend}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
