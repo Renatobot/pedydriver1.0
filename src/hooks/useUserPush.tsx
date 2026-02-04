@@ -29,28 +29,42 @@ export function useUserPush() {
   }, []);
 
   // Check current subscription status
-  useEffect(() => {
-    async function checkSubscription() {
-      if (!isSupported || !user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
-        if (registration) {
-          const subscription = await registration.pushManager.getSubscription();
-          setIsSubscribed(!!subscription);
-        }
-      } catch (error) {
-        console.error('Error checking push subscription:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  const checkSubscription = useCallback(async () => {
+    if (!isSupported || !user) {
+      setIsLoading(false);
+      return;
     }
 
-    checkSubscription();
+    try {
+      // Verificar se existe inscrição no banco de dados
+      const { data: dbSubscription } = await supabase
+        .from('user_push_subscriptions')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Verificar se existe inscrição no navegador
+      const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      let browserSubscribed = false;
+      
+      if (registration) {
+        const subscription = await registration.pushManager.getSubscription();
+        browserSubscribed = !!subscription;
+      }
+
+      // Só está realmente inscrito se tiver no banco E no navegador
+      setIsSubscribed(!!dbSubscription && browserSubscribed);
+    } catch (error) {
+      console.error('Error checking push subscription:', error);
+      setIsSubscribed(false);
+    } finally {
+      setIsLoading(false);
+    }
   }, [isSupported, user]);
+
+  useEffect(() => {
+    checkSubscription();
+  }, [checkSubscription]);
 
   // Fetch reminder settings from database
   const { data: reminderSettings, isLoading: isLoadingSettings } = useQuery({
@@ -228,14 +242,17 @@ export function useUserPush() {
   }, [user, updateSettingsMutation]);
 
   const setReminderEnabled = useCallback(async (enabled: boolean) => {
-    if (enabled && !isSubscribed) {
-      // Need to subscribe first
+    if (enabled) {
+      // Sempre tenta inscrever ao ativar (subscribe() verifica se já está inscrito)
       const success = await subscribe();
       if (!success) return;
     }
     
     await updateSettingsMutation.mutateAsync({ enabled });
-  }, [isSubscribed, subscribe, updateSettingsMutation]);
+    
+    // Atualiza o estado de inscrição após mudança
+    await checkSubscription();
+  }, [subscribe, updateSettingsMutation, checkSubscription]);
 
   const setReminderTime = useCallback(async (time: string) => {
     await updateSettingsMutation.mutateAsync({ reminder_time: time });
