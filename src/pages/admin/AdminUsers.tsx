@@ -28,8 +28,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, useDeleteUser, AdminUser } from '@/hooks/useAdmin';
-import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound, Trash2, Bell, Clock } from 'lucide-react';
+import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, useDeleteUser, useAdminUpdateProfile, AdminUser } from '@/hooks/useAdmin';
+import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound, Trash2, Bell, Clock, Pencil } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,12 +42,15 @@ export default function AdminUsers() {
   const resetMonthlyLimit = useResetMonthlyLimit();
   const adminResetPassword = useAdminResetPassword();
   const deleteUser = useDeleteUser();
+  const adminUpdateProfile = useAdminUpdateProfile();
   
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
-  const [dialogType, setDialogType] = useState<'view' | 'block' | 'unblock' | 'pro' | 'free' | 'reset' | 'password' | 'delete' | 'notify_inactive' | null>(null);
+  const [dialogType, setDialogType] = useState<'view' | 'block' | 'unblock' | 'pro' | 'free' | 'reset' | 'password' | 'delete' | 'notify_inactive' | 'edit_profile' | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [filterInactive, setFilterInactive] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
 
   const filteredUsers = users?.filter(user => {
     const matchesSearch = user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -102,6 +106,15 @@ export default function AdminUsers() {
       case 'notify_inactive':
         deleteUser.mutate({ targetUserId: selectedUser.user_id, sendNotification: true });
         break;
+      case 'edit_profile':
+        if (editName.trim()) {
+          adminUpdateProfile.mutate({
+            targetUserId: selectedUser.user_id,
+            fullName: editName,
+            phone: editPhone || null,
+          });
+        }
+        break;
     }
     setDialogType(null);
     setSelectedUser(null);
@@ -110,6 +123,25 @@ export default function AdminUsers() {
   const formatDate = (date: string | null) => {
     if (!date) return '-';
     return format(new Date(date), "dd/MM/yyyy HH:mm", { locale: ptBR });
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    } else if (numbers.length <= 11) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+    }
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const openEditProfile = (user: AdminUser) => {
+    setSelectedUser(user);
+    setEditName(user.full_name || '');
+    setEditPhone(user.phone || '');
+    setDialogType('edit_profile');
   };
 
   const getDialogContent = () => {
@@ -167,6 +199,12 @@ export default function AdminUsers() {
           title: 'Enviar Aviso de Inatividade',
           description: `Enviar notificação para ${selectedUser?.full_name || selectedUser?.email} avisando sobre a inatividade da conta?`,
           action: 'Enviar Notificação',
+        };
+      case 'edit_profile':
+        return {
+          title: 'Editar Dados do Usuário',
+          description: `Editar informações de ${selectedUser?.full_name || selectedUser?.email}`,
+          action: 'Salvar',
         };
       default:
         return { title: '', description: '', action: null };
@@ -270,6 +308,12 @@ export default function AdminUsers() {
                               >
                                 <Eye className="w-4 h-4 mr-2" />
                                 Ver Detalhes
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openEditProfile(user)}
+                              >
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Editar Dados
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               {user.plan === 'pro' ? (
@@ -481,6 +525,12 @@ export default function AdminUsers() {
                                     <Eye className="w-4 h-4 mr-2" />
                                     Ver Detalhes
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => openEditProfile(user)}
+                                  >
+                                    <Pencil className="w-4 h-4 mr-2" />
+                                    Editar Dados
+                                  </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   {user.plan === 'pro' ? (
                                     <DropdownMenuItem
@@ -668,6 +718,41 @@ export default function AdminUsers() {
               </div>
             )}
 
+            {dialogType === 'edit_profile' && selectedUser && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editName">Nome Completo</Label>
+                  <Input
+                    id="editName"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Nome do usuário"
+                    maxLength={100}
+                  />
+                  {editName.length > 0 && editName.trim().length === 0 && (
+                    <p className="text-xs text-destructive">Nome não pode ser vazio</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editPhone">WhatsApp</Label>
+                  <Input
+                    id="editPhone"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(formatPhoneNumber(e.target.value))}
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Email (não editável)</Label>
+                  <Input
+                    value={selectedUser.email || ''}
+                    disabled
+                    className="bg-muted/50 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+            )}
+
             {dialogContent.action && (
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogType(null)}>
@@ -682,7 +767,9 @@ export default function AdminUsers() {
                     resetMonthlyLimit.isPending ||
                     adminResetPassword.isPending ||
                     deleteUser.isPending ||
-                    (dialogType === 'password' && newPassword.length < 6)
+                    adminUpdateProfile.isPending ||
+                    (dialogType === 'password' && newPassword.length < 6) ||
+                    (dialogType === 'edit_profile' && !editName.trim())
                   }
                 >
                   {dialogContent.action}

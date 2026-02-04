@@ -400,3 +400,52 @@ export function useDeleteUser() {
     },
   });
 }
+
+export function useAdminUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      targetUserId,
+      fullName,
+      phone,
+    }: {
+      targetUserId: string;
+      fullName: string;
+      phone: string | null;
+    }) => {
+      // Validações
+      if (!fullName.trim()) {
+        throw new Error('Nome é obrigatório');
+      }
+      if (fullName.length > 100) {
+        throw new Error('Nome deve ter no máximo 100 caracteres');
+      }
+
+      const { data, error } = await supabase.rpc('admin_update_user_profile', {
+        _target_user_id: targetUserId,
+        _full_name: fullName.trim(),
+        _phone: phone?.trim() || null,
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
+      toast({
+        title: 'Sucesso',
+        description: 'Dados do usuário atualizados.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao atualizar dados do usuário.',
+        variant: 'destructive',
+      });
+      console.error('Error updating user profile:', error);
+    },
+  });
+}

@@ -904,6 +904,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      admin_update_user_profile: {
+        Args: { _full_name: string; _phone: string; _target_user_id: string }
+        Returns: undefined
+      }
       check_pending_referrals: { Args: never; Returns: Json }
       create_payment_failure_alert: {
         Args: { _error_type?: string; _user_id: string }
