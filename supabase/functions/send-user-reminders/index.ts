@@ -216,9 +216,16 @@ async function createVapidJwt(
     new TextEncoder().encode(unsignedToken)
   );
   
-  // Convert signature from DER to raw format (64 bytes: r || s)
-  const sigBytes = new Uint8Array(signature);
-  const encodedSignature = base64UrlEncode(sigBytes);
+  // Web Crypto returns signature in IEEE P1363 format (raw 64 bytes: r || s)
+  // This is exactly what JWT ES256 requires - no conversion needed
+  const rawSignature = new Uint8Array(signature);
+  
+  // Ensure we have exactly 64 bytes (32 for r, 32 for s)
+  if (rawSignature.length !== 64) {
+    console.error(`Unexpected signature length: ${rawSignature.length}, expected 64`);
+  }
+  
+  const encodedSignature = base64UrlEncode(rawSignature);
   
   return `${unsignedToken}.${encodedSignature}`;
 }
