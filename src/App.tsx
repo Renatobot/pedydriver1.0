@@ -27,6 +27,8 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Upgrade = lazy(() => import("./pages/Upgrade"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Landing = lazy(() => import("./pages/Landing"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Lazy load admin pages
@@ -75,6 +77,8 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/landing" element={<Landing />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
