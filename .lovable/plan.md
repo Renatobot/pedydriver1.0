@@ -1,108 +1,94 @@
 
-# Plano: Implementar Notificações Push para Admin
+# Plano: Corrigir PWA Admin para iOS
 
-## Situação Atual
+## Problema Identificado
 
-Os **alertas já funcionam** e estão sendo criados corretamente no banco de dados (tabela `admin_alerts`) quando há novos cadastros e upgrades PRO. Porém, eles só aparecem quando o admin abre o painel e visualiza o sino.
+No iOS, a instalação de PWAs funciona de forma diferente do Android:
 
-O que você precisa é de **notificações push reais** - aquelas que aparecem no celular/computador mesmo quando o navegador está fechado ou em segundo plano.
+1. iOS usa as meta tags `apple-mobile-web-app-*` da pagina, nao o manifest.json
+2. Como o app e uma SPA (Single Page Application), todas as rotas carregam o mesmo `index.html` raiz
+3. O arquivo `public/admin/index.html` nao e usado pelo Vite - ele serve sempre o `index.html` principal
+4. Resultado: Quando admin instala no iOS, o app usa as meta tags do usuario comum
 
-## Arquitetura da Solução
+## Solucao Proposta
+
+Injetar dinamicamente as meta tags corretas quando a rota comeca com `/admin/`:
+
+### 1. Criar Hook `useAdminPWAMeta`
+
+Um hook que detecta se estamos em rotas admin e atualiza dinamicamente:
+- `apple-mobile-web-app-title` -> "PEDY Admin"
+- `apple-touch-icon` -> icones do admin
+- `link[rel="manifest"]` -> `/admin-manifest.json`
+- `meta[name="theme-color"]` -> manter consistente
+- `document.title` -> titulo do admin
+
+### 2. Aplicar no AdminAuth e AdminLayout
+
+O hook sera chamado em:
+- `AdminAuth.tsx` (pagina de login admin)
+- `AdminLayout.tsx` (layout de todas as paginas admin)
+
+### 3. Fluxo de Instalacao no iOS
 
 ```text
-+-------------------+     +-------------------+     +-------------------+
-|   Novo Usuário    |     |   Database        |     |   Edge Function   |
-|   se Cadastra     | --> |   Trigger         | --> |   send-admin-push |
-+-------------------+     |   (admin_alerts)  |     +-------------------+
-                          +-------------------+              |
-                                                             v
-                          +-------------------+     +-------------------+
-                          |   Navegador do    | <-- |   Web Push API    |
-                          |   Administrador   |     |   (FCM/VAPID)     |
-                          +-------------------+     +-------------------+
+Usuario acessa /admin/login
+        |
+        v
+Hook detecta rota /admin/*
+        |
+        v
+Injeta meta tags do admin:
+- apple-mobile-web-app-title: "PEDY Admin"
+- apple-touch-icon: /icons/admin-icon-512.png
+- manifest: /admin-manifest.json
+        |
+        v
+Usuario instala via Safari
+(Compartilhar > Adicionar a Tela Inicial)
+        |
+        v
+App instalado com nome "PEDY Admin"
+e icone correto!
 ```
 
-## O que será implementado
+## Arquivos a Modificar
 
-### 1. Nova Tabela: `admin_push_subscriptions`
-
-Armazena as credenciais de push de cada admin inscrito:
-
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | UUID | Chave primária |
-| admin_id | UUID | ID do admin (referência) |
-| endpoint | TEXT | URL do serviço de push |
-| p256dh | TEXT | Chave pública do cliente |
-| auth | TEXT | Token de autenticação |
-| created_at | TIMESTAMP | Data de inscrição |
-
-### 2. Nova Edge Function: `send-admin-push`
-
-Responsável por enviar a notificação push para todos os admins inscritos:
-- Recebe o tipo de evento e dados do alerta
-- Busca todas as assinaturas push ativas
-- Envia notificação para cada uma usando Web Push API
-
-### 3. Trigger no Banco de Dados
-
-Configurar um Database Webhook que dispara a Edge Function automaticamente quando um novo registro é inserido na tabela `admin_alerts`.
-
-### 4. Interface de Ativação
-
-Adicionar um botão no Dashboard do Admin: **"Ativar Notificações Push"**
-- Solicita permissão do navegador
-- Registra o Service Worker
-- Salva a subscription no banco
-
-### 5. Service Worker Customizado
-
-Arquivo que escuta eventos `push` e exibe a notificação nativa:
-- Exibe título, mensagem e ícone do app
-- Ao clicar, abre o painel admin
-
-## Configuração Necessária
-
-Será necessário gerar e configurar **chaves VAPID**:
-- VAPID_PUBLIC_KEY (usada no frontend)
-- VAPID_PRIVATE_KEY (usada na Edge Function)
-
-Essas chaves são geradas uma única vez e ficam no ambiente.
-
-## Arquivos a Criar/Modificar
-
-| Arquivo | Ação |
+| Arquivo | Acao |
 |---------|------|
-| Migração SQL | Nova tabela + trigger para webhook |
-| `supabase/functions/send-admin-push/index.ts` | Nova Edge Function |
-| `public/sw-push.js` | Service Worker customizado |
-| `src/hooks/useAdminPush.tsx` | Hook para gerenciar push |
-| `src/pages/admin/AdminDashboard.tsx` | Botão de ativar notificações |
+| `src/hooks/useAdminPWAMeta.tsx` | Criar - Hook para injetar meta tags |
+| `src/pages/admin/AdminAuth.tsx` | Modificar - Usar o novo hook |
+| `src/components/admin/AdminLayout.tsx` | Modificar - Usar o novo hook |
+| `public/admin/index.html` | Remover - Nao funciona com SPA |
 
-## Fluxo Final
+## Detalhes Tecnicos
 
-```text
-Evento (cadastro/PRO)
-        |
-        v
-Trigger cria admin_alert
-        |
-        v
-Database Webhook dispara
-        |
-        v
-Edge Function send-admin-push
-        |
-        v
-Web Push para cada admin inscrito
-        |
-        v
-Notificação aparece no dispositivo
+### Hook useAdminPWAMeta
+
+```typescript
+// Detecta rota admin e injeta meta tags corretas
+useEffect(() => {
+  // Salva valores originais
+  const originalTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+  
+  // Atualiza para admin
+  updateMetaTag('apple-mobile-web-app-title', 'PEDY Admin');
+  updateLinkTag('apple-touch-icon', '/icons/admin-icon-512.png');
+  updateLinkTag('manifest', '/admin-manifest.json');
+  
+  // Restaura ao sair da rota admin
+  return () => { /* restaura originais */ };
+}, []);
 ```
 
-## Benefícios
+### Comportamento Esperado
 
-- Notificações instantâneas mesmo com navegador fechado
-- Funciona em celular e desktop
-- Não requer app nativo
-- Admin pode ativar/desativar quando quiser
+- **Usuario comum no iOS**: Instala em `/` ou `/auth` -> Recebe "PEDY Driver" com icone verde
+- **Admin no iOS**: Instala em `/admin/login` -> Recebe "PEDY Admin" com icone diferenciado
+- **Android**: Continua funcionando normalmente (usa manifest.json)
+
+## Beneficios
+
+- iOS e Android terao comportamento consistente
+- Ambos os apps podem coexistir na tela inicial do iPhone
+- Codigo limpo e reutilizavel via hook
