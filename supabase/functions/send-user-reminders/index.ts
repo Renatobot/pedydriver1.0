@@ -92,57 +92,39 @@ async function hkdf(
   return result.slice(0, length);
 }
 
-// Create content encoding info
-function createInfo(type: string, clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
+// Create info for aes128gcm (RFC 8291)
+function createAes128gcmInfo(type: string, context: Uint8Array): Uint8Array {
   const encoder = new TextEncoder();
-  const typeBytes = encoder.encode(type);
+  const typeLabel = encoder.encode(`Content-Encoding: ${type}\0`);
   
-  // "Content-Encoding: <type>\0" + "P-256\0" + client key length (2 bytes) + client key + server key length (2 bytes) + server key
-  const info = new Uint8Array(
-    18 + typeBytes.length + 1 + 5 + 1 + 2 + clientPublicKey.length + 2 + serverPublicKey.length
-  );
+  const info = new Uint8Array(typeLabel.length + context.length);
+  info.set(typeLabel, 0);
+  info.set(context, typeLabel.length);
   
+  return info;
+}
+
+// Build IKM info for aes128gcm
+function buildIkmInfo(clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
+  const encoder = new TextEncoder();
+  const keyLabel = encoder.encode('WebPush: info\0');
+  
+  // Format: "WebPush: info\0" + client public key (65 bytes) + server public key (65 bytes)
+  const info = new Uint8Array(keyLabel.length + clientPublicKey.length + serverPublicKey.length);
   let offset = 0;
   
-  // "Content-Encoding: "
-  const prefix = encoder.encode('Content-Encoding: ');
-  info.set(prefix, offset);
-  offset += prefix.length;
+  info.set(keyLabel, offset);
+  offset += keyLabel.length;
   
-  // type
-  info.set(typeBytes, offset);
-  offset += typeBytes.length;
-  
-  // null byte
-  info[offset++] = 0;
-  
-  // "P-256"
-  const curve = encoder.encode('P-256');
-  info.set(curve, offset);
-  offset += curve.length;
-  
-  // null byte
-  info[offset++] = 0;
-  
-  // Client public key length (2 bytes, big endian)
-  info[offset++] = 0;
-  info[offset++] = clientPublicKey.length;
-  
-  // Client public key
   info.set(clientPublicKey, offset);
   offset += clientPublicKey.length;
   
-  // Server public key length (2 bytes, big endian)
-  info[offset++] = 0;
-  info[offset++] = serverPublicKey.length;
-  
-  // Server public key
   info.set(serverPublicKey, offset);
   
   return info;
 }
 
-// Encrypt payload using aes128gcm content encoding
+// Encrypt payload using aes128gcm content encoding (RFC 8291)
 async function encryptPayload(
   payload: string,
   clientPublicKeyBase64: string,
@@ -157,28 +139,28 @@ async function encryptPayload(
   // Generate random salt
   const salt = crypto.getRandomValues(new Uint8Array(16));
   
-  // Derive shared secret
+  // Derive shared secret via ECDH
   const sharedSecret = await deriveSharedSecret(serverPrivateKey, clientPublicKey);
   
-  // Derive PRK using auth secret
-  const authInfo = new TextEncoder().encode('Content-Encoding: auth\0');
-  const prk = await hkdf(authSecret, sharedSecret, authInfo, 32);
+  // Build IKM info: "WebPush: info\0" + client key + server key
+  const ikmInfo = buildIkmInfo(clientPublicKey, serverPublicKey);
   
-  // Derive content encryption key
-  const cekInfo = createInfo('aesgcm', clientPublicKey, serverPublicKey);
-  const contentEncryptionKey = await hkdf(salt, prk, cekInfo, 16);
+  // Derive IKM from auth secret and shared secret
+  const ikm = await hkdf(authSecret, sharedSecret, ikmInfo, 32);
+  
+  // Derive content encryption key using aes128gcm info
+  const cekInfo = createAes128gcmInfo('aes128gcm', new Uint8Array(0));
+  const contentEncryptionKey = await hkdf(salt, ikm, cekInfo, 16);
   
   // Derive nonce
-  const nonceInfo = createInfo('nonce', clientPublicKey, serverPublicKey);
-  const nonce = await hkdf(salt, prk, nonceInfo, 12);
+  const nonceInfo = createAes128gcmInfo('nonce', new Uint8Array(0));
+  const nonce = await hkdf(salt, ikm, nonceInfo, 12);
   
-  // Add padding (2 bytes for padding length + padding)
+  // aes128gcm padding: delimiter byte (0x02) at the end
   const payloadBytes = new TextEncoder().encode(payload);
-  const paddingLength = 0;
-  const paddedPayload = new Uint8Array(2 + paddingLength + payloadBytes.length);
-  paddedPayload[0] = (paddingLength >> 8) & 0xff;
-  paddedPayload[1] = paddingLength & 0xff;
-  paddedPayload.set(payloadBytes, 2 + paddingLength);
+  const paddedPayload = new Uint8Array(payloadBytes.length + 1);
+  paddedPayload.set(payloadBytes, 0);
+  paddedPayload[payloadBytes.length] = 0x02; // Record delimiter
   
   // Import content encryption key
   const aesKey = await crypto.subtle.importKey(
