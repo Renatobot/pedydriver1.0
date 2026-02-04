@@ -45,32 +45,13 @@ export function useUserPush() {
 
       console.log('[useUserPush] DB subscription:', !!dbSubscription);
 
-      // Verificar se existe inscrição no navegador - try multiple registrations
-      let browserSubscribed = false;
-      
-      // Try specific path first
-      let registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
-      
-      // If not found, try root scope
-      if (!registration) {
-        registration = await navigator.serviceWorker.getRegistration('/');
-      }
-      
-      // If still not found, try ready state
-      if (!registration) {
-        try {
-          registration = await navigator.serviceWorker.ready;
-        } catch {
-          // Ignore errors from ready
-        }
-      }
-      
+      // Verificar se existe inscrição no navegador (usa o SW do PWA)
+      const registration = await getPrimaryServiceWorkerRegistration();
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
-        browserSubscribed = !!subscription;
         console.log('[useUserPush] Browser subscription:', !!subscription, 'scope:', registration.scope);
       } else {
-        console.log('[useUserPush] No service worker registration found');
+        console.log('[useUserPush] No service worker registration found (PWA SW not ready)');
       }
 
       // Se tiver no banco, consideramos inscrito (o SW pode ter sido limpo pelo navegador)
@@ -159,15 +140,12 @@ export function useUserPush() {
         return false;
       }
 
-      // Register service worker
-      const registration = await navigator.serviceWorker.register('/sw-push.js', {
-        scope: '/'
-      });
-
-      console.log('Service Worker registered:', registration);
-
-      // Wait for the service worker to be ready
-      await navigator.serviceWorker.ready;
+      // IMPORTANT: Do NOT register a separate SW for push.
+      // The PWA's SW is already registered automatically and imports sw-push.js.
+      const registration = await getOrWaitForServiceWorker();
+      if (!registration) {
+        throw new Error('Service Worker não está pronto. Recarregue o app e tente novamente.');
+      }
 
       // Get VAPID public key from database
       const { data: vapidKey, error: vapidError } = await supabase.rpc('get_vapid_public_key');
@@ -231,7 +209,7 @@ export function useUserPush() {
     setIsLoading(true);
 
     try {
-      const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      const registration = await getPrimaryServiceWorkerRegistration();
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
@@ -270,7 +248,7 @@ export function useUserPush() {
     
     if (enabled) {
       // Verifica se precisa (re)inscrever no push
-      const registration = await navigator.serviceWorker.getRegistration('/');
+      const registration = await getPrimaryServiceWorkerRegistration();
       let needsSubscription = true;
       
       if (registration) {
@@ -313,7 +291,10 @@ export function useUserPush() {
 
     try {
       // Ensure service worker is ready
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getOrWaitForServiceWorker();
+      if (!registration) {
+        throw new Error('Service Worker não está pronto');
+      }
       
       if (registration && registration.active) {
         console.log('[Test Notification] Using Service Worker registration');
@@ -330,30 +311,6 @@ export function useUserPush() {
         } as NotificationOptions);
         
         toast.success('Notificação de teste enviada!');
-      } else {
-        // Fallback: try to get specific registration
-        const swReg = await navigator.serviceWorker.getRegistration('/sw-push.js');
-        
-        if (swReg) {
-          await swReg.showNotification('🚗 Teste de Lembrete', {
-            body: 'Suas notificações estão funcionando!',
-            icon: '/icons/icon-192.png',
-            tag: 'test-reminder-' + Date.now(),
-            renotify: true,
-            vibrate: [200, 100, 200],
-            data: { url: '/settings' }
-          } as NotificationOptions);
-          toast.success('Notificação de teste enviada!');
-        } else {
-          // Last resort: native Notification API (desktop only)
-          console.log('[Test Notification] Falling back to native Notification API');
-          new Notification('🚗 Teste de Lembrete', {
-            body: 'Suas notificações estão funcionando!',
-            icon: '/icons/icon-192.png',
-            tag: 'test-reminder'
-          });
-          toast.success('Notificação de teste enviada!');
-        }
       }
     } catch (error) {
       console.error('[Test Notification] Error:', error);
@@ -374,6 +331,43 @@ export function useUserPush() {
     setReminderTime,
     sendTestNotification,
   };
+}
+
+async function getPrimaryServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    // Root scope SW (PWA)
+    const reg = await navigator.serviceWorker.getRegistration('/');
+    if (reg) return reg;
+  } catch {
+    // ignore
+  }
+  try {
+    // Any reg controlling current page
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) return reg;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+async function getOrWaitForServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (!('serviceWorker' in navigator)) return null;
+  // First try immediate
+  const existing = await getPrimaryServiceWorkerRegistration();
+  if (existing) return existing;
+
+  // Then wait for ready (can hang on first load on some mobile browsers)
+  try {
+    const ready = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000)),
+    ]);
+    return ready;
+  } catch {
+    return null;
+  }
 }
 
 // Helper function to convert VAPID key

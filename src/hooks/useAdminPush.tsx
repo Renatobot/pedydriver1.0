@@ -31,7 +31,7 @@ export function useAdminPush() {
       }
 
       try {
-        const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+        const registration = await getPrimaryServiceWorkerRegistration();
         if (registration) {
           const subscription = await registration.pushManager.getSubscription();
           setIsSubscribed(!!subscription);
@@ -73,15 +73,11 @@ export function useAdminPush() {
         return false;
       }
 
-      // Register service worker
-      const registration = await navigator.serviceWorker.register('/sw-push.js', {
-        scope: '/'
-      });
-
-      console.log('Service Worker registered:', registration);
-
-      // Wait for the service worker to be ready
-      await navigator.serviceWorker.ready;
+      // IMPORTANT: Do NOT register a separate SW for push (conflicts with PWA SW on mobile).
+      const registration = await getOrWaitForServiceWorker();
+      if (!registration) {
+        throw new Error('Service Worker não está pronto. Recarregue o app e tente novamente.');
+      }
 
       // Get VAPID public key from database
       const { data: vapidKey, error: vapidError } = await supabase.rpc('get_vapid_public_key');
@@ -152,7 +148,7 @@ export function useAdminPush() {
     setIsLoading(true);
 
     try {
-      const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      const registration = await getPrimaryServiceWorkerRegistration();
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
@@ -207,6 +203,38 @@ export function useAdminPush() {
     unsubscribe,
     toggle
   };
+}
+
+async function getPrimaryServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration('/');
+    if (reg) return reg;
+  } catch {
+    // ignore
+  }
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) return reg;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+async function getOrWaitForServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  if (!('serviceWorker' in navigator)) return null;
+  const existing = await getPrimaryServiceWorkerRegistration();
+  if (existing) return existing;
+  try {
+    const ready = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000)),
+    ]);
+    return ready;
+  } catch {
+    return null;
+  }
 }
 
 // Helper function to convert VAPID key
