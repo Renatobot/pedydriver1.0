@@ -1,123 +1,216 @@
 
-# Plano de Implementação: Termos, Privacidade e Correções Pendentes
 
-## Resumo
+# Plano de Implementação: 6 Novas Funcionalidades Leves
 
-Implementação completa de Política de Privacidade, Termos de Uso (incluindo regras de indicação), links nas páginas apropriadas, e correção de todas as inconsistências pendentes da auditoria.
+## Visão Geral
 
----
-
-## Parte 1: Novas Páginas Legais
-
-### 1.1 Política de Privacidade (`src/pages/PrivacyPolicy.tsx`)
-
-Nova página com os seguintes tópicos:
-- Dados coletados (email, nome, telefone, dados de uso)
-- Finalidade do uso dos dados
-- Compartilhamento com terceiros (apenas processadores de pagamento)
-- Segurança dos dados (criptografia, Supabase)
-- Direitos do usuário (LGPD: acesso, correção, exclusão)
-- Cookies e tecnologias similares
-- Contato para dúvidas
-
-### 1.2 Termos de Uso (`src/pages/TermsOfUse.tsx`)
-
-Nova página com os seguintes tópicos:
-- Aceitação dos termos
-- Descrição do serviço
-- Cadastro e responsabilidades do usuário
-- Planos e pagamentos (gratuito e PRO)
-- **Programa de Indicação** (seção dedicada):
-  - Como funciona o sistema de indicação
-  - Requisitos para validação (24h de uso + 2 de 4 critérios)
-  - Benefícios: 7 dias PRO para indicador e indicado
-  - Limite máximo de 90 dias de acúmulo
-  - Proteções anti-fraude (fingerprint, mesmo dispositivo)
-  - Proibições (contas falsas, auto-indicação)
-- Propriedade intelectual
-- Limitação de responsabilidade
-- Cancelamento e reembolso
-- Alterações nos termos
-- Legislação aplicável (Brasil, LGPD)
+Implementação de 6 funcionalidades que utilizam dados já existentes no sistema, sem adicionar dependências pesadas ou queries complexas.
 
 ---
 
-## Parte 2: Configuração de Rotas
+## Funcionalidade 1: Visualização das Metas Semanais no Dashboard
 
-### 2.1 Atualizar `src/App.tsx`
+### Objetivo
+Mostrar barras de progresso das 4 metas semanais (ganhos, serviços, km, horas) diretamente no Dashboard, permitindo acompanhamento rápido sem navegar para outras páginas.
 
-Adicionar rotas públicas:
-- `/privacy` - Política de Privacidade
-- `/terms` - Termos de Uso
+### Implementação
+
+**Novo componente:** `src/components/dashboard/WeeklyGoalsProgress.tsx`
+
+Card compacto com 4 barras de progresso horizontais mostrando:
+- Meta de Ganhos: R$ atual / R$ meta
+- Meta de Serviços: X / Y serviços
+- Meta de KM: X / Y km
+- Meta de Horas: X / Y horas
+
+Cada barra terá cores diferentes baseadas no progresso:
+- Verde quando >= 100%
+- Amarelo quando >= 70%
+- Vermelho quando < 70%
+
+**Modificação:** `src/pages/Dashboard.tsx`
+- Adicionar import do novo componente
+- Inserir após o GamificationCard
+
+### Dados Utilizados
+- `useGamification().weeklyProgress` - progresso atual
+- `useGamification().weeklyGoals` - metas configuradas
 
 ---
 
-## Parte 3: Links nas Páginas
+## Funcionalidade 2: Análise de Melhores Horários (Faixas Horárias)
 
-### 3.1 Página de Cadastro (`src/pages/Auth.tsx`)
+### Objetivo
+Expandir a análise de "Melhor dia para trabalhar" para incluir também quais faixas horárias rendem mais.
 
-Adicionar no final do formulário de signup:
-```
-Ao criar sua conta, você concorda com os Termos de Uso e Política de Privacidade
-```
+### Implementação
 
-### 3.2 Footer da Landing (`src/components/landing/TrustFooter.tsx`)
+**Modificação:** `src/components/reports/BestTimesAnalysis.tsx`
 
-Adicionar links para:
-- Termos de Uso
-- Política de Privacidade
+Adicionar nova seção após o gráfico de dias da semana com faixas horárias:
+- Manhã: 06:00 - 12:00
+- Tarde: 12:00 - 18:00
+- Noite: 18:00 - 24:00
+- Madrugada: 00:00 - 06:00
 
-Corrigir: import do logo para `logo-optimized.webp`
+**Lógica:**
+- Usar o campo `created_at` dos earnings para extrair a hora
+- Agrupar por faixa horária
+- Calcular média de ganho por hora em cada faixa
+- Mostrar ranking com barras de progresso
+
+### Dados Utilizados
+- Earnings com `created_at` (já passado ao componente)
+- Shifts com `created_at` (já passado ao componente)
 
 ---
 
-## Parte 4: Correções Pendentes da Auditoria
+## Funcionalidade 3: Sistema de Lembretes de Manutenção
 
-### 4.1 Usar Constantes PRICING
+### Objetivo
+Permitir que o usuário configure alertas de manutenção baseados em quilometragem acumulada.
 
-**UpgradeCard.tsx** (linhas 87-89):
-```typescript
-// De:
-<span className="text-3xl font-bold">R$ 14,90</span>
-<span className="text-muted-foreground">/mês</span>
-<span className="text-xs text-muted-foreground ml-2">ou R$ 99/ano</span>
+### Implementação
 
-// Para:
-<span className="text-3xl font-bold">R$ {PRICING.monthly.toFixed(2).replace('.', ',')}</span>
-<span className="text-muted-foreground">/mês</span>
-<span className="text-xs text-muted-foreground ml-2">ou R$ {PRICING.yearly}/ano</span>
+**Nova tabela no banco:** `maintenance_reminders`
+
+```text
+┌─────────────────────────────────────────────────┐
+│              maintenance_reminders              │
+├─────────────────────────────────────────────────┤
+│ id          UUID PRIMARY KEY                    │
+│ user_id     UUID (ref auth.users)               │
+│ name        TEXT (ex: "Troca de óleo")          │
+│ interval_km INTEGER (ex: 10000)                 │
+│ last_km     NUMERIC (quando foi feita)          │
+│ created_at  TIMESTAMPTZ                         │
+│ updated_at  TIMESTAMPTZ                         │
+└─────────────────────────────────────────────────┘
 ```
 
-**UpgradeModal.tsx** (linhas 67-73):
-```typescript
-// De:
-<span className="text-3xl font-bold">R$ 14,90</span>
-<span className="text-muted-foreground">/mês</span>
-ou R$ 99/ano (economize 45%)
+**Novos arquivos:**
+- `src/hooks/useMaintenanceReminders.tsx` - CRUD de lembretes
+- `src/components/settings/MaintenanceRemindersSettings.tsx` - Configuração
+- `src/components/dashboard/MaintenanceAlertBanner.tsx` - Alertas no Dashboard
 
-// Para:
-<span className="text-3xl font-bold">R$ {PRICING.monthly.toFixed(2).replace('.', ',')}</span>
-<span className="text-muted-foreground">/mês</span>
-ou R$ {PRICING.yearly}/ano (economize {PRICING.discountPercent}%)
+**Templates pré-definidos:**
+- Troca de óleo: 5.000 km ou 10.000 km
+- Revisão de freios: 20.000 km
+- Troca de pneus: 40.000 km
+- Revisão geral: 30.000 km
+
+---
+
+## Funcionalidade 4: Métricas de Eficiência de Combustível
+
+### Objetivo
+Adicionar gráficos comparando custo de combustível por 100km ao longo do tempo, correlacionando dados de gastos com combustível e quilometragem rodada.
+
+### Implementação
+
+**Novo componente:** `src/components/reports/FuelEfficiencyChart.tsx`
+
+Exibirá:
+- Gráfico de linha: custo por 100km ao longo do tempo
+- Média do período selecionado
+- Comparação com período anterior (se disponível)
+- Dicas de economia baseadas nos dados
+
+**Lógica de cálculo:**
+
+```text
+Custo por 100km = (Gastos com combustível no período / KM rodados) × 100
 ```
 
-### 4.2 AdminPendingPayments - Threshold Dinâmico
+**Modificação:** `src/pages/Reports.tsx`
+- Adicionar nova seção "Eficiência de Combustível"
+- Inserir após BestTimesAnalysis
 
-**AdminPendingPayments.tsx** (linha 142):
-```typescript
-// De:
-setIsAnnual(payment.amount >= 9000);
+### Dados Utilizados
+- Expenses com categoria `combustivel`
+- Shifts com `km_driven`
+- Agrupamento por semana/mês
 
-// Para:
-setIsAnnual(payment.amount >= (PRICING.yearly * 100) - 500);
+---
+
+## Funcionalidade 5: Atalhos Rápidos para Apps de Corrida
+
+### Objetivo
+Adicionar botões de acesso rápido que abrem diretamente os apps de corrida/entrega instalados no dispositivo.
+
+### Implementação
+
+**Novo componente:** `src/components/dashboard/QuickAppLinks.tsx`
+
+Cards horizontais com deep links para:
+- Uber Driver: `uberdriver://`
+- 99 Motorista: `motorista99://`
+- iFood Entregador: `ifood-entregador://`
+
+**Lógica de fallback:**
+- Tentar abrir deep link
+- Se falhar (app não instalado), abrir loja de apps correspondente
+
+**Modificação:** `src/pages/Dashboard.tsx`
+- Adicionar seção "Abrir Apps" abaixo do botão "Iniciar Turno"
+
+### Deep Links
+
+| App | Deep Link | Play Store Fallback |
+|-----|-----------|---------------------|
+| Uber Driver | `uberdriver://` | Play Store do Uber Driver |
+| 99 Motorista | `motorista99://` | Play Store do 99 |
+| iFood Entregador | `ifood-entregador://` | Play Store do iFood |
+
+---
+
+## Funcionalidade 6: Rankings Anônimos da Comunidade
+
+### Objetivo
+Exibir métricas de desempenho relativo comparando o usuário com outros motoristas da plataforma de forma anônima (ex: "Você está entre os Top 10% da sua cidade").
+
+### Implementação
+
+**Nova tabela no banco:** `community_stats` (agregações periódicas)
+
+```text
+┌─────────────────────────────────────────────────┐
+│                 community_stats                 │
+├─────────────────────────────────────────────────┤
+│ id          UUID PRIMARY KEY                    │
+│ period      TEXT (ex: "2025-01")                │
+│ metric      TEXT (ex: "revenue_per_hour")       │
+│ p10         NUMERIC (percentil 10)              │
+│ p25         NUMERIC (percentil 25)              │
+│ p50         NUMERIC (percentil 50 - mediana)    │
+│ p75         NUMERIC (percentil 75)              │
+│ p90         NUMERIC (percentil 90)              │
+│ avg         NUMERIC (média)                     │
+│ count       INTEGER (qtd usuários)              │
+│ updated_at  TIMESTAMPTZ                         │
+└─────────────────────────────────────────────────┘
 ```
 
-### 4.3 PaymentSuccess - Features PRO Completas
+**Edge Function:** `supabase/functions/calculate-community-stats/index.ts`
+- Executada via cron (1x por dia)
+- Calcula percentis para: R$/hora, R$/km, ganho semanal médio
+- Armazena na tabela `community_stats`
+- Dados 100% anônimos (apenas agregações)
 
-**PaymentSuccess.tsx** (linhas 199-214 e 316-332):
-Adicionar features faltantes:
-- "Melhor dia para trabalhar"
-- "Plataformas ilimitadas"
+**Novo componente:** `src/components/dashboard/CommunityRanking.tsx`
+
+Exibirá cards como:
+- "Seu R$/hora está acima de 75% dos motoristas"
+- "Você está no Top 10% em ganhos semanais"
+- Ícone de troféu/medalha para rankings altos
+
+**Modificação:** `src/pages/Dashboard.tsx`
+- Adicionar CommunityRanking após as métricas principais
+
+### Privacidade
+- Nenhum dado individual é exposto
+- Apenas percentis agregados
+- Mínimo de 10 usuários para exibir (evita identificação)
 
 ---
 
@@ -125,65 +218,60 @@ Adicionar features faltantes:
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `src/pages/PrivacyPolicy.tsx` | Página de Política de Privacidade |
-| `src/pages/TermsOfUse.tsx` | Página de Termos de Uso |
+| `src/components/dashboard/WeeklyGoalsProgress.tsx` | Card de progresso das metas semanais |
+| `src/components/dashboard/MaintenanceAlertBanner.tsx` | Banner de alerta de manutenção |
+| `src/components/dashboard/QuickAppLinks.tsx` | Atalhos para apps de corrida |
+| `src/components/dashboard/CommunityRanking.tsx` | Rankings anônimos da comunidade |
+| `src/components/settings/MaintenanceRemindersSettings.tsx` | Configuração de lembretes |
+| `src/components/reports/FuelEfficiencyChart.tsx` | Gráfico de eficiência de combustível |
+| `src/hooks/useMaintenanceReminders.tsx` | Hook para CRUD de lembretes |
+| `src/hooks/useCommunityStats.tsx` | Hook para buscar stats da comunidade |
+| `supabase/functions/calculate-community-stats/index.ts` | Edge function para calcular percentis |
 
 ## Arquivos a Modificar
 
 | Arquivo | Mudanças |
 |---------|----------|
-| `src/App.tsx` | Adicionar rotas /privacy e /terms |
-| `src/pages/Auth.tsx` | Adicionar texto de consentimento com links |
-| `src/components/landing/TrustFooter.tsx` | Corrigir logo + adicionar links legais |
-| `src/components/subscription/UpgradeCard.tsx` | Usar PRICING constants |
-| `src/components/subscription/UpgradeModal.tsx` | Usar PRICING constants |
-| `src/pages/admin/AdminPendingPayments.tsx` | Usar PRICING para threshold |
-| `src/pages/PaymentSuccess.tsx` | Adicionar features PRO faltantes |
+| `src/pages/Dashboard.tsx` | Adicionar WeeklyGoalsProgress, MaintenanceAlertBanner, QuickAppLinks, CommunityRanking |
+| `src/pages/Settings.tsx` | Adicionar MaintenanceRemindersSettings |
+| `src/pages/Reports.tsx` | Adicionar FuelEfficiencyChart |
+| `src/components/reports/BestTimesAnalysis.tsx` | Adicionar análise por faixa horária |
+
+## Migrações de Banco
+
+```text
+Tabela 1: maintenance_reminders
+- id, user_id, name, interval_km, last_km, created_at, updated_at
+- RLS: usuário só vê seus próprios lembretes
+
+Tabela 2: community_stats
+- id, period, metric, p10, p25, p50, p75, p90, avg, count, updated_at
+- RLS: leitura pública (dados anônimos), escrita apenas via service_role
+```
 
 ---
 
-## Seção Técnica
+## Ordem de Implementação
 
-### Estrutura da Página de Termos
+1. **Metas Semanais no Dashboard** - Mais simples, usa dados existentes
+2. **Análise de Faixas Horárias** - Modificação em componente existente
+3. **Atalhos para Apps** - Novo componente, sem banco de dados
+4. **Eficiência de Combustível** - Novo componente, usa dados existentes
+5. **Lembretes de Manutenção** - Requer migração de banco
+6. **Rankings da Comunidade** - Requer migração + edge function
 
-```typescript
-// src/pages/TermsOfUse.tsx
-export default function TermsOfUse() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-12">
-        <h1>Termos de Uso</h1>
-        
-        {/* Seções com ScrollArea ou Accordion para mobile */}
-        <section id="referral-program">
-          <h2>7. Programa de Indicação</h2>
-          {/* Regras detalhadas... */}
-        </section>
-      </div>
-    </div>
-  );
-}
-```
+---
 
-### Constantes para Referral no Termos
+## Impacto de Performance
 
-Usarei as informações da memória do sistema para documentar:
-- 7 dias PRO por indicação bem-sucedida
-- 24h mínimo de uso + 2 de 4 critérios
-- Limite de 90 dias de acúmulo
-- Proteção por fingerprint
+| Funcionalidade | Impacto | Motivo |
+|----------------|---------|--------|
+| Metas Semanais | Zero | Usa hook já carregado |
+| Faixas Horárias | Mínimo | Processamento local com useMemo |
+| Atalhos Apps | Zero | Apenas deep links |
+| Eficiência Combustível | Baixo | useMemo sobre dados já carregados |
+| Lembretes Manutenção | Baixo | 1 query adicional com cache |
+| Rankings Comunidade | Baixo | 1 query pequena, dados pré-calculados |
 
-### Texto de Consentimento no Signup
+Todas as funcionalidades foram projetadas para serem leves e não impactar a experiência do usuário.
 
-```tsx
-<p className="text-2xs text-muted-foreground text-center mt-4">
-  Ao criar sua conta, você concorda com os{' '}
-  <Link to="/terms" className="text-primary hover:underline">
-    Termos de Uso
-  </Link>{' '}
-  e{' '}
-  <Link to="/privacy" className="text-primary hover:underline">
-    Política de Privacidade
-  </Link>
-</p>
-```
