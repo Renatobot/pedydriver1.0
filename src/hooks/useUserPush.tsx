@@ -241,20 +241,49 @@ export function useUserPush() {
     await updateSettingsMutation.mutateAsync({ reminder_time: time });
   }, [updateSettingsMutation]);
 
-  const sendTestNotification = useCallback(() => {
+  const sendTestNotification = useCallback(async () => {
     if (!('Notification' in window) || Notification.permission !== 'granted') {
       toast.error('Permissão de notificação não concedida');
       return;
     }
 
-    new Notification('🚗 Teste de Lembrete', {
-      body: 'Suas notificações estão funcionando! Você receberá lembretes no horário configurado.',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      tag: 'test-reminder'
-    });
-
-    toast.success('Notificação de teste enviada!');
+    try {
+      // Try to use Service Worker first (works on mobile PWA)
+      const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      
+      if (registration) {
+        await registration.showNotification('🚗 Teste de Lembrete', {
+          body: 'Suas notificações estão funcionando! Você receberá lembretes no horário configurado.',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag: 'test-reminder',
+          data: { url: '/settings' }
+        } as NotificationOptions);
+        toast.success('Notificação de teste enviada!');
+      } else {
+        // Fallback to Notification API (desktop only)
+        new Notification('🚗 Teste de Lembrete', {
+          body: 'Suas notificações estão funcionando! Você receberá lembretes no horário configurado.',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag: 'test-reminder'
+        });
+        toast.success('Notificação de teste enviada!');
+      }
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      // Fallback to Notification API
+      try {
+        new Notification('🚗 Teste de Lembrete', {
+          body: 'Suas notificações estão funcionando!',
+          icon: '/icons/icon-192.png',
+          tag: 'test-reminder'
+        });
+        toast.success('Notificação de teste enviada!');
+      } catch (e) {
+        toast.error('Erro ao enviar notificação de teste');
+      }
+    }
   }, []);
 
   return {
