@@ -24,5 +24,11 @@ verify_jwt = false
 [functions.reset-password-verified]
 verify_jwt = false
 
+[functions.send-admin-notification]
+verify_jwt = false
+
+[functions.process-scheduled-notifications]
+verify_jwt = false
+
 [functions.cron-check-churn]
 verify_jwt = false

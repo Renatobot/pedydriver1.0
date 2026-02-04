@@ -445,6 +445,96 @@ export type Database = {
         }
         Relationships: []
       }
+      push_send_logs: {
+        Row: {
+          body: string
+          failure_count: number
+          id: string
+          notification_id: string | null
+          recurring_id: string | null
+          sent_at: string
+          sent_by: string | null
+          success_count: number
+          target_type: string
+          title: string
+          total_recipients: number
+        }
+        Insert: {
+          body: string
+          failure_count?: number
+          id?: string
+          notification_id?: string | null
+          recurring_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          success_count?: number
+          target_type: string
+          title: string
+          total_recipients?: number
+        }
+        Update: {
+          body?: string
+          failure_count?: number
+          id?: string
+          notification_id?: string | null
+          recurring_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          success_count?: number
+          target_type?: string
+          title?: string
+          total_recipients?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_send_logs_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_send_logs_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_templates: {
+        Row: {
+          body: string
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       recurring_expenses: {
         Row: {
           amount: number
@@ -504,6 +594,75 @@ export type Database = {
           },
         ]
       }
+      recurring_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string
+          day_of_month: number | null
+          days_of_week: number[] | null
+          frequency: string
+          icon: string | null
+          id: string
+          inactive_days: number | null
+          is_active: boolean
+          last_run_at: string | null
+          name: string
+          next_run_at: string
+          target_type: string
+          time_of_day: string
+          timezone: string
+          title: string
+          total_sent: number
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by: string
+          day_of_month?: number | null
+          days_of_week?: number[] | null
+          frequency: string
+          icon?: string | null
+          id?: string
+          inactive_days?: number | null
+          is_active?: boolean
+          last_run_at?: string | null
+          name: string
+          next_run_at: string
+          target_type?: string
+          time_of_day?: string
+          timezone?: string
+          title: string
+          total_sent?: number
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string
+          day_of_month?: number | null
+          days_of_week?: number[] | null
+          frequency?: string
+          icon?: string | null
+          id?: string
+          inactive_days?: number | null
+          is_active?: boolean
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string
+          target_type?: string
+          time_of_day?: string
+          timezone?: string
+          title?: string
+          total_sent?: number
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_applied: boolean | null
@@ -543,6 +702,60 @@ export type Database = {
           referrer_id?: string
           rejection_reason?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      scheduled_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string
+          failed_count: number | null
+          icon: string | null
+          id: string
+          inactive_days: number | null
+          scheduled_at: string
+          sent_at: string | null
+          sent_count: number | null
+          status: string
+          target_type: string
+          target_user_id: string | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by: string
+          failed_count?: number | null
+          icon?: string | null
+          id?: string
+          inactive_days?: number | null
+          scheduled_at: string
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          target_type?: string
+          target_user_id?: string | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string
+          failed_count?: number | null
+          icon?: string | null
+          id?: string
+          inactive_days?: number | null
+          scheduled_at?: string
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: string
+          target_type?: string
+          target_user_id?: string | null
+          title?: string
+          url?: string | null
         }
         Relationships: []
       }
@@ -968,7 +1181,21 @@ export type Database = {
         Args: { _full_name: string; _phone: string; _target_user_id: string }
         Returns: undefined
       }
+      calculate_next_run_at: {
+        Args: {
+          _day_of_month: number
+          _days_of_week: number[]
+          _frequency: string
+          _time_of_day: string
+          _timezone: string
+        }
+        Returns: string
+      }
       check_pending_referrals: { Args: never; Returns: Json }
+      count_push_recipients: {
+        Args: { _inactive_days?: number; _target_type: string }
+        Returns: number
+      }
       create_payment_failure_alert: {
         Args: { _error_type?: string; _user_id: string }
         Returns: boolean
@@ -1040,6 +1267,24 @@ export type Database = {
           sample_count: number
         }[]
       }
+      get_due_recurring_notifications: {
+        Args: never
+        Returns: {
+          body: string
+          day_of_month: number
+          days_of_week: number[]
+          frequency: string
+          icon: string
+          id: string
+          inactive_days: number
+          name: string
+          target_type: string
+          time_of_day: string
+          timezone: string
+          title: string
+          url: string
+        }[]
+      }
       get_email_by_phone: { Args: { _phone: string }; Returns: string }
       get_or_create_referral_code: {
         Args: { _device_fingerprint: string }
@@ -1063,6 +1308,32 @@ export type Database = {
           linked_user_name: string
           status: string
           transaction_id: string
+        }[]
+      }
+      get_pending_scheduled_notifications: {
+        Args: never
+        Returns: {
+          body: string
+          icon: string
+          id: string
+          inactive_days: number
+          target_type: string
+          target_user_id: string
+          title: string
+          url: string
+        }[]
+      }
+      get_push_recipients: {
+        Args: {
+          _inactive_days?: number
+          _target_type: string
+          _target_user_id?: string
+        }
+        Returns: {
+          auth: string
+          endpoint: string
+          p256dh: string
+          user_id: string
         }[]
       }
       get_referral_progress: { Args: never; Returns: Json }
@@ -1116,6 +1387,10 @@ export type Database = {
       register_pending_referral: {
         Args: { _device_fingerprint: string; _referral_code: string }
         Returns: Json
+      }
+      update_recurring_after_send: {
+        Args: { _recurring_id: string; _sent_count: number }
+        Returns: undefined
       }
       validate_referral: {
         Args: { _device_fingerprint: string; _referral_code: string }
