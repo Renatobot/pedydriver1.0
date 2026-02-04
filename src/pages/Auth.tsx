@@ -141,24 +141,36 @@ export default function Auth() {
   // Check admin status and redirect accordingly
   const checkAdminAndRedirect = useCallback(async () => {
     try {
-      const { data: isAdmin } = await supabase.rpc('is_admin');
-      if (isAdmin) {
-        navigate('/admin');
+      console.log('[Auth] Checking admin status...');
+      const { data: isAdmin, error } = await supabase.rpc('is_admin');
+      console.log('[Auth] is_admin result:', isAdmin, 'error:', error);
+      if (isAdmin === true) {
+        console.log('[Auth] Redirecting to /admin');
+        navigate('/admin', { replace: true });
       } else {
-        navigate('/');
+        console.log('[Auth] Redirecting to /');
+        navigate('/', { replace: true });
       }
-    } catch {
-      navigate('/');
+    } catch (err) {
+      console.error('[Auth] Error checking admin:', err);
+      navigate('/', { replace: true });
     }
   }, [navigate]);
 
   const handleLogin = async (data: LoginData) => {
     setError(null);
-    const { error } = await signIn(data.email, data.password);
-    if (error) {
-      setError(translateAuthError(error.message));
-    } else {
-      await checkAdminAndRedirect();
+    setIsLoading(true);
+    try {
+      const { error } = await signIn(data.email, data.password);
+      if (error) {
+        setError(translateAuthError(error.message));
+      } else {
+        // Important: wait for session to be established before checking admin
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await checkAdminAndRedirect();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -340,9 +352,9 @@ export default function Auth() {
             <Button
               type="submit"
               className="w-full h-11 sm:h-12 text-sm sm:text-base bg-gradient-profit hover:opacity-90 touch-feedback"
-              disabled={loginForm.formState.isSubmitting}
+              disabled={loginForm.formState.isSubmitting || isLoading}
             >
-              {loginForm.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
+              {(loginForm.formState.isSubmitting || isLoading) ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
         )}

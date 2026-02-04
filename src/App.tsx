@@ -53,32 +53,35 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Smart public route that redirects logged-in users based on their role
+// Smart public route - only redirects if user is already logged in when first loading the page
+// Does NOT redirect during the login process (Auth.tsx handles that)
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [checkingAdmin, setCheckingAdmin] = useState(false);
+  const [initialCheck, setInitialCheck] = useState(true);
 
   useEffect(() => {
-    if (user && !checkingAdmin) {
-      setCheckingAdmin(true);
+    // Only check on initial mount if user is already logged in
+    if (!loading && user && initialCheck) {
       supabase.rpc('is_admin').then(({ data, error }) => {
         if (error) {
           setIsAdmin(false);
         } else {
           setIsAdmin(data === true);
         }
-        setCheckingAdmin(false);
+        setInitialCheck(false);
       });
+    } else if (!loading && !user) {
+      setInitialCheck(false);
     }
-  }, [user, checkingAdmin]);
+  }, [user, loading, initialCheck]);
 
-  if (loading || (user && isAdmin === null)) {
+  if (loading || (user && initialCheck)) {
     return <PageLoader />;
   }
 
-  if (user) {
-    // Redirect to admin panel if user is admin, otherwise to dashboard
+  // Only redirect if user was ALREADY logged in when component mounted
+  if (user && !initialCheck && isAdmin !== null) {
     return <Navigate to={isAdmin ? "/admin" : "/"} replace />;
   }
 
