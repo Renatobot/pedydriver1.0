@@ -183,7 +183,7 @@ export default function Upgrade() {
                 <span className="text-muted-foreground">/mês</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                ou <span className="line-through">R$ 149</span> <span className="font-medium text-emerald-600 dark:text-emerald-400">R$ 99/ano</span> (economize 34%)
+                ou <span className="line-through">R$ 179</span> <span className="font-medium text-emerald-600 dark:text-emerald-400">R$ 99/ano</span> (economize 45%)
               </p>
             </div>
 

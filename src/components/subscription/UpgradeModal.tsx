@@ -1,4 +1,4 @@
-import { Crown, Check, X } from 'lucide-react';
+import { Crown, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { PremiumFeature, FEATURE_NAMES } from '@/types/subscription';
