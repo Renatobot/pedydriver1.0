@@ -1,4 +1,4 @@
-import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, Fuel } from 'lucide-react';
+import { Car, Bike, LogOut, User, Gauge, Calendar, Scale, Calculator, Bell, Crown, ArrowRight, Smartphone, Download, CheckCircle2, Sun, Moon, Monitor, MessageSquare, HelpCircle, Zap, Gift, Fuel, Wrench } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { VehicleType, CostDistributionRule, FuelType } from '@/types/database';
 import { VehicleCostCalculator } from '@/components/settings/VehicleCostCalculator';
 import { WeeklyGoalsSettings } from '@/components/settings/WeeklyGoalsSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { MaintenanceRemindersSettings } from '@/components/settings/MaintenanceRemindersSettings';
 import { useSubscriptionContext } from '@/contexts/SubscriptionContext';
 import { PremiumBadge } from '@/components/subscription/PremiumBadge';
 import { Link } from 'react-router-dom';
@@ -443,6 +444,11 @@ export default function Settings() {
 
             {/* Weekly Goals */}
             <WeeklyGoalsSettings />
+
+            {/* Maintenance Reminders */}
+            <div className="rounded-xl p-4 bg-card border border-border/50">
+              <MaintenanceRemindersSettings />
+            </div>
 
             {/* Notifications */}
             <div className="space-y-2 sm:space-y-3">

@@ -142,6 +142,48 @@ export type Database = {
         }
         Relationships: []
       }
+      community_stats: {
+        Row: {
+          avg: number | null
+          count: number | null
+          id: string
+          metric: string
+          p10: number | null
+          p25: number | null
+          p50: number | null
+          p75: number | null
+          p90: number | null
+          period: string
+          updated_at: string | null
+        }
+        Insert: {
+          avg?: number | null
+          count?: number | null
+          id?: string
+          metric: string
+          p10?: number | null
+          p25?: number | null
+          p50?: number | null
+          p75?: number | null
+          p90?: number | null
+          period: string
+          updated_at?: string | null
+        }
+        Update: {
+          avg?: number | null
+          count?: number | null
+          id?: string
+          metric?: string
+          p10?: number | null
+          p25?: number | null
+          p50?: number | null
+          p75?: number | null
+          p90?: number | null
+          period?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       device_fingerprints: {
         Row: {
           created_at: string
@@ -292,6 +334,36 @@ export type Database = {
           longitude?: number | null
           price?: number
           state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      maintenance_reminders: {
+        Row: {
+          created_at: string | null
+          id: string
+          interval_km: number
+          last_km: number | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interval_km: number
+          last_km?: number | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interval_km?: number
+          last_km?: number | null
+          name?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
