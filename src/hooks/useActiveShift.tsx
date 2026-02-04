@@ -113,20 +113,14 @@ export function useActiveShift() {
         (activeShift.platform_id ? [activeShift.platform_id] : []);
       
       // Create ONE shift record with all platforms (not one per platform)
-      const shiftData = {
-        user_id: user.id, // Required for RLS policy
+      // Use the offline-aware mutation so it always sets user_id correctly (required by RLS)
+      await createShift.mutateAsync({
         platform_id: platformIds[0], // Keep first for backwards compatibility
         platform_ids: platformIds,
         hours_worked: hoursWorked,
         km_driven: kmDriven,
         date: format(startedAt, 'yyyy-MM-dd'),
-      };
-      
-      const { error: shiftError } = await supabase
-        .from('shifts')
-        .insert(shiftData as any);
-      
-      if (shiftError) throw shiftError;
+      });
       
       // Delete active shift
       const { error } = await supabase
