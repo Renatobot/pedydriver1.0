@@ -100,6 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkAdminRole]);
 
   const signUp = async (email: string, password: string, fullName?: string, phone?: string) => {
+    // Defensive: ensure no cached queries from a previous session can bleed into the new account
+    queryClient.clear();
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -117,6 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    // Defensive: clear cached user data BEFORE switching sessions
+    // (prevents stale data flashing when switching accounts without a full page reload)
+    queryClient.clear();
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
