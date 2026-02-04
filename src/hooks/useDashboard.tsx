@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEarnings } from './useEarnings';
 import { useExpenses } from './useExpenses';
@@ -6,7 +6,7 @@ import { useShifts } from './useShifts';
 import { useUserSettings } from './useUserSettings';
 import { usePlatforms } from './usePlatforms';
 import { DashboardMetrics, PlatformMetrics, Platform } from '@/types/database';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export type DateRange = 'day' | 'week' | 'month';
@@ -15,6 +15,8 @@ export function useDashboard(range: DateRange = 'week') {
   const queryClient = useQueryClient();
   const { data: settings } = useUserSettings();
   const { data: platforms } = usePlatforms();
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [lastUpdatedText, setLastUpdatedText] = useState<string | null>(null);
   
   const weekStartsOn = settings?.week_starts_on === 'domingo' ? 0 : 1;
   
@@ -39,9 +41,30 @@ export function useDashboard(range: DateRange = 'week') {
     }
   }, [range, weekStartsOn]);
 
-  const { data: earnings, isLoading: earningsLoading } = useEarnings(dateRange.start, dateRange.end);
-  const { data: expenses, isLoading: expensesLoading } = useExpenses(dateRange.start, dateRange.end);
-  const { data: shifts, isLoading: shiftsLoading } = useShifts(dateRange.start, dateRange.end);
+  const { data: earnings, isLoading: earningsLoading, dataUpdatedAt: earningsUpdatedAt } = useEarnings(dateRange.start, dateRange.end);
+  const { data: expenses, isLoading: expensesLoading, dataUpdatedAt: expensesUpdatedAt } = useExpenses(dateRange.start, dateRange.end);
+  const { data: shifts, isLoading: shiftsLoading, dataUpdatedAt: shiftsUpdatedAt } = useShifts(dateRange.start, dateRange.end);
+
+  // Track last update time
+  useEffect(() => {
+    const latestUpdate = Math.max(earningsUpdatedAt || 0, expensesUpdatedAt || 0, shiftsUpdatedAt || 0);
+    if (latestUpdate > 0) {
+      setLastUpdatedAt(new Date(latestUpdate));
+    }
+  }, [earningsUpdatedAt, expensesUpdatedAt, shiftsUpdatedAt]);
+
+  // Update the "time ago" text every minute
+  useEffect(() => {
+    if (!lastUpdatedAt) return;
+    
+    const updateText = () => {
+      setLastUpdatedText(formatDistanceToNow(lastUpdatedAt, { addSuffix: true, locale: ptBR }));
+    };
+    
+    updateText();
+    const interval = setInterval(updateText, 60000);
+    return () => clearInterval(interval);
+  }, [lastUpdatedAt]);
 
   const costPerKm = settings?.cost_per_km || 0.5;
   const distributionRule = settings?.cost_distribution_rule || 'km';
@@ -208,5 +231,6 @@ export function useDashboard(range: DateRange = 'week') {
     costPerKm,
     refetch,
     hasMultiPlatformShifts,
+    lastUpdatedText,
   };
 }
