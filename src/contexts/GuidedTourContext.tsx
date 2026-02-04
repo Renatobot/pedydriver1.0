@@ -6,10 +6,16 @@ const TOUR_KEY = 'pedy_guided_tour_completed';
 
 interface GuidedTourContextType {
   showTour: boolean;
+  currentStep: number;
   isLoading: boolean;
   completeTour: () => void;
   resetTour: () => void;
+  nextStep: () => void;
+  prevStep: () => void;
+  totalSteps: number;
 }
+
+const TOTAL_STEPS = 7; // Number of tour steps
 
 const GuidedTourContext = createContext<GuidedTourContextType | null>(null);
 
@@ -18,6 +24,7 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showTour, setShowTour] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +45,7 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
     // Show tour if not completed and user is new
     if (!completedTour && isNewUser) {
       setShowTour(true);
+      setCurrentStep(0);
     }
 
     setIsLoading(false);
@@ -48,12 +56,14 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(`${TOUR_KEY}_${user.id}`, 'true');
     }
     setShowTour(false);
+    setCurrentStep(0);
   }, [user]);
 
   const resetTour = useCallback(() => {
     if (user) {
       localStorage.removeItem(`${TOUR_KEY}_${user.id}`);
     }
+    setCurrentStep(0);
     // Navigate to dashboard first, then show tour
     if (location.pathname !== '/') {
       navigate('/');
@@ -64,8 +74,31 @@ export function GuidedTourProvider({ children }: { children: ReactNode }) {
     }, 150);
   }, [user, navigate, location.pathname]);
 
+  const nextStep = useCallback(() => {
+    if (currentStep >= TOTAL_STEPS - 1) {
+      completeTour();
+    } else {
+      setCurrentStep((prev) => prev + 1);
+    }
+  }, [currentStep, completeTour]);
+
+  const prevStep = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
+    }
+  }, [currentStep]);
+
   return (
-    <GuidedTourContext.Provider value={{ showTour, isLoading, completeTour, resetTour }}>
+    <GuidedTourContext.Provider value={{ 
+      showTour, 
+      currentStep,
+      isLoading, 
+      completeTour, 
+      resetTour,
+      nextStep,
+      prevStep,
+      totalSteps: TOTAL_STEPS,
+    }}>
       {children}
     </GuidedTourContext.Provider>
   );

@@ -13,7 +13,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { isPro } = useSubscriptionContext();
-  const { showTour, completeTour } = useGuidedTourContext();
+  const { showTour } = useGuidedTourContext();
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,7 +38,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <BottomNav />
 
       {/* Guided Tour */}
-      {showTour && <GuidedTour onComplete={completeTour} />}
+      {showTour && <GuidedTour />}
     </div>
   );
 }
