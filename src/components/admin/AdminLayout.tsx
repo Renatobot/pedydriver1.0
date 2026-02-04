@@ -1,12 +1,14 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Wallet, Menu, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, FileText, LogOut, Wallet, Menu, MessageSquare, Pencil, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useAdmin';
 import { useAdminPWAMeta } from '@/hooks/useAdminPWAMeta';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { AdminAlertsBell } from './AdminAlertsBell';
+import { EditAdminProfileModal } from './EditAdminProfileModal';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import adminLogo from '@/assets/admin-logo-optimized.png';
 
@@ -22,6 +24,46 @@ const navItems = [
   { to: '/admin/support', icon: MessageSquare, label: 'Suporte' },
   { to: '/admin/logs', icon: FileText, label: 'Logs' },
 ];
+
+function AdminProfileCard({ 
+  fullName, 
+  email, 
+  phone,
+  onEdit,
+  compact = false 
+}: { 
+  fullName: string | null; 
+  email: string; 
+  phone: string | null;
+  onEdit: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={cn(
+      "border-b border-border",
+      compact ? "p-3" : "p-4"
+    )}>
+      <div className="flex items-center gap-3">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <User className="w-5 h-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{fullName || 'Admin'}</p>
+          <p className="text-xs text-muted-foreground truncate">{email}</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 flex-shrink-0"
+          onClick={onEdit}
+          title="Editar perfil"
+        >
+          <Pencil className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
@@ -74,7 +116,9 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user } = useAuth();
   const { data: isAdmin, isLoading } = useIsAdmin();
+  const { data: profile } = useProfile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   // Inject admin-specific PWA meta tags for iOS installation
   useAdminPWAMeta();
@@ -109,6 +153,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <span className="font-bold text-lg">Admin</span>
                 </div>
               </div>
+              <AdminProfileCard 
+                fullName={profile?.full_name || null}
+                email={user?.email || ''}
+                phone={profile?.phone || null}
+                onEdit={() => {
+                  setMobileMenuOpen(false);
+                  setEditProfileOpen(true);
+                }}
+                compact
+              />
               <NavContent onNavigate={() => setMobileMenuOpen(false)} />
             </SheetContent>
           </Sheet>
@@ -131,6 +185,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <span className="font-bold text-lg">PEDY Admin</span>
             </div>
           </div>
+          <AdminProfileCard 
+            fullName={profile?.full_name || null}
+            email={user?.email || ''}
+            phone={profile?.phone || null}
+            onEdit={() => setEditProfileOpen(true)}
+          />
           <NavContent />
         </aside>
 
@@ -154,6 +214,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </main>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditAdminProfileModal
+        open={editProfileOpen}
+        onOpenChange={setEditProfileOpen}
+        currentName={profile?.full_name || ''}
+        currentPhone={profile?.phone}
+        email={user?.email || ''}
+      />
     </div>
   );
 }

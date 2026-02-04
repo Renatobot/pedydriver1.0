@@ -449,3 +449,47 @@ export function useAdminUpdateProfile() {
     },
   });
 }
+
+export function useAdminUpdateEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      targetUserId,
+      newEmail,
+    }: {
+      targetUserId: string;
+      newEmail: string;
+    }) => {
+      // Validação de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmail)) {
+        throw new Error('Formato de email inválido');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-update-user-email', {
+        body: { targetUserId, newEmail },
+      });
+      
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminLogs'] });
+      toast({
+        title: 'Sucesso',
+        description: 'Email do usuário atualizado.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Falha ao atualizar email do usuário.',
+        variant: 'destructive',
+      });
+      console.error('Error updating user email:', error);
+    },
+  });
+}
