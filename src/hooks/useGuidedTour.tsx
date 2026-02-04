@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const TOUR_KEY = 'pedy_guided_tour_completed';
 
 export function useGuidedTour() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showTour, setShowTour] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,19 +34,26 @@ export function useGuidedTour() {
     setIsLoading(false);
   }, [user]);
 
-  const completeTour = () => {
+  const completeTour = useCallback(() => {
     if (user) {
       localStorage.setItem(`${TOUR_KEY}_${user.id}`, 'true');
     }
     setShowTour(false);
-  };
+  }, [user]);
 
-  const resetTour = () => {
+  const resetTour = useCallback(() => {
     if (user) {
       localStorage.removeItem(`${TOUR_KEY}_${user.id}`);
     }
-    setShowTour(true);
-  };
+    // Navigate to dashboard first, then show tour
+    if (location.pathname !== '/') {
+      navigate('/');
+    }
+    // Use setTimeout to ensure navigation completes before showing tour
+    setTimeout(() => {
+      setShowTour(true);
+    }, 100);
+  }, [user, navigate, location.pathname]);
 
   return {
     showTour,

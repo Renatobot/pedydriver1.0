@@ -11,17 +11,9 @@ export function CommunityRanking() {
 
   if (isLoading) return null;
 
-  // If no community data yet, show placeholder
+  // Hide completely if no community data yet
   if (!hasEnoughData) {
-    return (
-      <div className="rounded-xl p-4 bg-card border border-border/50 text-center">
-        <Users className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Rankings em breve</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Aguardando mais motoristas para comparação anônima
-        </p>
-      </div>
-    );
+    return null;
   }
 
   // PRO feature gate
@@ -42,7 +34,8 @@ export function CommunityRanking() {
     );
   }
 
-  if (userRankings.length === 0) {
+  // Hide if no ranking data available
+  if (!userRankings || userRankings.length === 0) {
     return null;
   }
 
