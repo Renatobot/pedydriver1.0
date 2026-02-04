@@ -105,7 +105,6 @@ function AppRoutes() {
         <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         {/* Admin Routes - protection handled by AdminLayout */}
-        <Route path="/admin/login" element={<Navigate to="/auth" replace />} />
         <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
         <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
