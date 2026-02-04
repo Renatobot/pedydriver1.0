@@ -1,94 +1,78 @@
 
-# Plano: Adicionar Ganhos e Gastos ao Finalizar Turno
+# Plano: Corrigir Lógica de Limite de Plataformas no Plano Grátis
 
-## Contexto
-Atualmente, quando o motorista finaliza um turno, o sistema apenas salva o registro de horas e km rodados, mas não oferece a opção de registrar os ganhos e gastos daquele período de trabalho. Isso não faz sentido porque o principal objetivo do turno é acompanhar a rentabilidade.
+## Diagnóstico do Bug
+
+O sistema atual está bloqueando plataformas baseado no **histórico total** de uso, quando deveria limitar apenas **quantas plataformas podem ser selecionadas por vez** (no turno atual).
+
+### Lógica Atual (incorreta)
+```
+userPlatformCount = plataformas distintas já usadas em earnings (ex: 2)
+maxPlatforms = 1
+
+canUsePlatform(platformId):
+  - Se já usou antes → libera
+  - Se não usou e userPlatformCount >= maxPlatforms → BLOQUEIA
+```
+
+**Resultado**: Se o usuário já usou 99 Food e Uber antes, só essas duas ficam liberadas. Todas as outras ficam bloqueadas para sempre.
+
+### Lógica Correta
+O limite de "1 plataforma" deve significar: "você pode selecionar apenas 1 plataforma por turno", não "você só pode ter 1 plataforma no histórico".
 
 ## Solução Proposta
-Transformar o modal de "Finalizar Turno" em um fluxo de 2 etapas:
 
-```text
-+------------------+     +------------------------+     +-----------------------+
-|  ETAPA 1         | --> |  ETAPA 2               | --> |  RESUMO FINAL         |
-|  Km Final        |     |  Adicionar Ganhos/     |     |  (Toast com totais)   |
-|                  |     |  Gastos (opcional)     |     |                       |
-+------------------+     +------------------------+     +-----------------------+
-```
+### Opção 1 - Simplificar (Recomendada)
+Remover a restrição baseada em histórico. O plano grátis simplesmente limita quantas plataformas podem ser selecionadas **simultaneamente** no momento de iniciar o turno.
 
-## O que o motorista verá
+**Comportamento:**
+- Todas as plataformas ficam disponíveis para seleção
+- Ao selecionar 1, as outras ficam bloqueadas até desmarcar
+- Usuário pode usar qualquer plataforma, mas apenas 1 por turno
 
-### Etapa 1 - Km Final (como está hoje)
-- Informar o km final do odômetro
-- Ver o resumo de duração e km inicial
-- Botão "Continuar" ao invés de "Finalizar"
+### Opção 2 - Manter Restrição Histórica (mais restritiva)
+Se a intenção é que o usuário FREE só possa usar 1 plataforma "para sempre" (mesmo em turnos diferentes), a lógica precisa ser ajustada para deixar isso claro e funcionar corretamente.
 
-### Etapa 2 - Registrar Ganhos e Gastos
-- Card com resumo do turno (duração, km rodados, plataformas)
-- Seção para adicionar ganhos rápidos:
-  - Campo de valor
-  - Quantidade de serviços
-  - Já vem com a plataforma do turno selecionada
-  - Botão "+ Adicionar Ganho"
-  - Lista dos ganhos já adicionados nesse turno
-- Seção para adicionar gastos rápidos:
-  - Campo de valor
-  - Categoria (combustível, alimentação, etc)
-  - Botão "+ Adicionar Gasto"
-  - Lista dos gastos já adicionados nesse turno
-- Botão "Pular" para quem não quer adicionar nada
-- Botão "Finalizar Turno" para salvar tudo
+## Arquivos a Modificar
 
-### Resumo Final
-- Toast mostrando: "Turno finalizado! X horas, Y km, R$ Z em ganhos, R$ W em gastos"
+### 1. `src/contexts/SubscriptionContext.tsx`
+- Modificar `canUsePlatform` para NÃO considerar histórico
+- Ou remover completamente a lógica de `usedPlatformIds` se não for mais necessária
 
-## Arquivos a serem modificados
+### 2. `src/components/shifts/StartShiftModal.tsx`
+- Ajustar `isPlatformLocked` para considerar apenas a seleção atual
+- Simplificar a lógica: se já selecionou 1 e não é PRO, bloquear as outras
 
-### 1. `src/components/shifts/EndShiftModal.tsx`
-- Adicionar estado para controlar a etapa atual (`step: 1 | 2`)
-- Adicionar estados para lista de ganhos e gastos temporários
-- Criar interface simplificada para adicionar ganhos/gastos
-- Modificar botão "Finalizar" da etapa 1 para "Continuar"
-- Adicionar etapa 2 com formulários simplificados
+### 3. `src/hooks/useSubscription.tsx`
+- Remover ou simplificar `useUsedPlatformIds` e `useUserPlatformCount` se não forem mais usados
 
-### 2. `src/hooks/useActiveShift.tsx`
-- Modificar `endShiftMutation` para aceitar lista de ganhos e gastos opcionais
-- Salvar todos os registros juntos (turno + ganhos + gastos)
-- Retornar totais no resultado para exibir no toast
+## Implementação Detalhada
 
-## Detalhes Técnicos
-
-### Estrutura dos dados temporários
+### Em `StartShiftModal.tsx`
 ```typescript
-interface TempEarning {
-  id: string; // UUID temporário para remover da lista
-  amount: number;
-  service_count: number;
-  platform_id: string;
-}
-
-interface TempExpense {
-  id: string;
-  amount: number;
-  category: ExpenseCategory;
-}
+const isPlatformLocked = (platformId: string): boolean => {
+  if (isPro) return false;
+  // Já está selecionado? Nunca bloquear
+  if (selectedPlatforms.includes(platformId)) return false;
+  // Se já selecionou o máximo, bloquear as outras
+  return selectedPlatforms.length >= limits.maxPlatforms;
+};
 ```
 
-### Fluxo de dados
-1. Usuário preenche km final na etapa 1
-2. Clica "Continuar" → vai para etapa 2
-3. Pode adicionar múltiplos ganhos e gastos
-4. Clica "Finalizar Turno" ou "Pular"
-5. Hook salva tudo no banco:
-   - Cria registro do turno (shifts)
-   - Cria cada ganho (earnings) com data do turno
-   - Cria cada gasto (expenses) com data do turno
-6. Deleta o turno ativo (active_shifts)
-7. Toast com resumo completo
+### Em `SubscriptionContext.tsx`
+```typescript
+// Simplificar canUsePlatform - não considerar histórico
+const canUsePlatform = (platformId: string): boolean => {
+  // Para o modal de turno, a lógica de seleção fica no próprio modal
+  // Aqui podemos sempre retornar true ou remover essa função
+  return true;
+};
+```
 
-### Considerações de UX
-- Plataformas do turno já vêm pré-selecionadas nos ganhos
-- Data já vem preenchida com a data do turno
-- Formulário simplificado (apenas campos essenciais)
-- Pode adicionar vários ganhos de uma vez
-- Lista mostra o que já foi adicionado com opção de remover
-- Botão "Pular" visível para quem quer finalizar rápido
+## Comportamento Esperado Após a Correção
+
+1. Usuário abre "Iniciar Turno"
+2. Todas as plataformas aparecem disponíveis
+3. Ao selecionar uma (ex: iFood), as outras ficam com cadeado
+4. Se desmarcar iFood, pode selecionar qualquer outra
+5. Pode iniciar turno com qualquer plataforma, mas apenas 1 por vez
