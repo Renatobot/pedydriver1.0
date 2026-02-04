@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Send, Clock, Repeat, X, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Send, Clock, Repeat, X, Eye, EyeOff, User } from 'lucide-react';
 import { 
   useRecipientCounts, 
   useSendNotification, 
@@ -16,6 +16,7 @@ import {
 } from '@/hooks/useAdminNotifications';
 import { format } from 'date-fns';
 import { NotificationPreview } from './NotificationPreview';
+import { UserSearchCombobox } from './UserSearchCombobox';
 
 interface NotificationFormProps {
   initialValues?: {
@@ -50,8 +51,10 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
   const [body, setBody] = useState('');
   const [icon, setIcon] = useState('📢');
   const [url, setUrl] = useState('');
-  const [targetType, setTargetType] = useState<'all' | 'pro' | 'free' | 'inactive'>('all');
+  const [targetType, setTargetType] = useState<'all' | 'pro' | 'free' | 'inactive' | 'user'>('all');
   const [inactiveDays, setInactiveDays] = useState(30);
+  const [targetUserId, setTargetUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
   const [sendMode, setSendMode] = useState<SendMode>('now');
   
   // Scheduled fields
@@ -93,6 +96,7 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
         icon,
         url: url || undefined,
         targetType,
+        targetUserId: targetType === 'user' ? targetUserId || undefined : undefined,
         inactiveDays: targetType === 'inactive' ? inactiveDays : undefined
       });
     } else if (sendMode === 'scheduled') {
@@ -105,19 +109,22 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
         icon,
         url: url || undefined,
         targetType,
+        targetUserId: targetType === 'user' ? targetUserId || undefined : undefined,
         inactiveDays: targetType === 'inactive' ? inactiveDays : undefined,
         scheduledAt
       });
     } else if (sendMode === 'recurring') {
       if (!recurringName) return;
       
+      // Recurring doesn't support 'user' target type
+      const recurringTargetType = targetType === 'user' ? 'all' : targetType;
       await createRecurring.mutateAsync({
         name: recurringName,
         title,
         body,
         icon,
         url: url || undefined,
-        targetType,
+        targetType: recurringTargetType,
         inactiveDays: targetType === 'inactive' ? inactiveDays : undefined,
         frequency,
         timeOfDay,
@@ -132,6 +139,8 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
     setIcon('📢');
     setUrl('');
     setRecurringName('');
+    setTargetUserId(null);
+    setSelectedUserName(null);
     onClearTemplate?.();
   };
 
@@ -141,6 +150,7 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
     if (targetType === 'all') return counts?.all || 0;
     if (targetType === 'pro') return counts?.pro || 0;
     if (targetType === 'free') return counts?.free || 0;
+    if (targetType === 'user') return targetUserId ? 1 : 0;
     return '?';
   };
 
@@ -215,7 +225,7 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
         </div>
 
         {/* Target Type */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label>Destinatários</Label>
           <RadioGroup value={targetType} onValueChange={(v) => setTargetType(v as typeof targetType)}>
             <div className="flex items-center space-x-2">
@@ -259,7 +269,32 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
               </Select>
               <span className="text-sm text-muted-foreground">dias</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="user" id="user" />
+              <Label htmlFor="user" className="font-normal flex items-center gap-1">
+                <User className="w-4 h-4" />
+                Usuário específico
+              </Label>
+            </div>
           </RadioGroup>
+
+          {/* User Search */}
+          {targetType === 'user' && (
+            <div className="ml-6 mt-2">
+              <UserSearchCombobox
+                value={targetUserId}
+                onSelect={(userId, userInfo) => {
+                  setTargetUserId(userId);
+                  setSelectedUserName(userInfo?.full_name || userInfo?.email || null);
+                }}
+              />
+              {selectedUserName && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Notificação será enviada para: <strong>{selectedUserName}</strong>
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Send Mode */}
@@ -401,7 +436,7 @@ export function NotificationForm({ initialValues, onClearTemplate }: Notificatio
         {/* Submit Button */}
         <Button
           onClick={handleSubmit}
-          disabled={!title || !body || isLoading || (sendMode === 'recurring' && !recurringName)}
+          disabled={!title || !body || isLoading || (sendMode === 'recurring' && !recurringName) || (targetType === 'user' && !targetUserId)}
           className="w-full"
         >
           {isLoading ? (
