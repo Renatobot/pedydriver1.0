@@ -2,7 +2,8 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdminMetrics, useGenerateChurnAlerts } from '@/hooks/useAdmin';
-import { Users, UserCheck, Crown, UserPlus, TrendingUp, UserX, AlertTriangle, Ban, RefreshCw } from 'lucide-react';
+import { useAdminPush } from '@/hooks/useAdminPush';
+import { Users, UserCheck, Crown, UserPlus, TrendingUp, AlertTriangle, Ban, RefreshCw, Bell, BellOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface MetricCardProps {
@@ -39,6 +40,7 @@ function MetricCard({ title, value, icon, description, isLoading }: MetricCardPr
 export default function AdminDashboard() {
   const { data: metrics, isLoading } = useAdminMetrics();
   const generateChurnAlerts = useGenerateChurnAlerts();
+  const { isSupported, isSubscribed, isLoading: isPushLoading, toggle } = useAdminPush();
 
   const conversionRate = metrics 
     ? ((metrics.pro_users / (metrics.total_users || 1)) * 100).toFixed(1)
@@ -56,16 +58,39 @@ export default function AdminDashboard() {
             <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
             <p className="text-sm text-muted-foreground">Visão geral do sistema</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCheckChurn}
-            disabled={generateChurnAlerts.isPending}
-            className="gap-2 w-full sm:w-auto"
-          >
-            <RefreshCw className={`h-4 w-4 ${generateChurnAlerts.isPending ? 'animate-spin' : ''}`} />
-            Verificar Churn
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            {isSupported && (
+              <Button
+                variant={isSubscribed ? "default" : "outline"}
+                size="sm"
+                onClick={toggle}
+                disabled={isPushLoading}
+                className="gap-2 w-full sm:w-auto"
+              >
+                {isSubscribed ? (
+                  <>
+                    <Bell className="h-4 w-4" />
+                    Push Ativo
+                  </>
+                ) : (
+                  <>
+                    <BellOff className="h-4 w-4" />
+                    Ativar Push
+                  </>
+                )}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCheckChurn}
+              disabled={generateChurnAlerts.isPending}
+              className="gap-2 w-full sm:w-auto"
+            >
+              <RefreshCw className={`h-4 w-4 ${generateChurnAlerts.isPending ? 'animate-spin' : ''}`} />
+              Verificar Churn
+            </Button>
+          </div>
         </div>
 
         {/* Main Metrics */}
