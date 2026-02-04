@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { History, CheckCircle, XCircle, Users, TrendingUp, Send } from 'lucide-react';
-import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { History, CheckCircle, XCircle, Users, TrendingUp, Send, Filter } from 'lucide-react';
+import { format, subDays, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const TARGET_LABELS = {
   all: 'Todos',
@@ -16,21 +17,70 @@ const TARGET_LABELS = {
   user: 'Específico'
 };
 
+type PeriodFilter = 'all' | '7days' | '30days' | 'today';
+type StatusFilter = 'all' | 'success' | 'failed';
+type TargetFilter = 'all' | 'all_users' | 'pro' | 'free' | 'inactive' | 'user';
+
 export function NotificationHistory() {
   const { data: logs, isLoading } = usePushSendLogs();
+  
+  // Filters
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [targetFilter, setTargetFilter] = useState<TargetFilter>('all');
+
+  // Filter logs
+  const filteredLogs = useMemo(() => {
+    if (!logs) return [];
+
+    return logs.filter(log => {
+      // Period filter
+      if (periodFilter !== 'all') {
+        const logDate = new Date(log.sent_at);
+        const now = new Date();
+        
+        if (periodFilter === 'today') {
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          if (!isAfter(logDate, today)) return false;
+        } else if (periodFilter === '7days') {
+          if (!isAfter(logDate, subDays(now, 7))) return false;
+        } else if (periodFilter === '30days') {
+          if (!isAfter(logDate, subDays(now, 30))) return false;
+        }
+      }
+
+      // Status filter
+      if (statusFilter !== 'all') {
+        const successRate = log.total_recipients > 0 
+          ? (log.success_count / log.total_recipients) * 100 
+          : 0;
+        
+        if (statusFilter === 'success' && successRate < 70) return false;
+        if (statusFilter === 'failed' && successRate >= 70) return false;
+      }
+
+      // Target filter
+      if (targetFilter !== 'all') {
+        const targetType = targetFilter === 'all_users' ? 'all' : targetFilter;
+        if (log.target_type !== targetType) return false;
+      }
+
+      return true;
+    });
+  }, [logs, periodFilter, statusFilter, targetFilter]);
 
   const stats = useMemo(() => {
-    if (!logs || logs.length === 0) return null;
+    if (!filteredLogs || filteredLogs.length === 0) return null;
 
-    const totalSent = logs.reduce((acc, log) => acc + log.success_count, 0);
-    const totalFailed = logs.reduce((acc, log) => acc + log.failure_count, 0);
-    const totalRecipients = logs.reduce((acc, log) => acc + log.total_recipients, 0);
+    const totalSent = filteredLogs.reduce((acc, log) => acc + log.success_count, 0);
+    const totalFailed = filteredLogs.reduce((acc, log) => acc + log.failure_count, 0);
+    const totalRecipients = filteredLogs.reduce((acc, log) => acc + log.total_recipients, 0);
     const overallSuccessRate = totalRecipients > 0 
       ? Math.round((totalSent / totalRecipients) * 100) 
       : 0;
 
     // Stats by target type
-    const byTargetType = logs.reduce((acc, log) => {
+    const byTargetType = filteredLogs.reduce((acc, log) => {
       if (!acc[log.target_type]) {
         acc[log.target_type] = { sent: 0, failed: 0, count: 0 };
       }
@@ -41,14 +91,14 @@ export function NotificationHistory() {
     }, {} as Record<string, { sent: number; failed: number; count: number }>);
 
     return {
-      totalNotifications: logs.length,
+      totalNotifications: filteredLogs.length,
       totalSent,
       totalFailed,
       totalRecipients,
       overallSuccessRate,
       byTargetType
     };
-  }, [logs]);
+  }, [filteredLogs]);
 
   if (isLoading) {
     return (
@@ -74,6 +124,54 @@ export function NotificationHistory() {
 
   return (
     <div className="space-y-4">
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Filtros</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todo o período</SelectItem>
+                <SelectItem value="today">Hoje</SelectItem>
+                <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                <SelectItem value="30days">Últimos 30 dias</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="success">Alta entrega (≥70%)</SelectItem>
+                <SelectItem value="failed">Baixa entrega (&lt;70%)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={targetFilter} onValueChange={(v) => setTargetFilter(v as TargetFilter)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Destinatário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="all_users">Todos os usuários</SelectItem>
+                <SelectItem value="pro">PRO</SelectItem>
+                <SelectItem value="free">Gratuitos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+                <SelectItem value="user">Específico</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -169,15 +267,22 @@ export function NotificationHistory() {
           <CardTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
             Histórico de Envios
+            {filteredLogs.length !== logs?.length && (
+              <Badge variant="secondary" className="ml-2">
+                {filteredLogs.length} de {logs?.length}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {logs?.length === 0 ? (
+          {filteredLogs?.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              Nenhum envio registrado ainda
+              {logs?.length === 0 
+                ? 'Nenhum envio registrado ainda' 
+                : 'Nenhum resultado com os filtros selecionados'}
             </p>
           ) : (
-            logs?.map((log) => {
+            filteredLogs?.map((log) => {
               const successRate = log.total_recipients > 0 
                 ? Math.round((log.success_count / log.total_recipients) * 100)
                 : 0;

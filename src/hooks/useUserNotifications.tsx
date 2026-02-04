@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -14,6 +15,34 @@ export interface UserNotification {
 
 export function useUserNotifications() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for notifications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`user_notifications_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[Notifications] Realtime update:', payload.eventType);
+          queryClient.invalidateQueries({ queryKey: ['userNotifications', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['unreadNotificationsCount', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   return useQuery({
     queryKey: ['userNotifications', user?.id],
@@ -29,7 +58,7 @@ export function useUserNotifications() {
       return data as UserNotification[];
     },
     enabled: !!user,
-    refetchInterval: 30000, // Check every 30 seconds
+    staleTime: 30000, // 30 seconds - realtime will handle updates
   });
 }
 
@@ -49,7 +78,7 @@ export function useUnreadNotificationsCount() {
       return count || 0;
     },
     enabled: !!user,
-    refetchInterval: 15000, // Check every 15 seconds
+    staleTime: 30000, // 30 seconds - realtime will handle updates
   });
 }
 

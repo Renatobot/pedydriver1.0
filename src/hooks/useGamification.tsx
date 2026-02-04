@@ -87,6 +87,7 @@ export function useGamification() {
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['gamification-stats', user?.id],
+    staleTime: 5 * 60 * 1000, // 5 minutes - data doesn't change frequently
     queryFn: async (): Promise<GamificationStats> => {
       if (!user?.id) throw new Error('User not authenticated');
 
@@ -136,6 +137,7 @@ export function useGamification() {
 
   const { data: unlockedAchievements, isLoading: achievementsLoading } = useQuery({
     queryKey: ['user-achievements', user?.id],
+    staleTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
@@ -152,6 +154,7 @@ export function useGamification() {
 
   const { data: weeklyProgress, isLoading: weeklyLoading } = useQuery({
     queryKey: ['weekly-goals', user?.id],
+    staleTime: 2 * 60 * 1000, // 2 minutes - weekly goals can change more often
     queryFn: async (): Promise<WeeklyGoals> => {
       if (!user?.id) throw new Error('User not authenticated');
 

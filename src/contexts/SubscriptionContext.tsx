@@ -40,11 +40,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const canAddEntry = isPro || monthlyEntryCount < limits.maxEntriesPerMonth;
   const canAddPlatform = isPro || userPlatformCount < limits.maxPlatforms;
   
-  // Check if a specific platform can be used
-  // Simplified: platform selection limits are now handled in the UI components
-  // This function is kept for compatibility but always returns true
-  const canUsePlatform = (_platformId: string): boolean => {
-    return true;
+  // Check if a specific platform can be used based on subscription limits
+  const canUsePlatform = (platformId: string): boolean => {
+    if (isPro) return true;
+    // Allow if already using this platform OR if still has room for new platforms
+    return usedPlatformIds.includes(platformId) || userPlatformCount < limits.maxPlatforms;
   };
   
   const remainingEntries = isPro 
