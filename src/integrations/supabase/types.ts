@@ -115,6 +115,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_push_subscriptions: {
+        Row: {
+          admin_id: string
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }
+        Insert: {
+          admin_id: string
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+        }
+        Update: {
+          admin_id?: string
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+        }
+        Relationships: []
+      }
       device_fingerprints: {
         Row: {
           created_at: string
@@ -641,6 +668,24 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          created_at: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -891,6 +936,14 @@ export type Database = {
         }[]
       }
       get_admin_metrics: { Args: never; Returns: Json }
+      get_admin_push_subscriptions: {
+        Args: never
+        Returns: {
+          auth: string
+          endpoint: string
+          p256dh: string
+        }[]
+      }
       get_admin_users: {
         Args: never
         Returns: {
@@ -966,6 +1019,7 @@ export type Database = {
         }[]
       }
       get_unread_alerts_count: { Args: never; Returns: number }
+      get_vapid_public_key: { Args: never; Returns: string }
       get_weekly_goals: { Args: { p_user_id: string }; Returns: Json }
       has_role: {
         Args: {
