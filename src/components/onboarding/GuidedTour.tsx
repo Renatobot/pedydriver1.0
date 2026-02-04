@@ -4,6 +4,7 @@ import { X, ChevronRight, ChevronLeft, Play, Clock, DollarSign, CheckCircle } fr
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useGuidedTourContext } from '@/contexts/GuidedTourContext';
 
 interface TourStep {
   id: string;
@@ -76,23 +77,19 @@ const tourSteps: TourStep[] = [
   },
 ];
 
-interface GuidedTourProps {
-  onComplete: () => void;
-}
-
-export function GuidedTour({ onComplete }: GuidedTourProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+export function GuidedTour() {
+  const { currentStep, nextStep, prevStep, completeTour, totalSteps } = useGuidedTourContext();
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   const step = tourSteps[currentStep];
-  const isLastStep = currentStep === tourSteps.length - 1;
+  const isLastStep = currentStep === totalSteps - 1;
   const isFirstStep = currentStep === 0;
 
   // Find and highlight target element
   const updateTargetRect = useCallback(() => {
-    if (!step.targetSelector) {
+    if (!step?.targetSelector) {
       setTargetRect(null);
       return;
     }
@@ -104,18 +101,18 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
     } else {
       setTargetRect(null);
     }
-  }, [step.targetSelector]);
+  }, [step?.targetSelector]);
 
   // Navigate to correct route and update target
   useEffect(() => {
-    if (step.route && location.pathname !== step.route) {
+    if (step?.route && location.pathname !== step.route) {
       navigate(step.route);
     }
     
     // Small delay to let DOM update after navigation
     const timer = setTimeout(updateTargetRect, 100);
     return () => clearTimeout(timer);
-  }, [step.route, location.pathname, navigate, updateTargetRect]);
+  }, [step?.route, location.pathname, navigate, updateTargetRect]);
 
   // Update on resize
   useEffect(() => {
@@ -124,22 +121,18 @@ export function GuidedTour({ onComplete }: GuidedTourProps) {
   }, [updateTargetRect]);
 
   const handleNext = () => {
-    if (isLastStep) {
-      onComplete();
-    } else {
-      setCurrentStep((prev) => prev + 1);
-    }
+    nextStep();
   };
 
   const handlePrev = () => {
-    if (!isFirstStep) {
-      setCurrentStep((prev) => prev - 1);
-    }
+    prevStep();
   };
 
   const handleSkip = () => {
-    onComplete();
+    completeTour();
   };
+
+  if (!step) return null;
 
   // Calculate tooltip position
   const getTooltipStyle = (): React.CSSProperties => {
