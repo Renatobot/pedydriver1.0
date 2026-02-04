@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PRICING } from '@/lib/constants';
 import {
   Dialog,
   DialogContent,
@@ -178,12 +179,12 @@ export default function Upgrade() {
 
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="text-lg text-muted-foreground line-through">R$ 29,90</span>
-                <span className="text-3xl font-bold text-emerald-500">R$ 14,90</span>
+                <span className="text-lg text-muted-foreground line-through">R$ {PRICING.monthlyOriginal.toFixed(2).replace('.', ',')}</span>
+                <span className="text-3xl font-bold text-emerald-500">R$ {PRICING.monthly.toFixed(2).replace('.', ',')}</span>
                 <span className="text-muted-foreground">/mês</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                ou <span className="line-through">R$ 179</span> <span className="font-medium text-emerald-600 dark:text-emerald-400">R$ 99/ano</span> (economize 45%)
+                ou <span className="line-through">R$ {PRICING.yearlyOriginal}</span> <span className="font-medium text-emerald-600 dark:text-emerald-400">R$ {PRICING.yearly}/ano</span> (economize {PRICING.discountPercent}%)
               </p>
             </div>
 
@@ -210,7 +211,7 @@ export default function Upgrade() {
                 disabled={isPro}
                 onClick={() => handleSubscribe('monthly')}
               >
-                {isPro ? 'Plano atual' : 'Assinar mensal - R$ 14,90'}
+                {isPro ? 'Plano atual' : `Assinar mensal - R$ ${PRICING.monthly.toFixed(2).replace('.', ',')}`}
               </Button>
               {!isPro && (
                 <Button 
@@ -218,7 +219,7 @@ export default function Upgrade() {
                   className="w-full border-amber-300 dark:border-amber-700"
                   onClick={() => handleSubscribe('yearly')}
                 >
-                  Assinar anual - R$ 99 (45% off)
+                  Assinar anual - R$ {PRICING.yearly} ({PRICING.discountPercent}% off)
                 </Button>
               )}
             </div>
@@ -234,14 +235,14 @@ export default function Upgrade() {
             <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
               <span className="text-emerald-600 dark:text-emerald-400 font-medium">PIX</span>
               <span className="text-xs bg-emerald-500 text-white px-1.5 py-0.5 rounded">sem taxa</span>
-              <span className="text-muted-foreground line-through text-xs">R$ 29,90</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">R$ 14,90</span>
+              <span className="text-muted-foreground line-through text-xs">R$ {PRICING.monthlyOriginal.toFixed(2).replace('.', ',')}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">R$ {PRICING.monthly.toFixed(2).replace('.', ',')}</span>
             </div>
             
             {/* Card option */}
             <div className="flex items-center gap-2 text-muted-foreground">
               <span>Cartão</span>
-              <span className="text-xs">R$ 14,90 + taxa da operadora</span>
+              <span className="text-xs">R$ {PRICING.monthly.toFixed(2).replace('.', ',')} + taxa da operadora</span>
             </div>
           </div>
           
@@ -288,7 +289,7 @@ export default function Upgrade() {
             {/* Selected plan info */}
             <div className="text-center text-sm text-muted-foreground">
               Plano selecionado: <span className="font-medium text-foreground">
-                {selectedPlan === 'monthly' ? 'Mensal - R$ 14,90' : 'Anual - R$ 99,00'}
+                {selectedPlan === 'monthly' ? `Mensal - R$ ${PRICING.monthly.toFixed(2).replace('.', ',')}` : `Anual - R$ ${PRICING.yearly},00`}
               </span>
             </div>
           </div>

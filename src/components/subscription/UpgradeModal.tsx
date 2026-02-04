@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { PremiumFeature, FEATURE_NAMES } from '@/types/subscription';
 import { Link } from 'react-router-dom';
+import { PRICING } from '@/lib/constants';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -65,11 +66,11 @@ export function UpgradeModal({ open, onOpenChange, feature }: UpgradeModalProps)
 
           <div className="bg-muted/50 rounded-xl p-4 text-center">
             <div className="flex items-baseline justify-center gap-2">
-              <span className="text-3xl font-bold">R$ 14,90</span>
+              <span className="text-3xl font-bold">R$ {PRICING.monthly.toFixed(2).replace('.', ',')}</span>
               <span className="text-muted-foreground">/mês</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ou R$ 99/ano (economize 45%)
+              ou R$ {PRICING.yearly}/ano (economize {PRICING.discountPercent}%)
             </p>
           </div>
         </div>

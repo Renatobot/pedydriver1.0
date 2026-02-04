@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { PRICING } from '@/lib/constants';
 
 interface PendingPayment {
   id: string;
@@ -138,8 +139,8 @@ export default function AdminPendingPayments() {
   const handleOpenLinkDialog = (payment: PendingPayment) => {
     setSelectedPayment(payment);
     setUserSearchTerm(payment.email);
-    // Try to detect if annual based on amount (R$ 90+ = annual)
-    setIsAnnual(payment.amount >= 9000);
+    // Try to detect if annual based on amount (using PRICING constant with margin for fees)
+    setIsAnnual(payment.amount >= (PRICING.yearly * 100) - 500);
     setShowLinkDialog(true);
   };
 

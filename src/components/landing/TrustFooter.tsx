@@ -1,6 +1,6 @@
 import { Shield, Settings, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo-optimized.webp';
 
 const trustSignals = [
   { icon: Shield, text: 'Seus dados são privados' },
@@ -28,6 +28,17 @@ export function TrustFooter() {
             <img src={logo} alt="PEDY Driver" className="w-12 h-12 rounded-xl shadow-md object-cover" />
             <span className="font-bold">PEDY Driver</span>
           </Link>
+          
+          {/* Legal Links */}
+          <div className="flex justify-center gap-4 text-xs">
+            <Link to="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+              Termos de Uso
+            </Link>
+            <span className="text-muted-foreground/50">•</span>
+            <Link to="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+              Política de Privacidade
+            </Link>
+          </div>
           
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} PEDY Driver. Todos os direitos reservados.

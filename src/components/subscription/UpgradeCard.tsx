@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { PremiumFeature, FEATURE_NAMES } from '@/types/subscription';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { PRICING } from '@/lib/constants';
 
 interface UpgradeCardProps {
   feature?: PremiumFeature;
@@ -84,9 +85,9 @@ export function UpgradeCard({ feature, compact = false, className }: UpgradeCard
         </ul>
 
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold">R$ 14,90</span>
+          <span className="text-3xl font-bold">R$ {PRICING.monthly.toFixed(2).replace('.', ',')}</span>
           <span className="text-muted-foreground">/mês</span>
-          <span className="text-xs text-muted-foreground ml-2">ou R$ 99/ano</span>
+          <span className="text-xs text-muted-foreground ml-2">ou R$ {PRICING.yearly}/ano</span>
         </div>
 
         <Button asChild size="lg" className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">

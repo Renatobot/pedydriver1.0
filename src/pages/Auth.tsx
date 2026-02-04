@@ -435,6 +435,18 @@ export default function Auth() {
             >
               {signupForm.formState.isSubmitting ? 'Criando conta...' : 'Criar Conta'}
             </Button>
+
+            {/* Legal consent text */}
+            <p className="text-2xs text-muted-foreground text-center mt-3">
+              Ao criar sua conta, você concorda com os{' '}
+              <Link to="/terms" className="text-primary hover:underline">
+                Termos de Uso
+              </Link>{' '}
+              e{' '}
+              <Link to="/privacy" className="text-primary hover:underline">
+                Política de Privacidade
+              </Link>
+            </p>
           </form>
         )}
 
