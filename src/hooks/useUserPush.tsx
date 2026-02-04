@@ -183,7 +183,7 @@ export function useUserPush() {
           p256dh,
           auth
         }, {
-          onConflict: 'user_id,endpoint'
+          onConflict: 'endpoint'
         });
 
       if (saveError) {

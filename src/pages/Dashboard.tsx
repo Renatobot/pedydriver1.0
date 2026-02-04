@@ -24,7 +24,10 @@ import { useActiveShift } from '@/hooks/useActiveShift';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { Button } from '@/components/ui/button';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { format } from 'date-fns';
 import logoWebp from '@/assets/logo-optimized.webp';
+
+const RECURRING_PROCESSED_KEY = 'recurring_expenses_last_processed';
 
 export default function Dashboard() {
   const [range, setRange] = useState<DateRange>('day');
@@ -47,10 +50,16 @@ export default function Dashboard() {
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Motorista';
 
-  // Processa gastos recorrentes pendentes ao carregar
+  // Processa gastos recorrentes pendentes ao carregar (apenas uma vez por dia)
   useEffect(() => {
-    if (user) {
+    if (!user) return;
+    
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const lastProcessed = localStorage.getItem(RECURRING_PROCESSED_KEY);
+    
+    if (lastProcessed !== today) {
       processRecurring.mutate();
+      localStorage.setItem(RECURRING_PROCESSED_KEY, today);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
