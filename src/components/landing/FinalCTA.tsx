@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Rocket } from 'lucide-react';
+import { ACTIVE_USERS_COUNT } from '@/lib/constants';
 
 export function FinalCTA() {
   return (
@@ -22,7 +23,7 @@ export function FinalCTA() {
               Criar minha conta grátis
             </Button>
           </Link>
-          <p className="text-sm text-muted-foreground">Junte-se a +500 motoristas</p>
+          <p className="text-sm text-muted-foreground">Junte-se a +{ACTIVE_USERS_COUNT} motoristas</p>
         </div>
       </div>
     </section>

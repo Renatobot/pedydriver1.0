@@ -1,6 +1,7 @@
 import { Users, Quote } from 'lucide-react';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { useCountUp } from '@/hooks/useCountUp';
+import { ACTIVE_USERS_COUNT } from '@/lib/constants';
 
 const testimonials = [
   {
@@ -22,7 +23,7 @@ const testimonials = [
 
 export function SocialProofSection() {
   const { ref, isVisible } = useScrollReveal({ threshold: 0.3 });
-  const count = useCountUp({ end: 500, duration: 2500, enabled: isVisible });
+  const count = useCountUp({ end: ACTIVE_USERS_COUNT, duration: 2500, enabled: isVisible });
 
   return (
     <section className="px-4 py-16 sm:py-20">

@@ -30,7 +30,7 @@ export function TrustFooter() {
           </Link>
           
           <p className="text-xs text-muted-foreground">
-            © 2026 PEDY Driver. Todos os direitos reservados.
+            © {new Date().getFullYear()} PEDY Driver. Todos os direitos reservados.
           </p>
           <p className="text-xs text-muted-foreground">
             Uma solução da PEDY Soluções Digitais
