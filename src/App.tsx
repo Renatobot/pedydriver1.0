@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { GuidedTourProvider } from "@/contexts/GuidedTourContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
@@ -108,21 +109,23 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AuthProvider>
-          <SyncProvider>
-            <SubscriptionProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <SyncStatusIndicator />
-                <PWAUpdatePrompt />
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
-            </SubscriptionProvider>
-          </SyncProvider>
-        </AuthProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <SyncProvider>
+              <SubscriptionProvider>
+                <GuidedTourProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <SyncStatusIndicator />
+                    <PWAUpdatePrompt />
+                    <AppRoutes />
+                  </TooltipProvider>
+                </GuidedTourProvider>
+              </SubscriptionProvider>
+            </SyncProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>
   );
