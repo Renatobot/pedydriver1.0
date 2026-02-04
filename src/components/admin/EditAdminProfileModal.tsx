@@ -6,7 +6,10 @@ import { Label } from '@/components/ui/label';
 import { useUpdateProfile } from '@/hooks/useProfile';
 import { useAdminUpdateEmail } from '@/hooks/useAdmin';
 import { useAuth } from '@/hooks/useAuth';
-import { AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { AlertTriangle, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 interface EditAdminProfileModalProps {
   open: boolean;
@@ -27,6 +30,13 @@ export function EditAdminProfileModal({
   const [fullName, setFullName] = useState(currentName);
   const [phone, setPhone] = useState(currentPhone || '');
   const [newEmail, setNewEmail] = useState(email);
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const updateProfile = useUpdateProfile();
   const updateEmail = useAdminUpdateEmail();
 
@@ -35,6 +45,10 @@ export function EditAdminProfileModal({
       setFullName(currentName);
       setPhone(currentPhone || '');
       setNewEmail(email);
+      setShowPasswordSection(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     }
   }, [open, currentName, currentPhone, email]);
 
@@ -57,7 +71,6 @@ export function EditAdminProfileModal({
   };
 
   const handleSave = async () => {
-    // Primeiro atualiza nome e telefone
     updateProfile.mutate(
       { 
         full_name: fullName, 
@@ -65,7 +78,6 @@ export function EditAdminProfileModal({
       },
       {
         onSuccess: () => {
-          // Se o email foi alterado, atualiza via edge function
           if (newEmail !== email && user?.id) {
             updateEmail.mutate(
               { targetUserId: user.id, newEmail },
@@ -83,18 +95,90 @@ export function EditAdminProfileModal({
     );
   };
 
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Erro',
+        description: 'As senhas não coincidem',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: 'Erro',
+        description: 'A nova senha deve ter no mínimo 6 caracteres',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      // First verify current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast({
+          title: 'Erro',
+          description: 'Senha atual incorreta',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update to new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        toast({
+          title: 'Erro',
+          description: updateError.message.includes('weak') 
+            ? 'Senha muito fraca. Use uma combinação mais forte.' 
+            : 'Erro ao alterar senha',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Senha alterada com sucesso',
+      });
+      setShowPasswordSection(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar senha. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const emailChanged = newEmail !== email;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = emailRegex.test(newEmail);
   const isValid = fullName.trim().length > 0 && fullName.length <= 100 && isEmailValid;
+  const isPasswordValid = currentPassword.length >= 6 && newPassword.length >= 6 && newPassword === confirmPassword;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Meu Perfil</DialogTitle>
           <DialogDescription>
-            Atualize suas informações pessoais. O email não pode ser alterado.
+            Atualize suas informações pessoais.
           </DialogDescription>
         </DialogHeader>
 
@@ -147,6 +231,112 @@ export function EditAdminProfileModal({
               </div>
             )}
           </div>
+
+          <Separator className="my-4" />
+
+          {/* Password Section */}
+          {!showPasswordSection ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => setShowPasswordSection(true)}
+            >
+              <KeyRound className="w-4 h-4" />
+              Alterar Senha
+            </Button>
+          ) : (
+            <div className="space-y-4 p-4 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm">Alterar Senha</h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowPasswordSection(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adminCurrentPassword">Senha Atual</Label>
+                <div className="relative">
+                  <Input
+                    id="adminCurrentPassword"
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••"
+                    className="h-11 pr-10"
+                    maxLength={100}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adminNewPassword">Nova Senha</Label>
+                <div className="relative">
+                  <Input
+                    id="adminNewPassword"
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className="h-11 pr-10"
+                    maxLength={100}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {newPassword.length > 0 && newPassword.length < 6 && (
+                  <p className="text-xs text-destructive">Mínimo 6 caracteres</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adminConfirmPassword">Confirmar Nova Senha</Label>
+                <Input
+                  id="adminConfirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  className="h-11"
+                  maxLength={100}
+                />
+                {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                  <p className="text-xs text-destructive">As senhas não coincidem</p>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={!isPasswordValid || isChangingPassword}
+                className="w-full"
+              >
+                {isChangingPassword ? 'Alterando...' : 'Confirmar Nova Senha'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
