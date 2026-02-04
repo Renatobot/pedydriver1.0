@@ -37,12 +37,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    const prevUserId = { current: user?.id };
 
     // Listener for ONGOING auth changes (does NOT control loading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
         
+        const currentUserId = session?.user?.id;
+        
+        // Se o ID do usuário mudou (incluindo logout), limpa o cache imediatamente
+        if (currentUserId !== prevUserId.current) {
+          queryClient.clear();
+          prevUserId.current = currentUserId;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 

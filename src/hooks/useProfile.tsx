@@ -73,8 +73,8 @@ export function useUpdateProfile() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
       toast({
         title: 'Sucesso',
         description: 'Perfil atualizado com sucesso.',
