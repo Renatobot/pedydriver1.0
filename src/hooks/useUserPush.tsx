@@ -242,47 +242,63 @@ export function useUserPush() {
   }, [updateSettingsMutation]);
 
   const sendTestNotification = useCallback(async () => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') {
+    if (!('Notification' in window)) {
+      toast.error('Notificações não suportadas neste navegador');
+      return;
+    }
+
+    if (Notification.permission !== 'granted') {
       toast.error('Permissão de notificação não concedida');
       return;
     }
 
     try {
-      // Try to use Service Worker first (works on mobile PWA)
-      const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      // Ensure service worker is ready
+      const registration = await navigator.serviceWorker.ready;
       
-      if (registration) {
+      if (registration && registration.active) {
+        console.log('[Test Notification] Using Service Worker registration');
+        
         await registration.showNotification('🚗 Teste de Lembrete', {
           body: 'Suas notificações estão funcionando! Você receberá lembretes no horário configurado.',
           icon: '/icons/icon-192.png',
           badge: '/icons/icon-192.png',
-          tag: 'test-reminder',
+          tag: 'test-reminder-' + Date.now(), // Unique tag to avoid deduplication
+          renotify: true,
+          vibrate: [200, 100, 200],
+          requireInteraction: false,
           data: { url: '/settings' }
         } as NotificationOptions);
+        
         toast.success('Notificação de teste enviada!');
       } else {
-        // Fallback to Notification API (desktop only)
-        new Notification('🚗 Teste de Lembrete', {
-          body: 'Suas notificações estão funcionando! Você receberá lembretes no horário configurado.',
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          tag: 'test-reminder'
-        });
-        toast.success('Notificação de teste enviada!');
+        // Fallback: try to get specific registration
+        const swReg = await navigator.serviceWorker.getRegistration('/sw-push.js');
+        
+        if (swReg) {
+          await swReg.showNotification('🚗 Teste de Lembrete', {
+            body: 'Suas notificações estão funcionando!',
+            icon: '/icons/icon-192.png',
+            tag: 'test-reminder-' + Date.now(),
+            renotify: true,
+            vibrate: [200, 100, 200],
+            data: { url: '/settings' }
+          } as NotificationOptions);
+          toast.success('Notificação de teste enviada!');
+        } else {
+          // Last resort: native Notification API (desktop only)
+          console.log('[Test Notification] Falling back to native Notification API');
+          new Notification('🚗 Teste de Lembrete', {
+            body: 'Suas notificações estão funcionando!',
+            icon: '/icons/icon-192.png',
+            tag: 'test-reminder'
+          });
+          toast.success('Notificação de teste enviada!');
+        }
       }
     } catch (error) {
-      console.error('Error sending test notification:', error);
-      // Fallback to Notification API
-      try {
-        new Notification('🚗 Teste de Lembrete', {
-          body: 'Suas notificações estão funcionando!',
-          icon: '/icons/icon-192.png',
-          tag: 'test-reminder'
-        });
-        toast.success('Notificação de teste enviada!');
-      } catch (e) {
-        toast.error('Erro ao enviar notificação de teste');
-      }
+      console.error('[Test Notification] Error:', error);
+      toast.error('Erro ao enviar notificação. Verifique se o app está instalado como PWA.');
     }
   }, []);
 
