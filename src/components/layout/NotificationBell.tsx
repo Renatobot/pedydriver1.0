@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const { data: notifications, isLoading } = useUserNotifications();
+  const { data: notifications, isLoading, isError, refetch } = useUserNotifications();
   const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
@@ -81,6 +81,14 @@ export function NotificationBell() {
           {isLoading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               Carregando...
+            </div>
+          ) : isError ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Erro ao carregar notificações</p>
+              <Button variant="ghost" size="sm" onClick={() => refetch()} className="mt-2">
+                Tentar novamente
+              </Button>
             </div>
           ) : !notifications?.length ? (
             <div className="p-8 text-center text-sm text-muted-foreground">

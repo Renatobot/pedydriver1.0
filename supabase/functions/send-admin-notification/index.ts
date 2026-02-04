@@ -340,36 +340,45 @@ Deno.serve(async (req) => {
     // Service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get authorization header to verify admin
+    // Get authorization header to verify admin or service role
     const authHeader = req.headers.get('Authorization');
     let adminId: string | null = null;
+    let isServiceRoleCall = false;
 
     if (authHeader) {
-      // Create a client with the user's token to verify admin role
-      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } }
-      });
-      
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
       
-      if (user) {
-        // Verify admin role using the user's context
-        const { data: isAdmin, error: adminError } = await userClient.rpc('is_admin');
-        console.log(`[send-admin-notification] Admin check for ${user.id}: ${isAdmin}, error: ${adminError?.message}`);
+      // Check if this is a service role call (from cron/scheduled functions)
+      if (token === supabaseServiceKey) {
+        console.log('[send-admin-notification] Service role call detected (cron/scheduled)');
+        isServiceRoleCall = true;
+        adminId = null; // No specific admin for automated calls
+      } else {
+        // Create a client with the user's token to verify admin role
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: authHeader } }
+        });
         
-        if (!isAdmin) {
-          return new Response(JSON.stringify({ error: 'Unauthorized - Admin only' }), {
-            status: 403,
+        const { data: { user } } = await supabase.auth.getUser(token);
+        
+        if (user) {
+          // Verify admin role using the user's context
+          const { data: isAdmin, error: adminError } = await userClient.rpc('is_admin');
+          console.log(`[send-admin-notification] Admin check for ${user.id}: ${isAdmin}, error: ${adminError?.message}`);
+          
+          if (!isAdmin) {
+            return new Response(JSON.stringify({ error: 'Unauthorized - Admin only' }), {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+          adminId = user.id;
+        } else {
+          return new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
+            status: 401,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
-        adminId = user.id;
-      } else {
-        return new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
       }
     } else {
       return new Response(JSON.stringify({ error: 'Unauthorized - No token provided' }), {
