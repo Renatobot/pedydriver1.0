@@ -28,8 +28,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, useDeleteUser, useAdminUpdateProfile, AdminUser } from '@/hooks/useAdmin';
-import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound, Trash2, Bell, Clock, Pencil } from 'lucide-react';
+import { useAdminUsers, useUpdateSubscription, useToggleUserBlock, useResetMonthlyLimit, useAdminResetPassword, useDeleteUser, useAdminUpdateProfile, useAdminUpdateEmail, AdminUser } from '@/hooks/useAdmin';
+import { Search, MoreHorizontal, Crown, Ban, RefreshCw, Eye, UserX, UserCheck, MessageCircle, KeyRound, Trash2, Bell, Clock, Pencil, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -43,6 +43,7 @@ export default function AdminUsers() {
   const adminResetPassword = useAdminResetPassword();
   const deleteUser = useDeleteUser();
   const adminUpdateProfile = useAdminUpdateProfile();
+  const adminUpdateEmail = useAdminUpdateEmail();
   
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -51,6 +52,8 @@ export default function AdminUsers() {
   const [filterInactive, setFilterInactive] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
 
   const filteredUsers = users?.filter(user => {
     const matchesSearch = user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,10 +111,21 @@ export default function AdminUsers() {
         break;
       case 'edit_profile':
         if (editName.trim()) {
+          // First update profile (name/phone)
           adminUpdateProfile.mutate({
             targetUserId: selectedUser.user_id,
             fullName: editName,
             phone: editPhone || null,
+          }, {
+            onSuccess: () => {
+              // Then update email if changed
+              if (editEmail !== originalEmail && editEmail.trim()) {
+                adminUpdateEmail.mutate({
+                  targetUserId: selectedUser.user_id,
+                  newEmail: editEmail.trim(),
+                });
+              }
+            }
           });
         }
         break;
@@ -141,6 +155,8 @@ export default function AdminUsers() {
     setSelectedUser(user);
     setEditName(user.full_name || '');
     setEditPhone(user.phone || '');
+    setEditEmail(user.email || '');
+    setOriginalEmail(user.email || '');
     setDialogType('edit_profile');
   };
 
@@ -743,12 +759,22 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">Email (não editável)</Label>
+                  <Label htmlFor="editEmail">Email</Label>
                   <Input
-                    value={selectedUser.email || ''}
-                    disabled
-                    className="bg-muted/50 cursor-not-allowed"
+                    id="editEmail"
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    placeholder="email@exemplo.com"
                   />
+                  {editEmail !== originalEmail && (
+                    <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        Atenção: Alterar o email afetará o login do usuário. O usuário precisará usar o novo email para acessar a conta.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -768,6 +794,7 @@ export default function AdminUsers() {
                     adminResetPassword.isPending ||
                     deleteUser.isPending ||
                     adminUpdateProfile.isPending ||
+                    adminUpdateEmail.isPending ||
                     (dialogType === 'password' && newPassword.length < 6) ||
                     (dialogType === 'edit_profile' && !editName.trim())
                   }
