@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Clock, Calendar, TrendingUp, Sparkles, Info } from 'lucide-react';
+import { Clock, Calendar, TrendingUp, Sparkles, Info, Sun, Sunset, Moon, CloudMoon } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +25,13 @@ interface BestTimesAnalysisProps {
 const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const DAY_FULL_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
+const TIME_SLOTS = [
+  { id: 'morning', name: 'Manhã', range: '06h-12h', icon: Sun, start: 6, end: 12 },
+  { id: 'afternoon', name: 'Tarde', range: '12h-18h', icon: Sunset, start: 12, end: 18 },
+  { id: 'evening', name: 'Noite', range: '18h-24h', icon: Moon, start: 18, end: 24 },
+  { id: 'night', name: 'Madrugada', range: '00h-06h', icon: CloudMoon, start: 0, end: 6 },
+];
+
 export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) {
   const analysis = useMemo(() => {
     // Group earnings by day of week
@@ -34,12 +41,34 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
       earningsByDay[i] = { total: 0, count: 0, hours: 0 };
     }
 
+    // Group earnings by time slot
+    const earningsByTimeSlot: Record<string, { total: number; count: number }> = {
+      morning: { total: 0, count: 0 },
+      afternoon: { total: 0, count: 0 },
+      evening: { total: 0, count: 0 },
+      night: { total: 0, count: 0 },
+    };
+
     // Process earnings
     earnings.forEach((earning) => {
       const date = new Date(earning.date + 'T12:00:00');
       const dayOfWeek = date.getDay();
       earningsByDay[dayOfWeek].total += Number(earning.amount);
       earningsByDay[dayOfWeek].count += 1;
+
+      // Process by time slot using created_at
+      if (earning.created_at) {
+        const createdAt = new Date(earning.created_at);
+        const hour = createdAt.getHours();
+        
+        let slotId = 'night';
+        if (hour >= 6 && hour < 12) slotId = 'morning';
+        else if (hour >= 12 && hour < 18) slotId = 'afternoon';
+        else if (hour >= 18 && hour < 24) slotId = 'evening';
+        
+        earningsByTimeSlot[slotId].total += Number(earning.amount);
+        earningsByTimeSlot[slotId].count += 1;
+      }
     });
 
     // Process shifts to get hours per day
@@ -61,6 +90,20 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
       daysWorked: data.count,
     })).filter(d => d.daysWorked > 0);
 
+    // Calculate time slot stats
+    const timeSlotStats = TIME_SLOTS.map(slot => ({
+      ...slot,
+      total: earningsByTimeSlot[slot.id].total,
+      count: earningsByTimeSlot[slot.id].count,
+      avgPerEntry: earningsByTimeSlot[slot.id].count > 0 
+        ? earningsByTimeSlot[slot.id].total / earningsByTimeSlot[slot.id].count 
+        : 0,
+    })).filter(s => s.count > 0);
+
+    // Sort time slots by average per entry
+    const sortedTimeSlots = [...timeSlotStats].sort((a, b) => b.avgPerEntry - a.avgPerEntry);
+    const maxTimeSlotAvg = Math.max(...timeSlotStats.map(s => s.avgPerEntry), 1);
+
     // Sort by revenue per hour (best metric for efficiency)
     const sortedByEfficiency = [...dayStats].sort((a, b) => b.revenuePerHour - a.revenuePerHour);
     const sortedByTotal = [...dayStats].sort((a, b) => b.totalRevenue - a.totalRevenue);
@@ -69,6 +112,7 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
     const bestDay = sortedByEfficiency[0];
     const worstDay = sortedByEfficiency[sortedByEfficiency.length - 1];
     const highestRevenueDay = sortedByTotal[0];
+    const bestTimeSlot = sortedTimeSlots[0];
 
     // Calculate max for progress bars
     const maxRevenuePerHour = Math.max(...dayStats.map(d => d.revenuePerHour), 1);
@@ -81,6 +125,11 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
       highestRevenueDay,
       maxRevenuePerHour,
       hasData: dayStats.length > 0,
+      timeSlotStats,
+      sortedTimeSlots,
+      maxTimeSlotAvg,
+      bestTimeSlot,
+      hasTimeSlotData: timeSlotStats.length > 0,
     };
   }, [earnings, shifts]);
 
@@ -169,6 +218,82 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
         </div>
       </div>
 
+      {/* Time Slot Analysis */}
+      {analysis.hasTimeSlotData && (
+        <div className="rounded-xl p-4 bg-card border border-border/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium text-foreground">Melhor horário</span>
+          </div>
+
+          {analysis.bestTimeSlot && (
+            <div className="rounded-lg p-3 bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/30 mb-4">
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const IconComponent = analysis.bestTimeSlot.icon;
+                  return <IconComponent className="w-4 h-4 text-primary" />;
+                })()}
+                <span className="font-semibold text-foreground">{analysis.bestTimeSlot.name}</span>
+                <span className="text-xs text-muted-foreground">{analysis.bestTimeSlot.range}</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Média de <span className="font-mono font-semibold text-primary">{formatCurrency(analysis.bestTimeSlot.avgPerEntry)}</span> por registro
+              </p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {analysis.sortedTimeSlots.map((slot) => {
+              const percentage = (slot.avgPerEntry / analysis.maxTimeSlotAvg) * 100;
+              const isBest = slot.id === analysis.bestTimeSlot?.id;
+              const IconComponent = slot.icon;
+
+              return (
+                <div key={slot.id} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <IconComponent className={cn(
+                        "w-3.5 h-3.5",
+                        isBest ? "text-primary" : "text-muted-foreground"
+                      )} />
+                      <span className={cn(
+                        "font-medium",
+                        isBest ? "text-primary" : "text-foreground"
+                      )}>
+                        {slot.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{slot.range}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {slot.count}x
+                      </span>
+                      <span className={cn(
+                        "font-mono text-sm font-semibold",
+                        isBest ? "text-primary" : "text-foreground"
+                      )}>
+                        {formatCurrency(slot.avgPerEntry)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        isBest
+                          ? "bg-gradient-to-r from-primary to-primary/70"
+                          : "bg-gradient-to-r from-muted-foreground/40 to-muted-foreground/20"
+                      )}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Insights */}
       <div className="rounded-xl p-4 bg-muted/30 border border-border/50">
         <div className="flex items-center gap-2 mb-3">
@@ -189,6 +314,11 @@ export function BestTimesAnalysis({ earnings, shifts }: BestTimesAnalysisProps) 
               📊 Maior receita total: <span className="text-foreground font-semibold">
                 {formatCurrency(analysis.highestRevenueDay.totalRevenue)}
               </span> em {analysis.highestRevenueDay.dayFullName}s
+            </p>
+          )}
+          {analysis.bestTimeSlot && (
+            <p>
+              ⏰ Melhor período: <span className="text-foreground font-semibold">{analysis.bestTimeSlot.name}</span> ({analysis.bestTimeSlot.range})
             </p>
           )}
         </div>

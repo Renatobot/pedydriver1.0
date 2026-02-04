@@ -9,6 +9,10 @@ import { ProfitEvolutionChart } from '@/components/dashboard/ProfitEvolutionChar
 import { PlatformComparisonChart } from '@/components/dashboard/PlatformComparisonChart';
 import { ExpenseCategoryChart } from '@/components/dashboard/ExpenseCategoryChart';
 import { ExpenseDetailCard } from '@/components/dashboard/ExpenseDetailCard';
+import { WeeklyGoalsProgress } from '@/components/dashboard/WeeklyGoalsProgress';
+import { QuickAppLinks } from '@/components/dashboard/QuickAppLinks';
+import { MaintenanceAlertBanner } from '@/components/dashboard/MaintenanceAlertBanner';
+import { CommunityRanking } from '@/components/dashboard/CommunityRanking';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
 import { useProcessRecurringExpenses } from '@/hooks/useRecurringExpenses';
 import { useAuth } from '@/hooks/useAuth';
@@ -107,15 +111,23 @@ export default function Dashboard() {
           {hasActiveShift ? (
             <ActiveShiftBanner />
           ) : (
-            <Button
-              onClick={() => setShowStartShiftModal(true)}
-              variant="outline"
-              className="w-full h-12 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Iniciar Turno
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={() => setShowStartShiftModal(true)}
+                variant="outline"
+                className="w-full h-12 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Iniciar Turno
+              </Button>
+              
+              {/* Quick App Links */}
+              <QuickAppLinks />
+            </div>
           )}
+
+          {/* Maintenance Alert Banner */}
+          <MaintenanceAlertBanner />
 
           {/* PWA Install Banner */}
           <PWAInstallBanner />
@@ -125,6 +137,12 @@ export default function Dashboard() {
 
           {/* Gamification Card */}
           <GamificationCard />
+
+          {/* Weekly Goals Progress */}
+          <WeeklyGoalsProgress />
+
+          {/* Community Ranking */}
+          <CommunityRanking />
 
           {/* Date Range Selector */}
           <DateRangeSelector value={range} onChange={setRange} />

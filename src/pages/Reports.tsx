@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, subMonths } from 'date-fns';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { BestTimesAnalysis } from '@/components/reports/BestTimesAnalysis';
+import { FuelEfficiencyChart } from '@/components/reports/FuelEfficiencyChart';
 import { FeatureGate } from '@/components/subscription/FeatureGate';
 import logoWebp from '@/assets/logo-optimized.webp';
 
@@ -141,11 +142,34 @@ export default function Reports() {
               <div className="space-y-3 sm:space-y-4">
                 <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                  Melhores Dias para Trabalhar
+                  Melhores Dias e Horários
                 </h2>
                 <BestTimesAnalysis 
                   earnings={allEarnings || []} 
                   shifts={allShifts || []} 
+                />
+              </div>
+            </FeatureGate>
+
+            {/* Fuel Efficiency Chart - PRO Feature */}
+            <FeatureGate feature="bestTimes" showTeaser>
+              <div className="space-y-3 sm:space-y-4">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+                  <Fuel className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  Eficiência de Combustível
+                </h2>
+                <FuelEfficiencyChart 
+                  expenses={allEarnings ? (expenses || []).map(e => ({
+                    id: e.id,
+                    date: e.date,
+                    amount: Number(e.amount),
+                    category: e.category,
+                  })) : []}
+                  shifts={(allShifts || []).map(s => ({
+                    id: s.id,
+                    date: s.date,
+                    km_driven: Number(s.km_driven),
+                  }))}
                 />
               </div>
             </FeatureGate>

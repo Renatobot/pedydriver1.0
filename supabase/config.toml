@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.cron-check-churn]
 verify_jwt = false
+
+[functions.calculate-community-stats]
+verify_jwt = false
