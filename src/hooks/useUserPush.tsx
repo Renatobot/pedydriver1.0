@@ -43,17 +43,41 @@ export function useUserPush() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Verificar se existe inscrição no navegador
-      const registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      console.log('[useUserPush] DB subscription:', !!dbSubscription);
+
+      // Verificar se existe inscrição no navegador - try multiple registrations
       let browserSubscribed = false;
+      
+      // Try specific path first
+      let registration = await navigator.serviceWorker.getRegistration('/sw-push.js');
+      
+      // If not found, try root scope
+      if (!registration) {
+        registration = await navigator.serviceWorker.getRegistration('/');
+      }
+      
+      // If still not found, try ready state
+      if (!registration) {
+        try {
+          registration = await navigator.serviceWorker.ready;
+        } catch {
+          // Ignore errors from ready
+        }
+      }
       
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
         browserSubscribed = !!subscription;
+        console.log('[useUserPush] Browser subscription:', !!subscription, 'scope:', registration.scope);
+      } else {
+        console.log('[useUserPush] No service worker registration found');
       }
 
-      // Só está realmente inscrito se tiver no banco E no navegador
-      setIsSubscribed(!!dbSubscription && browserSubscribed);
+      // Se tiver no banco, consideramos inscrito (o SW pode ter sido limpo pelo navegador)
+      // Quando o usuário ativar o lembrete, vamos re-subscrever se necessário
+      const isSubscribedStatus = !!dbSubscription;
+      console.log('[useUserPush] Final isSubscribed:', isSubscribedStatus);
+      setIsSubscribed(isSubscribedStatus);
     } catch (error) {
       console.error('Error checking push subscription:', error);
       setIsSubscribed(false);
@@ -242,13 +266,31 @@ export function useUserPush() {
   }, [user, updateSettingsMutation]);
 
   const setReminderEnabled = useCallback(async (enabled: boolean) => {
+    console.log('[useUserPush] setReminderEnabled called:', enabled);
+    
     if (enabled) {
-      // Sempre tenta inscrever ao ativar (subscribe() verifica se já está inscrito)
-      const success = await subscribe();
-      if (!success) return;
+      // Verifica se precisa (re)inscrever no push
+      const registration = await navigator.serviceWorker.getRegistration('/');
+      let needsSubscription = true;
+      
+      if (registration) {
+        const existingSubscription = await registration.pushManager.getSubscription();
+        needsSubscription = !existingSubscription;
+        console.log('[useUserPush] Existing browser subscription:', !!existingSubscription);
+      }
+      
+      if (needsSubscription) {
+        console.log('[useUserPush] Need to subscribe to push');
+        const success = await subscribe();
+        if (!success) {
+          console.log('[useUserPush] Subscribe failed, aborting');
+          return;
+        }
+      }
     }
     
     await updateSettingsMutation.mutateAsync({ enabled });
+    console.log('[useUserPush] Settings updated, enabled:', enabled);
     
     // Atualiza o estado de inscrição após mudança
     await checkSubscription();
