@@ -11,6 +11,7 @@ import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
 import { supabase } from "@/integrations/supabase/client";
+import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 
 // Lazy load all pages for better code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -130,6 +131,7 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <SyncStatusIndicator />
+                <PWAUpdatePrompt />
                 <BrowserRouter>
                   <AppRoutes />
                 </BrowserRouter>

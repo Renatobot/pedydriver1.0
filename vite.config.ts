@@ -17,10 +17,10 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // Changed to prompt for manual update control
       includeAssets: ['favicon.ico', 'favicon.svg', 'icons/*.png', 'icons/*.webp'],
       manifest: false, // Using existing manifest.json
-      injectRegister: 'script-defer',
+      injectRegister: null, // We'll register manually via the hook
       workbox: {
         // IMPORTANT: We must have a single SW for '/' scope.
         // The generated Workbox SW will import our push handlers from public/sw-push.js
