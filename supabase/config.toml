@@ -8,3 +8,21 @@ verify_jwt = false
 
 [functions.send-admin-push]
 verify_jwt = false
+
+[functions.send-user-reminders]
+verify_jwt = false
+
+[functions.admin-delete-user]
+verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = false
+
+[functions.admin-update-user-email]
+verify_jwt = false
+
+[functions.reset-password-verified]
+verify_jwt = false
+
+[functions.cron-check-churn]
+verify_jwt = false

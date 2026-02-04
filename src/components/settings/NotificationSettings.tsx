@@ -1,45 +1,40 @@
-import { useState, useEffect } from 'react';
-import { Bell, BellOff, Clock, TestTube } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, BellOff, Clock, TestTube, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { useNotificationReminder } from '@/hooks/useNotificationReminder';
+import { useUserPush } from '@/hooks/useUserPush';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 
 export function NotificationSettings() {
   const { 
     permission, 
-    requestPermission, 
-    sendReminderNow, 
+    subscribe, 
+    sendTestNotification, 
     isSupported,
+    isLoading,
+    isSubscribed,
     reminderEnabled,
     reminderTime,
     setReminderEnabled,
     setReminderTime,
-  } = useNotificationReminder();
-  const [localPermission, setLocalPermission] = useState(permission);
-
-  useEffect(() => {
-    setLocalPermission(permission);
-  }, [permission]);
+  } = useUserPush();
+  
+  const [isEnabling, setIsEnabling] = useState(false);
 
   const handleEnableNotifications = async () => {
-    const result = await requestPermission();
-    setLocalPermission(result);
-    
-    if (result === 'granted') {
-      toast.success('Notificações ativadas!');
-      setReminderEnabled(true);
-    } else if (result === 'denied') {
-      toast.error('Permissão negada. Habilite nas configurações do navegador.');
-    }
+    setIsEnabling(true);
+    await subscribe();
+    setIsEnabling(false);
   };
 
-  const handleTestNotification = () => {
-    sendReminderNow();
-    toast.success('Notificação de teste enviada!');
+  const handleToggleReminder = async (enabled: boolean) => {
+    await setReminderEnabled(enabled);
+  };
+
+  const handleTimeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await setReminderTime(e.target.value);
   };
 
   if (!isSupported) {
@@ -47,7 +42,21 @@ export function NotificationSettings() {
       <div className="p-4 rounded-xl bg-muted/50 border border-border">
         <div className="flex items-center gap-3 text-muted-foreground">
           <BellOff className="w-5 h-5" />
-          <span className="text-sm">Notificações não são suportadas neste navegador</span>
+          <div>
+            <p className="text-sm font-medium">Notificações não suportadas</p>
+            <p className="text-xs">Instale o app na tela inicial para receber lembretes</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-4 rounded-xl bg-muted/50 border border-border">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Carregando configurações...</span>
         </div>
       </div>
     );
@@ -55,16 +64,16 @@ export function NotificationSettings() {
 
   return (
     <div className="space-y-4">
-      {/* Permission Status */}
-      {localPermission !== 'granted' ? (
+      {/* Permission/Subscription Status */}
+      {permission !== 'granted' || !isSubscribed ? (
         <div className="p-4 rounded-xl bg-muted/50 border border-border">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Bell className="w-5 h-5 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Ativar Lembretes</p>
+                <p className="text-sm font-medium">Ativar Lembretes Push</p>
                 <p className="text-xs text-muted-foreground">
-                  Receba lembretes para registrar seus ganhos
+                  Receba lembretes mesmo com o app fechado
                 </p>
               </div>
             </div>
@@ -72,9 +81,14 @@ export function NotificationSettings() {
               variant="outline"
               size="sm"
               onClick={handleEnableNotifications}
+              disabled={isEnabling}
               className="shrink-0"
             >
-              Ativar
+              {isEnabling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                'Ativar'
+              )}
             </Button>
           </div>
         </div>
@@ -94,7 +108,7 @@ export function NotificationSettings() {
             <Switch
               id="reminder-toggle"
               checked={reminderEnabled}
-              onCheckedChange={setReminderEnabled}
+              onCheckedChange={handleToggleReminder}
             />
           </div>
 
@@ -107,19 +121,23 @@ export function NotificationSettings() {
                   Horário do lembrete
                 </Label>
               </div>
-                <Input
-                  id="reminder-time"
-                  type="time"
-                  value={reminderTime}
-                  onChange={(e) => setReminderTime(e.target.value)}
+              <Input
+                id="reminder-time"
+                type="time"
+                value={reminderTime}
+                onChange={handleTimeChange}
                 className="w-32 touch-target"
               />
+              
+              <p className="text-xs text-muted-foreground">
+                O lembrete será enviado diariamente neste horário, mesmo com o app fechado.
+              </p>
               
               {/* Test Button */}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleTestNotification}
+                onClick={sendTestNotification}
                 className="gap-2 text-muted-foreground"
               >
                 <TestTube className="w-4 h-4" />

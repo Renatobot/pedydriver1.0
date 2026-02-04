@@ -1,4 +1,4 @@
-// Service Worker for Admin Push Notifications
+// Service Worker for Push Notifications (Admin + User Reminders)
 self.addEventListener('install', (event) => {
   console.log('[SW Push] Installing...');
   self.skipWaiting();
@@ -13,10 +13,10 @@ self.addEventListener('push', (event) => {
   console.log('[SW Push] Push received:', event);
 
   let data = {
-    title: 'PEDY Driver Admin',
+    title: 'PEDY Driver',
     body: 'Nova notificação',
-    icon: '/favicon.png',
-    url: '/admin'
+    icon: '/icons/icon-192.png',
+    url: '/'
   };
 
   try {
@@ -31,18 +31,22 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Determine if it's admin or user notification
+  const isAdmin = data.url && data.url.includes('/admin');
+  const tag = data.tag || (isAdmin ? 'admin-notification' : 'user-notification');
+
   const options = {
     body: data.body,
-    icon: data.icon || '/favicon.png',
-    badge: '/favicon.png',
+    icon: data.icon || '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     vibrate: [200, 100, 200],
-    tag: 'admin-notification',
+    tag: tag,
     renotify: true,
-    requireInteraction: true,
+    requireInteraction: tag === 'admin-notification', // Only admin notifications require interaction
     data: {
-      url: data.url || '/admin'
+      url: data.url || '/'
     },
-    actions: [
+    actions: isAdmin ? [
       {
         action: 'open',
         title: 'Abrir'
@@ -50,6 +54,15 @@ self.addEventListener('push', (event) => {
       {
         action: 'close',
         title: 'Fechar'
+      }
+    ] : [
+      {
+        action: 'open',
+        title: 'Registrar'
+      },
+      {
+        action: 'close',
+        title: 'Depois'
       }
     ]
   };
@@ -68,15 +81,19 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const urlToOpen = event.notification.data?.url || '/admin';
+  const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        // Try to find an existing window with the admin panel
+        // Try to find an existing window
         for (const client of clientList) {
-          if (client.url.includes('/admin') && 'focus' in client) {
-            return client.focus();
+          if ('focus' in client) {
+            return client.focus().then(() => {
+              if ('navigate' in client) {
+                return client.navigate(urlToOpen);
+              }
+            });
           }
         }
         // If no existing window, open a new one

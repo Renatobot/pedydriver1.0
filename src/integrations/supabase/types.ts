@@ -785,6 +785,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_reminder_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_sent_at: string | null
+          reminder_time: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          reminder_time?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          reminder_time?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1023,6 +1083,16 @@ export type Database = {
         }[]
       }
       get_unread_alerts_count: { Args: never; Returns: number }
+      get_users_due_for_reminder: {
+        Args: never
+        Returns: {
+          auth: string
+          endpoint: string
+          p256dh: string
+          reminder_time: string
+          user_id: string
+        }[]
+      }
       get_vapid_public_key: { Args: never; Returns: string }
       get_weekly_goals: { Args: { p_user_id: string }; Returns: Json }
       has_role: {
@@ -1035,6 +1105,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       mark_alert_as_read: { Args: { _alert_id: string }; Returns: boolean }
       mark_all_alerts_as_read: { Args: never; Returns: boolean }
+      mark_reminder_sent: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       notify_subscription_update: {
         Args: { _plan: string; _status: string; _target_user_id: string }
         Returns: boolean
