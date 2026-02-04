@@ -26,6 +26,7 @@ export function usePlatforms() {
 
   return useQuery({
     queryKey: ['platforms', user?.id],
+    staleTime: 5 * 60 * 1000, // 5 minutes - platforms rarely change
     queryFn: async (): Promise<Platform[]> => {
       // Fetch platforms
       const { data: platforms, error: platformsError } = await supabase

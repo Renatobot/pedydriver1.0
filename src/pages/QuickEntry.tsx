@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, CheckCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { usePlatforms } from '@/hooks/usePlatforms';
 import { useCreateEarningOffline } from '@/hooks/useOfflineEarnings';
@@ -12,6 +12,7 @@ import { EntryLimitBanner } from '@/components/subscription/EntryLimitBanner';
 import { EntryLimitBlocker } from '@/components/subscription/EntryLimitBlocker';
 import { QuickEntryMetrics } from '@/components/quick-entry/QuickEntryMetrics';
 import { QuickEntryForm } from '@/components/quick-entry/QuickEntryForm';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function QuickEntry() {
   const { data: platforms } = usePlatforms();
@@ -29,6 +30,7 @@ export default function QuickEntry() {
   const [isSaving, setIsSaving] = useState(false);
   const [showBlocker, setShowBlocker] = useState(!canAddEntry);
   const [platformError, setPlatformError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const isBlocked = !canAddEntry && !isPro;
 
@@ -117,6 +119,10 @@ export default function QuickEntry() {
         });
       }
 
+      // Show success animation
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+      
       toast.success('Corrida registrada!');
       setValue('');
       setKm('');
@@ -158,6 +164,41 @@ export default function QuickEntry() {
 
         {/* Input Form */}
         <div className="bg-card rounded-2xl p-3 sm:p-4 border border-border/50 space-y-3 sm:space-y-4 relative">
+          {/* Success Animation Overlay */}
+          <AnimatePresence>
+            {showSuccess && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute inset-0 z-20 flex items-center justify-center bg-background/90 backdrop-blur-sm rounded-2xl"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", damping: 15, stiffness: 300 }}
+                  className="flex flex-col items-center gap-3"
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 0.5 }}
+                    className="w-16 h-16 rounded-full bg-gradient-profit flex items-center justify-center"
+                  >
+                    <CheckCircle className="w-8 h-8 text-primary-foreground" />
+                  </motion.div>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-lg font-semibold text-foreground"
+                  >
+                    Registrado! 🎉
+                  </motion.p>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {isBlocked && showBlocker && (
             <EntryLimitBlocker onContinueViewing={() => setShowBlocker(false)} />
           )}

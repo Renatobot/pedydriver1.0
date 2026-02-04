@@ -16,35 +16,30 @@ export function useShifts(startDate?: string, endDate?: string) {
 
   return useQuery({
     queryKey: ['shifts', user?.id, startDate, endDate],
+    staleTime: 30 * 1000, // 30 seconds - data can be slightly stale
     queryFn: async (): Promise<Shift[]> => {
       if (!user) return [];
       
-      let query = supabase
-        .from('shifts')
-        .select('*, platform:platforms(*)')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
+      // Fetch shifts and platforms in parallel to avoid N+1 query
+      const [shiftsResult, platformsResult] = await Promise.all([
+        supabase
+          .from('shifts')
+          .select('*, platform:platforms(*)')
+          .eq('user_id', user.id)
+          .gte('date', startDate || '1900-01-01')
+          .lte('date', endDate || '2100-12-31')
+          .order('date', { ascending: false }),
+        supabase
+          .from('platforms')
+          .select('*')
+      ]);
       
-      if (startDate) {
-        query = query.gte('date', startDate);
-      }
-      if (endDate) {
-        query = query.lte('date', endDate);
-      }
+      if (shiftsResult.error) throw shiftsResult.error;
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      // Fetch all platforms for multi-platform shifts
-      const { data: allPlatforms } = await supabase
-        .from('platforms')
-        .select('*');
-      
-      const platformsMap = new Map(allPlatforms?.map(p => [p.id, p]) || []);
+      const platformsMap = new Map(platformsResult.data?.map(p => [p.id, p]) || []);
       
       // Enrich shifts with platforms array
-      const enrichedShifts = (data || []).map(shift => {
+      const enrichedShifts = (shiftsResult.data || []).map(shift => {
         const platformIds = shift.platform_ids || (shift.platform_id ? [shift.platform_id] : []);
         const platforms = platformIds
           .map((id: string) => platformsMap.get(id))

@@ -17,6 +17,7 @@ export function useExpenses(startDate?: string, endDate?: string) {
 
   return useQuery({
     queryKey: ['expenses', user?.id, startDate, endDate],
+    staleTime: 30 * 1000, // 30 seconds - data can be slightly stale
     queryFn: async (): Promise<Expense[]> => {
       if (!user) return [];
       

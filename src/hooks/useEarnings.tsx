@@ -20,6 +20,7 @@ export function useEarnings(startDate?: string, endDate?: string) {
 
   return useQuery({
     queryKey: ['earnings', user?.id, startDate, endDate],
+    staleTime: 30 * 1000, // 30 seconds - data can be slightly stale
     queryFn: async (): Promise<Earning[]> => {
       if (!user) return [];
       
