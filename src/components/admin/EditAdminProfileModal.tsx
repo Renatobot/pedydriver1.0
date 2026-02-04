@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useUpdateProfile } from '@/hooks/useProfile';
-import { Lock } from 'lucide-react';
+import { useAdminUpdateEmail } from '@/hooks/useAdmin';
+import { useAuth } from '@/hooks/useAuth';
+import { AlertTriangle } from 'lucide-react';
 
 interface EditAdminProfileModalProps {
   open: boolean;
@@ -21,16 +23,20 @@ export function EditAdminProfileModal({
   currentPhone,
   email,
 }: EditAdminProfileModalProps) {
+  const { user } = useAuth();
   const [fullName, setFullName] = useState(currentName);
   const [phone, setPhone] = useState(currentPhone || '');
+  const [newEmail, setNewEmail] = useState(email);
   const updateProfile = useUpdateProfile();
+  const updateEmail = useAdminUpdateEmail();
 
   useEffect(() => {
     if (open) {
       setFullName(currentName);
       setPhone(currentPhone || '');
+      setNewEmail(email);
     }
-  }, [open, currentName, currentPhone]);
+  }, [open, currentName, currentPhone, email]);
 
   const formatPhoneNumber = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -50,7 +56,8 @@ export function EditAdminProfileModal({
     setPhone(formatted);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Primeiro atualiza nome e telefone
     updateProfile.mutate(
       { 
         full_name: fullName, 
@@ -58,13 +65,28 @@ export function EditAdminProfileModal({
       },
       {
         onSuccess: () => {
-          onOpenChange(false);
+          // Se o email foi alterado, atualiza via edge function
+          if (newEmail !== email && user?.id) {
+            updateEmail.mutate(
+              { targetUserId: user.id, newEmail },
+              {
+                onSuccess: () => {
+                  onOpenChange(false);
+                },
+              }
+            );
+          } else {
+            onOpenChange(false);
+          }
         },
       }
     );
   };
 
-  const isValid = fullName.trim().length > 0 && fullName.length <= 100;
+  const emailChanged = newEmail !== email;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = emailRegex.test(newEmail);
+  const isValid = fullName.trim().length > 0 && fullName.length <= 100 && isEmailValid;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,19 +126,26 @@ export function EditAdminProfileModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="adminEmail" className="flex items-center gap-1.5 text-muted-foreground">
-              Email
-              <Lock className="w-3 h-3" />
-            </Label>
+            <Label htmlFor="adminEmail">Email</Label>
             <Input
               id="adminEmail"
-              value={email}
-              disabled
-              className="h-11 bg-muted/50 cursor-not-allowed"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="seu@email.com"
+              className="h-11"
             />
-            <p className="text-xs text-muted-foreground">
-              O email não pode ser alterado por segurança
-            </p>
+            {newEmail && !isEmailValid && (
+              <p className="text-xs text-destructive">Formato de email inválido</p>
+            )}
+            {emailChanged && isEmailValid && (
+              <div className="flex items-start gap-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-md">
+                <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Alterar o email afetará seu login. Você precisará usar o novo email para acessar.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -126,9 +155,9 @@ export function EditAdminProfileModal({
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={!isValid || updateProfile.isPending}
+            disabled={!isValid || updateProfile.isPending || updateEmail.isPending}
           >
-            {updateProfile.isPending ? 'Salvando...' : 'Salvar'}
+            {(updateProfile.isPending || updateEmail.isPending) ? 'Salvando...' : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>
