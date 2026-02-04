@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Clock, Navigation, Banknote, CreditCard, Hash, Play, Info, Layers } from 'lucide-react';
+import { Clock, Navigation, Banknote, CreditCard, Hash, Play, Info, Layers, RefreshCw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfitCard } from '@/components/dashboard/ProfitCard';
 import { MetricCard } from '@/components/dashboard/MetricCard';
@@ -42,6 +42,7 @@ export default function Dashboard() {
     costPerKm,
     refetch,
     hasMultiPlatformShifts,
+    lastUpdatedText,
   } = useDashboard(range);
   const { user } = useAuth();
   const { hasActiveShift } = useActiveShift();
@@ -89,10 +90,17 @@ export default function Dashboard() {
               height={80}
               loading="eager"
             />
-            <div className="space-y-0.5 sm:space-y-1">
+            <div className="space-y-0.5 sm:space-y-1 flex-1">
               <p className="text-muted-foreground text-xs sm:text-sm">Olá, {firstName}!</p>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Seu Resumo</h1>
             </div>
+            {lastUpdatedText && !isLoading && (
+              <div className="flex items-center gap-1 text-2xs text-muted-foreground">
+                <RefreshCw className="w-3 h-3" />
+                <span className="hidden sm:inline">Atualizado</span>
+                <span>{lastUpdatedText}</span>
+              </div>
+            )}
           </div>
 
           {/* Active Shift Banner or Start Shift Button */}
