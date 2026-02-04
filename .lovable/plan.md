@@ -1,94 +1,164 @@
 
-# Plano: Corrigir PWA Admin para iOS
+# Plano: Edição de Informações Pessoais (Usuário e Admin)
 
-## Problema Identificado
+## Resumo
 
-No iOS, a instalação de PWAs funciona de forma diferente do Android:
+Adicionar funcionalidade para usuários e administradores editarem informações pessoais (nome e telefone), mantendo o email bloqueado para edição para evitar criação de múltiplas contas.
 
-1. iOS usa as meta tags `apple-mobile-web-app-*` da pagina, nao o manifest.json
-2. Como o app e uma SPA (Single Page Application), todas as rotas carregam o mesmo `index.html` raiz
-3. O arquivo `public/admin/index.html` nao e usado pelo Vite - ele serve sempre o `index.html` principal
-4. Resultado: Quando admin instala no iOS, o app usa as meta tags do usuario comum
+## Componentes a Implementar
 
-## Solucao Proposta
+### 1. Banco de Dados
 
-Injetar dinamicamente as meta tags corretas quando a rota comeca com `/admin/`:
-
-### 1. Criar Hook `useAdminPWAMeta`
-
-Um hook que detecta se estamos em rotas admin e atualiza dinamicamente:
-- `apple-mobile-web-app-title` -> "PEDY Admin"
-- `apple-touch-icon` -> icones do admin
-- `link[rel="manifest"]` -> `/admin-manifest.json`
-- `meta[name="theme-color"]` -> manter consistente
-- `document.title` -> titulo do admin
-
-### 2. Aplicar no AdminAuth e AdminLayout
-
-O hook sera chamado em:
-- `AdminAuth.tsx` (pagina de login admin)
-- `AdminLayout.tsx` (layout de todas as paginas admin)
-
-### 3. Fluxo de Instalacao no iOS
+Criar uma função RPC `admin_update_user_profile` para permitir que administradores atualizem dados de perfil de qualquer usuário de forma segura.
 
 ```text
-Usuario acessa /admin/login
-        |
-        v
-Hook detecta rota /admin/*
-        |
-        v
-Injeta meta tags do admin:
-- apple-mobile-web-app-title: "PEDY Admin"
-- apple-touch-icon: /icons/admin-icon-512.png
-- manifest: /admin-manifest.json
-        |
-        v
-Usuario instala via Safari
-(Compartilhar > Adicionar a Tela Inicial)
-        |
-        v
-App instalado com nome "PEDY Admin"
-e icone correto!
+┌─────────────────────────────────────────────────────────────┐
+│                    Funções a Criar                          │
+├─────────────────────────────────────────────────────────────┤
+│ admin_update_user_profile(_target_user_id, _full_name,      │
+│                           _phone)                           │
+│ - Verifica se chamador é admin                              │
+│ - Atualiza profiles.full_name e profiles.phone              │
+│ - Registra ação em admin_logs                               │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Arquivos a Modificar
+### 2. Frontend - Lado do Usuário
 
-| Arquivo | Acao |
-|---------|------|
-| `src/hooks/useAdminPWAMeta.tsx` | Criar - Hook para injetar meta tags |
-| `src/pages/admin/AdminAuth.tsx` | Modificar - Usar o novo hook |
-| `src/components/admin/AdminLayout.tsx` | Modificar - Usar o novo hook |
-| `public/admin/index.html` | Remover - Nao funciona com SPA |
+Adicionar modal/formulário de edição no Settings.tsx onde o usuário pode editar seus dados pessoais:
 
-## Detalhes Tecnicos
+```text
+┌───────────────────────────────────────────────────────────┐
+│  Card Atual (somente leitura)                             │
+│  ┌─────┐  Nome: João Silva                               │
+│  │ 👤  │  Email: joao@email.com                          │
+│  └─────┘                                        [Editar]  │
+└───────────────────────────────────────────────────────────┘
+                          ↓
+┌───────────────────────────────────────────────────────────┐
+│  Modal de Edição                                          │
+│                                                           │
+│  Nome Completo: [João Silva____________]                 │
+│                                                           │
+│  WhatsApp:      [(11) 99999-9999_______]                 │
+│                                                           │
+│  Email:         [joao@email.com_________] 🔒 (bloqueado) │
+│                                                           │
+│                              [Cancelar]  [Salvar]         │
+└───────────────────────────────────────────────────────────┘
+```
 
-### Hook useAdminPWAMeta
+### 3. Frontend - Lado do Admin
+
+Adicionar opção "Editar Dados" no menu de ações do AdminUsers.tsx:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Menu de Ações do Usuário                                   │
+│  ────────────────────────                                   │
+│  👁️  Ver Detalhes                                          │
+│  ✏️  Editar Dados       ← NOVO                             │
+│  ─────────────────                                          │
+│  👑  Ativar/Desativar PRO                                  │
+│  🔄  Resetar Limite                                         │
+│  🔑  Resetar Senha                                          │
+│  ...                                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 4. Hooks a Criar/Modificar
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/useProfile.tsx` | Novo hook com `useProfile()` e `useUpdateProfile()` |
+| `src/hooks/useAdmin.tsx` | Adicionar `useAdminUpdateProfile()` |
+
+## Fluxo de Dados
+
+```text
+USUÁRIO EDITA PRÓPRIO PERFIL:
+┌──────────┐    ┌────────────────┐    ┌──────────────────┐
+│ Settings │───>│ useUpdateProfile│───>│ profiles (RLS)   │
+│   Page   │    │    (mutate)    │    │ user_id = auth() │
+└──────────┘    └────────────────┘    └──────────────────┘
+
+ADMIN EDITA PERFIL DE USUÁRIO:
+┌───────────┐    ┌─────────────────────┐    ┌────────────────────┐
+│ AdminUsers│───>│ useAdminUpdateProfile│───>│ admin_update_      │
+│   Page    │    │    (mutate)          │    │ user_profile RPC   │
+└───────────┘    └─────────────────────┘    └────────────────────┘
+```
+
+## Arquivos a Modificar/Criar
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| Migração SQL | Criar | Função RPC `admin_update_user_profile` |
+| `src/hooks/useProfile.tsx` | Criar | Hook para usuário gerenciar próprio perfil |
+| `src/hooks/useAdmin.tsx` | Modificar | Adicionar mutation para admin editar perfil |
+| `src/pages/Settings.tsx` | Modificar | Adicionar botão "Editar" e modal de edição |
+| `src/pages/admin/AdminUsers.tsx` | Modificar | Adicionar opção "Editar Dados" e dialog |
+
+## Validações de Segurança
+
+1. **Email bloqueado**: Campo desabilitado na UI, não aceito nas mutations
+2. **Usuário só edita próprio perfil**: RLS policy existente (`auth.uid() = user_id`)
+3. **Admin pode editar qualquer perfil**: Via RPC com verificação `is_admin()`
+4. **Logs de auditoria**: Toda edição de admin registrada em `admin_logs`
+
+## Validação de Entrada
+
+- Nome: máximo 100 caracteres, não pode ser vazio
+- Telefone: formato brasileiro, validação com regex
+- Ambos os campos sanitizados antes de enviar
+
+## Detalhes Técnicos
+
+### Hook useUpdateProfile (Usuário)
 
 ```typescript
-// Detecta rota admin e injeta meta tags corretas
-useEffect(() => {
-  // Salva valores originais
-  const originalTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-  
-  // Atualiza para admin
-  updateMetaTag('apple-mobile-web-app-title', 'PEDY Admin');
-  updateLinkTag('apple-touch-icon', '/icons/admin-icon-512.png');
-  updateLinkTag('manifest', '/admin-manifest.json');
-  
-  // Restaura ao sair da rota admin
-  return () => { /* restaura originais */ };
-}, []);
+// Atualiza diretamente a tabela profiles via Supabase client
+// RLS garante que só pode atualizar próprio perfil
+const { data, error } = await supabase
+  .from('profiles')
+  .update({ full_name, phone })
+  .eq('user_id', user.id)
+  .select()
+  .single();
 ```
 
-### Comportamento Esperado
+### RPC admin_update_user_profile
 
-- **Usuario comum no iOS**: Instala em `/` ou `/auth` -> Recebe "PEDY Driver" com icone verde
-- **Admin no iOS**: Instala em `/admin/login` -> Recebe "PEDY Admin" com icone diferenciado
-- **Android**: Continua funcionando normalmente (usa manifest.json)
+```sql
+CREATE OR REPLACE FUNCTION admin_update_user_profile(
+  _target_user_id uuid,
+  _full_name text,
+  _phone text
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Acesso negado';
+  END IF;
+  
+  UPDATE profiles 
+  SET full_name = _full_name, 
+      phone = _phone, 
+      updated_at = now()
+  WHERE user_id = _target_user_id;
+  
+  -- Log da ação
+  INSERT INTO admin_logs (admin_id, action, target_user_id, details)
+  VALUES (auth.uid(), 'update_user_profile', _target_user_id, 
+          jsonb_build_object('full_name', _full_name, 'phone', _phone));
+END;
+$$;
+```
 
-## Beneficios
+### Componente de Edição (Usuário)
 
-- iOS e Android terao comportamento consistente
-- Ambos os apps podem coexistir na tela inicial do iPhone
-- Codigo limpo e reutilizavel via hook
+Modal com formulário validado por zod:
+- Input para nome (required, max 100 chars)
+- Input para telefone com máscara brasileira
+- Email exibido mas disabled
+- Botões Cancelar/Salvar
