@@ -46,13 +46,12 @@ export function StartShiftModal({ open, onOpenChange }: StartShiftModalProps) {
   };
   
   // Check if platform is locked (can't be used)
+  // Simplified: only considers current selection, not historical usage
   const isPlatformLocked = (platformId: string): boolean => {
     if (isPro) return false;
     if (selectedPlatforms.includes(platformId)) return false;
-    // If already at limit in current selection
-    if (selectedPlatforms.length >= limits.maxPlatforms) return true;
-    // If can't use this platform based on history
-    return !canUsePlatform(platformId);
+    // If already selected the maximum allowed, lock the others
+    return selectedPlatforms.length >= limits.maxPlatforms;
   };
 
   const handleStart = async () => {
