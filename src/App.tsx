@@ -64,7 +64,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function UserOnlyRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, isAdmin } = useAuth();
 
-  if (loading) {
+  // Wait for BOTH auth AND role to be fully loaded
+  // isAdmin is null while loading, boolean once determined
+  if (loading || (user && isAdmin === null)) {
     return <PageLoader />;
   }
 
