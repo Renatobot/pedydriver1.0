@@ -39,7 +39,7 @@ export function LandingHeader() {
         </Link>
         
         {/* CTA - Enhanced when scrolled with pulse animation */}
-        <Link to="/auth?signup" onClick={handleCTAClick}>
+        <Link to="/demo" onClick={handleCTAClick}>
           <Button 
             size="sm" 
             className={cn(
@@ -50,7 +50,7 @@ export function LandingHeader() {
               "sm:text-sm sm:px-4 sm:py-2"
             )}
           >
-            Começar grátis
+            Testar grátis
           </Button>
         </Link>
       </div>

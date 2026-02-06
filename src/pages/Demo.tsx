@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus, Fuel, Wrench, Coffee, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Minus, Fuel, Wrench, Coffee, MoreHorizontal } from 'lucide-react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,9 @@ import { GuestModeBanner } from '@/components/guest/GuestModeBanner';
 import { SignupPromptModal } from '@/components/guest/SignupPromptModal';
 import { DemoQuickEntry } from '@/components/guest/DemoQuickEntry';
 import { GuestMetrics } from '@/components/guest/GuestMetrics';
+import { DemoProgressNudge } from '@/components/guest/DemoProgressNudge';
+import { DemoExitIntent } from '@/components/guest/DemoExitIntent';
+import { DemoSocialProof } from '@/components/guest/DemoSocialProof';
 import { useGuestMode } from '@/contexts/GuestModeContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -79,9 +82,15 @@ export default function Demo() {
       
       {/* Signup prompt modal */}
       <SignupPromptModal />
+      
+      {/* Progress nudge - appears after 2 entries */}
+      <DemoProgressNudge />
+      
+      {/* Exit intent detection */}
+      <DemoExitIntent />
 
       {/* Content with top padding for banner */}
-      <div className="pt-16 px-4 py-6 max-w-lg mx-auto space-y-6">
+      <div className="pt-14 px-4 py-6 max-w-lg mx-auto space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link 
@@ -97,9 +106,12 @@ export default function Demo() {
           <div className="w-16" /> {/* Spacer for centering */}
         </div>
 
+        {/* Social proof */}
+        <DemoSocialProof />
+
         {/* Quick intro */}
         <div className="text-center">
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Registre seus ganhos e veja seu lucro real instantaneamente
           </p>
         </div>
