@@ -1,8 +1,15 @@
 import { Car } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export function HeroSection() {
+  const { trackCTAClick } = useAnalytics();
+
+  const handleCTAClick = () => {
+    trackCTAClick('hero_cta', '/landing');
+  };
+
   return (
     <section className="relative overflow-hidden px-4 pt-20 pb-16 sm:pt-28 sm:pb-24">
       {/* Background gradient */}
@@ -28,7 +35,7 @@ export function HeroSection() {
         
         {/* CTA */}
         <div className="space-y-3 pt-4">
-          <Link to="/auth">
+          <Link to="/auth" onClick={handleCTAClick}>
             <Button size="lg" className="bg-gradient-profit hover:opacity-90 text-lg px-8 py-6 h-auto touch-feedback">
               Começar agora — é grátis
             </Button>

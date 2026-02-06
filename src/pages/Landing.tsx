@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ProblemSection } from '@/components/landing/ProblemSection';
@@ -11,9 +12,13 @@ import { FAQSection } from '@/components/landing/FAQSection';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { TrustFooter } from '@/components/landing/TrustFooter';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { cn } from '@/lib/utils';
 
 export default function Landing() {
+  const { trackPageView, trackScrollDepth, trackSectionView, hasTrackedPageView } = useAnalytics();
+  const scrollDepthsTracked = useRef<Set<number>>(new Set());
+  
   const problemSection = useScrollReveal();
   const solutionSection = useScrollReveal();
   const howItWorksSection = useScrollReveal();
@@ -23,6 +28,47 @@ export default function Landing() {
   const pricingSection = useScrollReveal();
   const faqSection = useScrollReveal();
   const finalCtaSection = useScrollReveal();
+
+  // Track page view once
+  useEffect(() => {
+    if (!hasTrackedPageView.current) {
+      trackPageView('/landing');
+      hasTrackedPageView.current = true;
+    }
+  }, [trackPageView, hasTrackedPageView]);
+
+  // Track scroll depth
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = Math.round((scrollTop / docHeight) * 100);
+      
+      const thresholds = [25, 50, 75, 100];
+      for (const threshold of thresholds) {
+        if (scrollPercent >= threshold && !scrollDepthsTracked.current.has(threshold)) {
+          scrollDepthsTracked.current.add(threshold);
+          trackScrollDepth(threshold, '/landing');
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [trackScrollDepth]);
+
+  // Track section views
+  useEffect(() => {
+    if (problemSection.isVisible) trackSectionView('problem', '/landing');
+  }, [problemSection.isVisible, trackSectionView]);
+
+  useEffect(() => {
+    if (solutionSection.isVisible) trackSectionView('solution', '/landing');
+  }, [solutionSection.isVisible, trackSectionView]);
+
+  useEffect(() => {
+    if (pricingSection.isVisible) trackSectionView('pricing', '/landing');
+  }, [pricingSection.isVisible, trackSectionView]);
 
   return (
     <div className="min-h-screen bg-background">

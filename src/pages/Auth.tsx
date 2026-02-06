@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
+import { useAnalytics } from '@/hooks/useAnalytics';
 // Using optimized WebP icon for better performance
 import logo3d from '@/assets/logo-optimized.webp';
 
@@ -91,10 +92,32 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
+  // Analytics tracking
+  const { 
+    trackPageView, 
+    trackModeSwitch, 
+    trackFormStart, 
+    trackFieldFocus, 
+    trackFormSubmit, 
+    trackSignupError, 
+    trackSignupComplete,
+    hasTrackedPageView 
+  } = useAnalytics();
+  const formStarted = useRef(false);
+  const focusedFields = useRef<Set<string>>(new Set());
+  
   // Detect referral code from URL
   const referralCodeFromUrl = useReferralCodeFromUrl();
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const { registerPendingReferral, fingerprint } = useReferral();
+
+  // Track page view once
+  useEffect(() => {
+    if (!hasTrackedPageView.current) {
+      trackPageView('/auth');
+      hasTrackedPageView.current = true;
+    }
+  }, [trackPageView, hasTrackedPageView]);
 
   // Handle redirect after login when isAdmin is determined
   useEffect(() => {
@@ -151,6 +174,7 @@ export default function Auth() {
   const handleLogin = async (data: LoginData) => {
     setError(null);
     setIsLoading(true);
+    trackFormSubmit('/auth', 'login');
     try {
       const { error } = await signIn(data.email, data.password);
       if (error) {
@@ -167,11 +191,15 @@ export default function Auth() {
 
   const handleSignup = async (data: SignupData) => {
     setError(null);
+    trackFormSubmit('/auth', 'signup');
     const formattedPhone = data.phone.startsWith('+') ? data.phone : '+55' + data.phone;
     const { error } = await signUp(data.email, data.password, data.fullName, formattedPhone);
     if (error) {
-      setError(translateAuthError(error.message));
+      const translatedError = translateAuthError(error.message);
+      setError(translatedError);
+      trackSignupError(translatedError);
     } else {
+      trackSignupComplete();
       // After signup, always go to user dashboard (new users are never admins)
       navigate('/');
     }
@@ -250,7 +278,7 @@ export default function Auth() {
       {/* Toggle */}
       <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary mb-4 sm:mb-6 w-full max-w-xs sm:max-w-sm">
         <button
-          onClick={() => { setMode('login'); setError(null); }}
+          onClick={() => { setMode('login'); setError(null); trackModeSwitch('login'); }}
           className={cn(
             'flex-1 py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[40px]',
             mode === 'login'
@@ -261,7 +289,7 @@ export default function Auth() {
           Entrar
         </button>
         <button
-          onClick={() => { setMode('signup'); setError(null); }}
+          onClick={() => { setMode('signup'); setError(null); trackModeSwitch('signup'); }}
           className={cn(
             'flex-1 py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[40px]',
             mode === 'signup'
@@ -272,7 +300,7 @@ export default function Auth() {
           Criar Conta
         </button>
         <button
-          onClick={() => { setMode('phone'); setError(null); }}
+          onClick={() => { setMode('phone'); setError(null); trackModeSwitch('phone'); }}
           className={cn(
             'flex-1 py-2 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all touch-feedback min-h-[40px]',
             mode === 'phone'
@@ -363,6 +391,16 @@ export default function Auth() {
                   type="text"
                   placeholder="Seu nome"
                   className="pl-9 sm:pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                  onFocus={() => {
+                    if (!formStarted.current) {
+                      formStarted.current = true;
+                      trackFormStart('/auth');
+                    }
+                    if (!focusedFields.current.has('fullName')) {
+                      focusedFields.current.add('fullName');
+                      trackFieldFocus('fullName', '/auth');
+                    }
+                  }}
                   {...signupForm.register('fullName')}
                 />
               </div>
@@ -379,6 +417,16 @@ export default function Auth() {
                   type="tel"
                   placeholder="11999999999"
                   className="pl-9 sm:pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                  onFocus={() => {
+                    if (!formStarted.current) {
+                      formStarted.current = true;
+                      trackFormStart('/auth');
+                    }
+                    if (!focusedFields.current.has('phone')) {
+                      focusedFields.current.add('phone');
+                      trackFieldFocus('phone', '/auth');
+                    }
+                  }}
                   {...signupForm.register('phone')}
                 />
               </div>
@@ -396,6 +444,16 @@ export default function Auth() {
                   type="email"
                   placeholder="seu@email.com"
                   className="pl-9 sm:pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                  onFocus={() => {
+                    if (!formStarted.current) {
+                      formStarted.current = true;
+                      trackFormStart('/auth');
+                    }
+                    if (!focusedFields.current.has('email')) {
+                      focusedFields.current.add('email');
+                      trackFieldFocus('email', '/auth');
+                    }
+                  }}
                   {...signupForm.register('email')}
                 />
               </div>
@@ -412,6 +470,16 @@ export default function Auth() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Mínimo 6 caracteres"
                   className="pl-9 sm:pl-10 pr-10 h-11 sm:h-12 text-sm sm:text-base"
+                  onFocus={() => {
+                    if (!formStarted.current) {
+                      formStarted.current = true;
+                      trackFormStart('/auth');
+                    }
+                    if (!focusedFields.current.has('password')) {
+                      focusedFields.current.add('password');
+                      trackFieldFocus('password', '/auth');
+                    }
+                  }}
                   {...signupForm.register('password')}
                 />
                 <button
