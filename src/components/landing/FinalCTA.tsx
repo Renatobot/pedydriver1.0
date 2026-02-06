@@ -21,13 +21,13 @@ export function FinalCTA() {
         <h2 className="text-2xl sm:text-3xl font-bold">Pronto pra descobrir seu lucro real?</h2>
         
         <p className="text-muted-foreground">
-          Crie sua conta em 30 segundos. É grátis, sem cartão, e você pode cancelar quando quiser.
+          Teste agora sem criar conta. É grátis, sem cartão, e você decide se quer salvar depois.
         </p>
         
         <div className="space-y-3">
-          <Link to="/auth" onClick={handleCTAClick}>
+          <Link to="/demo" onClick={handleCTAClick}>
             <Button size="lg" className="bg-gradient-profit hover:opacity-90 text-lg px-10 py-6 h-auto touch-feedback">
-              Criar minha conta grátis
+              Testar grátis agora
             </Button>
           </Link>
           <p className="text-sm text-muted-foreground">Junte-se a +{ACTIVE_USERS_COUNT} motoristas</p>
