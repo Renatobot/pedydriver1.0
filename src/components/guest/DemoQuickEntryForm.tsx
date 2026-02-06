@@ -1,15 +1,16 @@
 import { memo } from 'react';
-import { DollarSign, Navigation, Clock, TrendingUp, Car, Bike } from 'lucide-react';
+import { DollarSign, Navigation, Clock, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const PLATFORMS = [
-  { name: 'Uber', color: 'bg-black', icon: Car },
-  { name: '99', color: 'bg-yellow-500', icon: Car },
-  { name: 'iFood', color: 'bg-red-500', icon: Bike },
-  { name: 'Rappi', color: 'bg-orange-500', icon: Bike },
+const DEMO_PLATFORMS = [
+  { id: 'uber', name: 'Uber' },
+  { id: '99', name: '99' },
+  { id: 'ifood', name: 'iFood' },
+  { id: 'rappi', name: 'Rappi' },
+  { id: 'outras', name: 'Outras' },
 ];
 
 interface DemoQuickEntryFormProps {
@@ -39,33 +40,21 @@ export const DemoQuickEntryForm = memo(function DemoQuickEntryForm({
 }: DemoQuickEntryFormProps) {
   return (
     <div>
-      {/* Platform selector */}
+      {/* Platform - Using Select like the real app */}
       <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
         <Label className="text-xs sm:text-sm text-muted-foreground">Plataforma</Label>
-        <div className="grid grid-cols-4 gap-2">
-          {PLATFORMS.map((platform) => {
-            const Icon = platform.icon;
-            const isSelected = platformName === platform.name;
-            return (
-              <button
-                key={platform.name}
-                type="button"
-                onClick={() => onPlatformChange(platform.name)}
-                className={cn(
-                  'flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl border-2 transition-all',
-                  isSelected
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-secondary/50 hover:border-primary/50'
-                )}
-              >
-                <div className={cn('w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center', platform.color)}>
-                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                </div>
-                <span className="text-2xs sm:text-xs font-medium">{platform.name}</span>
-              </button>
-            );
-          })}
-        </div>
+        <Select value={platformName} onValueChange={onPlatformChange}>
+          <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base">
+            <SelectValue placeholder="Selecione" />
+          </SelectTrigger>
+          <SelectContent>
+            {DEMO_PLATFORMS.map((p) => (
+              <SelectItem key={p.id} value={p.name} className="py-3">
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Value - Main input */}
@@ -125,7 +114,7 @@ export const DemoQuickEntryForm = memo(function DemoQuickEntryForm({
       {/* Save Button */}
       <Button
         onClick={onSave}
-        disabled={isSaving || !value}
+        disabled={isSaving || !value || !platformName}
         className="w-full h-12 sm:h-14 text-sm sm:text-base font-semibold bg-gradient-profit hover:opacity-90 transition-opacity touch-feedback"
       >
         {isSaving ? (
