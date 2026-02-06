@@ -6,10 +6,11 @@ import { formatCurrency } from '@/lib/formatters';
 
 export function GuestModeBanner() {
   const { triggerSignupModal, guestEntryCount, totalEarnings, totalExpenses } = useGuestMode();
-  const { trackDemoCTAClick } = useAnalytics();
+  const { trackDemoCTAClick, trackDemoToAuth } = useAnalytics();
 
   const handleSaveClick = () => {
     trackDemoCTAClick('banner_save_data');
+    trackDemoToAuth('banner');
     triggerSignupModal('Clicou em salvar dados');
   };
 

@@ -188,6 +188,43 @@ export function useAnalytics() {
     trackEvent('demo_cta_click', '/demo', { cta_type: ctaType });
   }, [trackEvent]);
 
+  // ===== Demo Nudge & Exit Intent Events =====
+
+  // Track nudge shown (after 2+ entries)
+  const trackDemoNudgeShown = useCallback(() => {
+    trackEvent('demo_nudge_shown', '/demo');
+  }, [trackEvent]);
+
+  // Track nudge clicked (save data button)
+  const trackDemoNudgeClicked = useCallback(() => {
+    trackEvent('demo_nudge_clicked', '/demo');
+  }, [trackEvent]);
+
+  // Track nudge dismissed (continue testing)
+  const trackDemoNudgeDismissed = useCallback(() => {
+    trackEvent('demo_nudge_dismissed', '/demo');
+  }, [trackEvent]);
+
+  // Track exit intent shown
+  const trackDemoExitIntentShown = useCallback(() => {
+    trackEvent('demo_exit_intent_shown', '/demo');
+  }, [trackEvent]);
+
+  // Track exit intent clicked (save now)
+  const trackDemoExitIntentClicked = useCallback(() => {
+    trackEvent('demo_exit_intent_clicked', '/demo');
+  }, [trackEvent]);
+
+  // Track exit intent dismissed (let data be lost)
+  const trackDemoExitIntentDismissed = useCallback(() => {
+    trackEvent('demo_exit_intent_dismissed', '/demo');
+  }, [trackEvent]);
+
+  // Track demo to auth navigation (funnel step)
+  const trackDemoToAuth = useCallback((source: 'banner' | 'nudge' | 'exit_intent' | 'cta' | 'modal') => {
+    trackEvent('demo_to_auth', '/demo', { source });
+  }, [trackEvent]);
+
   return {
     sessionId: sessionId.current,
     deviceType: deviceType.current,
@@ -211,5 +248,13 @@ export function useAnalytics() {
     trackDemoSignupClicked,
     trackDemoDataMigrated,
     trackDemoCTAClick,
+    // Demo nudge & exit intent tracking
+    trackDemoNudgeShown,
+    trackDemoNudgeClicked,
+    trackDemoNudgeDismissed,
+    trackDemoExitIntentShown,
+    trackDemoExitIntentClicked,
+    trackDemoExitIntentDismissed,
+    trackDemoToAuth,
   };
 }
