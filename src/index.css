@@ -209,6 +209,27 @@
   }
 }
 
+/* Form highlight animation for banner CTA */
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5);
+    border-color: hsl(var(--primary));
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+    border-color: hsl(var(--primary));
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+    border-color: hsl(var(--border) / 0.5);
+  }
+}
+
+.form-highlight {
+  animation: highlight-pulse 1.5s ease-out;
+  border-color: hsl(var(--primary));
+}
+
 @layer utilities {
   /* Profit/positive values */
   .text-profit {
