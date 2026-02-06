@@ -16,7 +16,7 @@ const EXIT_INTENT_SESSION_KEY = 'pedy_demo_exit_intent_shown';
 
 export function DemoExitIntent() {
   const { guestEntryCount, totalEarnings, totalExpenses, netProfit, triggerSignupModal } = useGuestMode();
-  const { trackEvent } = useAnalytics();
+  const { trackDemoExitIntentShown, trackDemoExitIntentClicked, trackDemoExitIntentDismissed, trackDemoToAuth } = useAnalytics();
   const [isOpen, setIsOpen] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 
@@ -34,8 +34,8 @@ export function DemoExitIntent() {
     setIsOpen(true);
     setHasShown(true);
     sessionStorage.setItem(EXIT_INTENT_SESSION_KEY, 'true');
-    trackEvent('demo_exit_intent_shown', '/demo', { entry_count: guestEntryCount });
-  }, [hasShown, guestEntryCount, trackEvent]);
+    trackDemoExitIntentShown();
+  }, [hasShown, guestEntryCount, trackDemoExitIntentShown]);
 
   // Desktop: detect mouse leaving viewport from top
   useEffect(() => {
@@ -76,16 +76,14 @@ export function DemoExitIntent() {
 
   const handleSave = () => {
     setIsOpen(false);
-    trackEvent('demo_exit_intent_clicked', '/demo', {
-      total_earnings: totalEarnings,
-      total_expenses: totalExpenses,
-    });
+    trackDemoExitIntentClicked();
+    trackDemoToAuth('exit_intent');
     triggerSignupModal('Salve seus dados antes de sair');
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    trackEvent('demo_exit_intent_dismissed', '/demo');
+    trackDemoExitIntentDismissed();
   };
 
   const totalValue = totalEarnings + totalExpenses;

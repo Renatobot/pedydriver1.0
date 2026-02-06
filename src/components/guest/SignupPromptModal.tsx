@@ -38,7 +38,7 @@ export function SignupPromptModal() {
     totalExpenses,
     netProfit,
   } = useGuestMode();
-  const { trackDemoSignupTriggered, trackDemoSignupClicked } = useAnalytics();
+  const { trackDemoSignupTriggered, trackDemoSignupClicked, trackDemoToAuth } = useAnalytics();
 
   // Track when modal opens
   useEffect(() => {
@@ -49,6 +49,7 @@ export function SignupPromptModal() {
 
   const handleSignup = () => {
     trackDemoSignupClicked();
+    trackDemoToAuth('modal');
     setShowSignupModal(false);
     navigate('/auth?signup=true', { state: { fromDemo: true } });
   };

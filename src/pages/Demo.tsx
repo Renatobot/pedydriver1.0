@@ -20,7 +20,7 @@ const DEFAULT_COST_PER_KM = 0.5;
 
 export default function Demo() {
   const { addGuestEntry } = useGuestMode();
-  const { trackDemoPageView, trackDemoEntryAdded } = useAnalytics();
+  const { trackDemoPageView, trackDemoEntryAdded, trackDemoToAuth } = useAnalytics();
   
   // Form state
   const [value, setValue] = useState('');
@@ -204,6 +204,7 @@ export default function Demo() {
           <Button
             asChild
             className="w-full h-12 bg-gradient-profit hover:opacity-90 font-semibold"
+            onClick={() => trackDemoToAuth('cta')}
           >
             <Link to="/auth?signup=true" state={{ fromDemo: true }}>
               Criar conta grátis

@@ -14,7 +14,7 @@ const AUTO_DISMISS_MS = 15000;
 export function DemoProgressNudge() {
   const navigate = useNavigate();
   const { guestEntryCount, totalEarnings, totalExpenses, triggerSignupModal } = useGuestMode();
-  const { trackEvent } = useAnalytics();
+  const { trackDemoNudgeShown, trackDemoNudgeClicked, trackDemoNudgeDismissed, trackDemoToAuth } = useAnalytics();
   const [isVisible, setIsVisible] = useState(false);
   const [hasShown, setHasShown] = useState(false);
 
@@ -34,11 +34,11 @@ export function DemoProgressNudge() {
         setIsVisible(true);
         setHasShown(true);
         sessionStorage.setItem(NUDGE_SESSION_KEY, 'true');
-        trackEvent('demo_nudge_shown', '/demo', { entry_count: guestEntryCount });
+        trackDemoNudgeShown();
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [guestEntryCount, hasShown, isVisible, trackEvent]);
+  }, [guestEntryCount, hasShown, isVisible, trackDemoNudgeShown]);
 
   // Auto-dismiss after timeout
   useEffect(() => {
@@ -52,15 +52,13 @@ export function DemoProgressNudge() {
 
   const handleDismiss = () => {
     setIsVisible(false);
-    trackEvent('demo_nudge_dismissed', '/demo');
+    trackDemoNudgeDismissed();
   };
 
   const handleSaveClick = () => {
     setIsVisible(false);
-    trackEvent('demo_nudge_clicked', '/demo', { 
-      total_earnings: totalEarnings,
-      total_expenses: totalExpenses,
-    });
+    trackDemoNudgeClicked();
+    trackDemoToAuth('nudge');
     triggerSignupModal('Salve seus registros');
   };
 
