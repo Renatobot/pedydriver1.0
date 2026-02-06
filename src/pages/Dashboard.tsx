@@ -12,6 +12,7 @@ import { ExpenseDetailCard } from '@/components/dashboard/ExpenseDetailCard';
 import { WeeklyGoalsProgress } from '@/components/dashboard/WeeklyGoalsProgress';
 import { QuickAppLinks } from '@/components/dashboard/QuickAppLinks';
 import { MaintenanceAlertBanner } from '@/components/dashboard/MaintenanceAlertBanner';
+import { VehicleSetupReminder } from '@/components/dashboard/VehicleSetupReminder';
 import { CommunityRanking } from '@/components/dashboard/CommunityRanking';
 import { useDashboard, DateRange } from '@/hooks/useDashboard';
 import { useProcessRecurringExpenses } from '@/hooks/useRecurringExpenses';
@@ -128,6 +129,9 @@ export default function Dashboard() {
 
           {/* Maintenance Alert Banner */}
           <MaintenanceAlertBanner />
+
+          {/* Vehicle Setup Reminder */}
+          <VehicleSetupReminder />
 
           {/* PWA Install Banner */}
           <PWAInstallBanner />
