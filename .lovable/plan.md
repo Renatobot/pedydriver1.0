@@ -1,182 +1,140 @@
 
-# Plano: Sistema de Analytics para Landing Page e Cadastro
+# Plano: Melhorar Visibilidade do Cadastro
 
-## Objetivo
-Criar um sistema completo de rastreamento de visitantes na página de vendas (/landing) e no fluxo de cadastro (/auth), com painel no admin para visualizar:
-- Jornada completa dos visitantes
-- Onde os usuários desistem do cadastro
-- Taxa de conversão por etapa
-- Erros que impedem o cadastro
+## Diagnóstico
+
+Com base nos dados de analytics, identifiquei que:
+
+1. **93% dos visitantes ficam no modo "Login"** - Não percebem que precisam clicar em "Criar Conta"
+2. **O botão do header é pequeno** - Não há tracking, mas provavelmente pouco clicado
+3. **A landing page tem poucos acessos** - Maioria vai direto para /auth
 
 ---
 
-## O que você vai conseguir ver
+## Melhorias Propostas
 
-### 1. Funil de Conversão
+### 1. Página de Auth - Destaque para Novos Usuários
+
+**Antes:** Toggle neutro com "Entrar" selecionado por padrão
+
+**Depois:**
+- Adicionar um card destacado acima do toggle para novos visitantes
+- Texto: "Primeiro acesso? Crie sua conta grátis em 30 segundos"
+- Botão visual direcionando para o modo "Criar Conta"
+- Detecção de novo visitante via localStorage
+
+### 2. Header do Landing - CTA Mais Visível
+
+**Antes:** Botão pequeno "Começar grátis" no canto
+
+**Depois:**
+- Adicionar tracking de clique no botão do header
+- Botão com animação sutil de pulso quando scrollado
+- Aumentar levemente o tamanho em mobile
+
+### 3. Detecção Inteligente de Modo
+
+**Lógica:**
+- Se URL tem `?ref=` (indicação) → Abre em "Criar Conta"
+- Se URL tem `?signup` → Abre em "Criar Conta"
+- Se URL tem `?login` → Abre em "Entrar"
+- Se é primeiro acesso (sem histórico) → Mostra card de destaque
+
+### 4. Banner de Primeiro Acesso na Auth
+
 ```text
-Landing Page → Clique CTA → Página Auth → Início Cadastro → Cadastro Completo
-    100%          45%           42%            28%              18%
+┌─────────────────────────────────────────────┐
+│  🎉 Primeira vez aqui?                      │
+│  Crie sua conta grátis em segundos          │
+│  [Criar Conta Agora]                        │
+└─────────────────────────────────────────────┘
 ```
 
-### 2. Pontos de Abandono
-- Quantos saem da landing sem clicar
-- Quantos clicam no CTA mas não começam o cadastro
-- Quantos começam a preencher mas desistem em cada campo
-- Quantos tentam enviar mas recebem erro
+- Aparece apenas para visitantes sem sessão anterior
+- Dismiss permanente após clicar ou fechar
+- Direciona para o toggle de "Criar Conta"
 
-### 3. Erros Mais Comuns
-- "Senha muito fraca" - 45%
-- "Email já cadastrado" - 30%
-- "Telefone inválido" - 25%
+### 5. Analytics Adicionais
+
+- Track clique no CTA do header
+- Track impressões do banner de primeiro acesso
+- Track se usuário veio com parâmetro ?signup
+
+---
+
+## Arquivos que serão modificados
+
+```
+src/pages/Auth.tsx                    - Banner de primeiro acesso + lógica de modo
+src/components/landing/LandingHeader.tsx - Track CTA + animação
+```
 
 ---
 
 ## Implementação Técnica
 
-### Fase 1: Banco de Dados
+### Auth.tsx - Novo Banner
 
-**Nova tabela: `analytics_events`**
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | uuid | Identificador único |
-| session_id | text | ID da sessão do visitante |
-| event_type | text | Tipo: page_view, cta_click, form_start, field_focus, form_submit, error, signup_complete |
-| page | text | Página onde ocorreu |
-| metadata | jsonb | Dados extras (campo focado, erro, etc) |
-| referrer | text | De onde veio (Google, direto, indicação) |
-| device_type | text | mobile/desktop/tablet |
-| created_at | timestamp | Quando aconteceu |
+```tsx
+// Detectar primeiro acesso
+const [isFirstVisit, setIsFirstVisit] = useState(false);
 
-**Índices para performance:**
-- Por session_id e created_at
-- Por event_type e created_at
-- Por page e created_at
+useEffect(() => {
+  const hasVisited = localStorage.getItem('pedy_has_visited');
+  if (!hasVisited) {
+    setIsFirstVisit(true);
+    localStorage.setItem('pedy_has_visited', 'true');
+  }
+}, []);
 
-### Fase 2: Frontend - Rastreamento
+// Detectar parâmetro ?signup na URL
+useEffect(() => {
+  if (searchParams.get('signup') !== null) {
+    setMode('signup');
+  }
+}, [searchParams]);
 
-**Novo hook: `useAnalytics`**
-- Gera session_id único por visita
-- Detecta dispositivo (mobile/desktop)
-- Captura referrer (Google, link direto, indicação)
-- Funções: `trackPageView()`, `trackEvent()`, `trackError()`
-
-**Atualizações em componentes:**
-
-1. **Landing.tsx**
-   - Track page_view ao carregar
-   - Track scroll_depth (25%, 50%, 75%, 100%)
-   - Track section_view para cada seção visível
-
-2. **HeroSection.tsx / FinalCTA.tsx**
-   - Track cta_click ao clicar nos botões "Começar agora"
-
-3. **Auth.tsx**
-   - Track page_view ao carregar
-   - Track mode_switch ao trocar entre Login/Cadastro/Telefone
-   - Track form_start ao focar primeiro campo
-   - Track field_focus para cada campo (nome, email, telefone, senha)
-   - Track form_submit ao tentar enviar
-   - Track signup_error com mensagem traduzida
-   - Track signup_complete quando sucesso
-
-### Fase 3: Admin - Nova Página de Analytics
-
-**Novo arquivo: `src/pages/admin/AdminAnalytics.tsx`**
-
-Interface com:
-
-1. **Cards de Métricas Principais**
-   - Visitantes únicos (hoje/semana/mês)
-   - Taxa de conversão (visitantes → cadastros)
-   - Taxa de abandono do formulário
-   - Erro mais comum
-
-2. **Gráfico de Funil**
-   - Visualização vertical mostrando cada etapa
-   - Porcentagem de conversão entre etapas
-   - Cores indicando pontos críticos (vermelho = alta desistência)
-
-3. **Tabela de Erros**
-   - Lista dos erros mais frequentes
-   - Quantidade de ocorrências
-   - Porcentagem do total
-
-4. **Timeline de Eventos**
-   - Últimas 50 sessões
-   - Jornada completa de cada visitante
-   - Filtro por: completou cadastro / desistiu
-
-5. **Filtros**
-   - Período (hoje, 7 dias, 30 dias, customizado)
-   - Dispositivo (todos, mobile, desktop)
-   - Origem (todas, Google, direto, indicação)
-
-### Fase 4: Backend - RPC Functions
-
-**Novas funções SQL:**
-
-1. `get_analytics_funnel(days: int)` - Retorna dados do funil
-2. `get_analytics_errors(days: int)` - Retorna erros agrupados
-3. `get_analytics_sessions(limit: int)` - Retorna sessões com eventos
-4. `get_analytics_summary()` - Métricas resumidas para dashboard
-
----
-
-## Arquivos que serão criados/modificados
-
-### Novos arquivos:
-```
-src/hooks/useAnalytics.tsx          - Hook de rastreamento
-src/pages/admin/AdminAnalytics.tsx  - Página do admin
-src/components/admin/analytics/
-  ├── AnalyticsFunnel.tsx           - Gráfico de funil
-  ├── AnalyticsErrorsTable.tsx      - Tabela de erros
-  └── AnalyticsSessionList.tsx      - Lista de sessões
+// Banner de primeiro acesso
+{isFirstVisit && mode === 'login' && (
+  <div className="card-destaque">
+    <p>🎉 Primeira vez aqui?</p>
+    <Button onClick={() => setMode('signup')}>
+      Criar Conta Agora
+    </Button>
+  </div>
+)}
 ```
 
-### Arquivos modificados:
-```
-src/pages/Landing.tsx               - Adicionar tracking
-src/pages/Auth.tsx                  - Adicionar tracking detalhado
-src/components/landing/HeroSection.tsx   - Track CTA
-src/components/landing/FinalCTA.tsx      - Track CTA
-src/components/admin/AdminLayout.tsx     - Novo item no menu
-src/App.tsx                         - Nova rota /admin/analytics
-```
+### LandingHeader.tsx - CTA Melhorado
 
-### Migrações SQL:
-```
-1. Criar tabela analytics_events
-2. Criar índices
-3. Criar RPC functions
-4. Configurar RLS (apenas admins podem ler)
+```tsx
+// Adicionar analytics
+const { trackCTAClick } = useAnalytics();
+
+// Classe com animação quando scrollado
+className={cn(
+  "transition-all duration-300",
+  scrolled && "animate-pulse-subtle shadow-lg"
+)}
+
+onClick={() => trackCTAClick('header_cta', '/landing')}
 ```
 
 ---
 
-## Segurança
+## Resultado Esperado
 
-- Tabela `analytics_events` tem RLS habilitado
-- Apenas admins podem consultar dados via RPC
-- Dados sensíveis (email, telefone) não são armazenados nos eventos
-- Session_id é anônimo (não vinculado a usuário até cadastro completo)
+| Métrica | Antes | Depois |
+|---------|-------|--------|
+| Cliques em "Criar Conta" | 7.7% | ~40% |
+| Início de cadastro | 7.7% | ~35% |
+| Conclusão de cadastro | 0% | ~15-20% |
 
 ---
 
-## Exemplo de Uso
+## Resumo
 
-Quando um visitante chega:
-
-1. **Landing** → Evento: `page_view` (page: /landing, referrer: google.com)
-2. **Scroll 50%** → Evento: `scroll_depth` (depth: 50)
-3. **Clica CTA** → Evento: `cta_click` (button: hero_cta)
-4. **Auth page** → Evento: `page_view` (page: /auth)
-5. **Clica "Criar Conta"** → Evento: `mode_switch` (mode: signup)
-6. **Foca campo nome** → Evento: `form_start`
-7. **Preenche campos** → Eventos: `field_focus` para cada
-8. **Clica enviar** → Evento: `form_submit`
-9. **Erro de senha** → Evento: `signup_error` (error: "Senha muito fraca")
-10. **Corrige e envia** → Evento: `form_submit`
-11. **Sucesso** → Evento: `signup_complete`
-
-No admin você verá exatamente onde cada pessoa parou.
+1. Banner de destaque para novos visitantes
+2. Parâmetro ?signup para links de marketing
+3. CTA do header com tracking + animação
+4. Detecção inteligente de primeiro acesso
