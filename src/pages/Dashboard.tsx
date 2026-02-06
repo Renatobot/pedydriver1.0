@@ -135,15 +135,6 @@ export default function Dashboard() {
           {/* Entry Limit Banner */}
           <EntryLimitBanner />
 
-          {/* Gamification Card */}
-          <GamificationCard />
-
-          {/* Weekly Goals Progress */}
-          <WeeklyGoalsProgress />
-
-          {/* Community Ranking */}
-          <CommunityRanking />
-
           {/* Date Range Selector */}
           <DateRangeSelector value={range} onChange={setRange} />
 
@@ -250,6 +241,13 @@ export default function Dashboard() {
                   </div>
                 </div>
               </FeatureGate>
+
+              {/* Gamification & Goals Section - After financial metrics */}
+              <div className="space-y-3 sm:space-y-4 pt-2">
+                <GamificationCard />
+                <WeeklyGoalsProgress />
+                <CommunityRanking />
+              </div>
 
               {/* Platform Comparison */}
               {platformMetrics.length > 0 && (
