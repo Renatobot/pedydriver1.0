@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { useReferralCodeFromUrl, useReferral } from '@/hooks/useReferral';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { PlanSummary } from '@/components/auth/PlanSummary';
+import { hasGuestData, getGuestEntries, clearGuestData } from '@/lib/offlineDB';
+import { toast } from 'sonner';
 // Using optimized WebP icon for better performance
 import logo3d from '@/assets/logo-optimized.webp';
 
@@ -108,9 +111,15 @@ export default function Auth() {
   const [pendingRedirect, setPendingRedirect] = useState(false);
   const [showConversionBanner, setShowConversionBanner] = useState(shouldShowBanner);
   const [showFormHighlight, setShowFormHighlight] = useState(false);
+  const [hasGuestEntries, setHasGuestEntries] = useState(false);
+  const [guestEntryCount, setGuestEntryCount] = useState(0);
   const { signIn, signUp, user, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+  
+  // Check if coming from demo
+  const fromDemo = location.state?.fromDemo === true;
   
   // Refs for scroll + focus behavior
   const signupFormRef = useRef<HTMLFormElement>(null);
@@ -144,6 +153,24 @@ export default function Auth() {
       bannerViewTracked.current = true;
     }
   }, [showConversionBanner, referralCode, trackEvent]);
+
+  // Check for guest data on mount
+  useEffect(() => {
+    async function checkGuestData() {
+      const hasData = await hasGuestData();
+      setHasGuestEntries(hasData);
+      if (hasData) {
+        const entries = await getGuestEntries();
+        setGuestEntryCount(entries.length);
+        // If coming from demo with data, switch to signup mode
+        if (fromDemo) {
+          setMode('signup');
+          setShowConversionBanner(false);
+        }
+      }
+    }
+    checkGuestData();
+  }, [fromDemo]);
 
   // Detect URL params for mode selection
   useEffect(() => {
@@ -282,8 +309,85 @@ export default function Auth() {
       trackSignupError(translatedError);
     } else {
       trackSignupComplete();
+      
+      // Migrate guest data if exists - get user from session after signup
+      if (hasGuestEntries) {
+        // Small delay to ensure session is established
+        setTimeout(async () => {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user?.id) {
+            await migrateGuestDataToUser(sessionData.session.user.id);
+          }
+        }, 500);
+      }
+      
       // After signup, always go to user dashboard (new users are never admins)
       navigate('/');
+    }
+  };
+
+  // Function to migrate guest data after signup
+  const migrateGuestDataToUser = async (userId: string) => {
+    try {
+      const entries = await getGuestEntries();
+      
+      if (entries.length === 0) return;
+
+      // Get default platforms to map names to IDs
+      const { data: platforms } = await supabase
+        .from('platforms')
+        .select('id, name')
+        .or(`user_id.is.null,user_id.eq.${userId}`);
+
+      const platformMap = new Map(
+        platforms?.map(p => [p.name.toLowerCase(), p.id]) || []
+      );
+
+      // Separate entries by type
+      const earnings = entries.filter(e => e.type === 'earning');
+      const expenses = entries.filter(e => e.type === 'expense');
+
+      // Migrate earnings
+      if (earnings.length > 0) {
+        const earningsToInsert = earnings.map(entry => {
+          const platformId = platformMap.get(entry.platform_name.toLowerCase()) || null;
+          return {
+            user_id: userId,
+            amount: entry.amount,
+            date: entry.date,
+            platform_id: platformId,
+            notes: entry.notes || `Migrado do modo visitante`,
+            earning_type: 'corrida_entrega' as const,
+            payment_type: 'imediato' as const,
+            service_type: 'corrida' as const,
+            service_count: 1,
+          };
+        });
+
+        await supabase.from('earnings').insert(earningsToInsert);
+      }
+
+      // Migrate expenses
+      if (expenses.length > 0) {
+        const expensesToInsert = expenses.map(entry => ({
+          user_id: userId,
+          amount: entry.amount,
+          date: entry.date,
+          category: (entry.category as 'combustivel' | 'manutencao' | 'alimentacao' | 'outros') || 'outros',
+          notes: entry.notes || `Migrado do modo visitante`,
+        }));
+
+        await supabase.from('expenses').insert(expensesToInsert);
+      }
+
+      // Clear guest data after migration
+      await clearGuestData();
+      
+      toast.success('Seus dados foram salvos! 🎉', {
+        description: `${entries.length} registro(s) migrado(s) para sua conta.`,
+      });
+    } catch (error) {
+      console.error('Error migrating guest data:', error);
     }
   };
 
@@ -395,6 +499,11 @@ export default function Auth() {
             Código: {referralCode}
           </Badge>
         </div>
+      )}
+
+      {/* Plan Summary - show before signup form when switching to signup mode */}
+      {mode === 'signup' && !referralCode && (
+        <PlanSummary />
       )}
 
       {/* Logo */}
@@ -515,6 +624,16 @@ export default function Auth() {
 
         {mode === 'signup' && (
           <form ref={signupFormRef} onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-3 sm:space-y-4">
+            {/* Guest data migration notice */}
+            {hasGuestEntries && (
+              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 mb-2">
+                <p className="text-sm text-center">
+                  <span className="font-semibold text-primary">{guestEntryCount} registro{guestEntryCount !== 1 ? 's' : ''}</span>
+                  {' '}será{guestEntryCount !== 1 ? 'ão' : ''} salvo{guestEntryCount !== 1 ? 's' : ''} na sua conta
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-1.5 sm:space-y-2">
               <Label className="text-sm sm:text-base">Nome</Label>
               <div className="relative">

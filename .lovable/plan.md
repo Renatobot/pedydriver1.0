@@ -1,6 +1,8 @@
 
 # Plano: Modo Visitante com Persistência Local
 
+## ✅ Status: IMPLEMENTADO
+
 ## Objetivo
 Permitir que visitantes experimentem o app sem cadastro, salvando dados localmente, e solicitar criação de conta apenas quando tentarem salvar definitivamente ou acessar funcionalidades que requerem autenticação.
 

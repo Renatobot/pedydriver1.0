@@ -8,6 +8,20 @@ export interface PendingOperation {
   createdAt: number;
 }
 
+// Guest mode entry interface
+export interface GuestEntry {
+  id: string;
+  type: 'earning' | 'expense' | 'shift';
+  amount: number;
+  km?: number;
+  minutes?: number;
+  platform_name: string;
+  date: string;
+  notes?: string;
+  category?: string; // For expenses
+  created_at: number;
+}
+
 interface CachedData {
   id: string;
   table: string;
@@ -30,15 +44,23 @@ interface DriverPayDB extends DBSchema {
     key: string;
     value: { key: string; value: unknown };
   };
+  guestData: {
+    key: string;
+    value: GuestEntry;
+    indexes: { 'by-type': string; 'by-date': string; 'by-createdAt': number };
+  };
 }
 
 let dbInstance: IDBPDatabase<DriverPayDB> | null = null;
 
+// Database version - increment when adding new stores
+const DB_VERSION = 2;
+
 export async function getDB(): Promise<IDBPDatabase<DriverPayDB>> {
   if (dbInstance) return dbInstance;
 
-  dbInstance = await openDB<DriverPayDB>('driverpay-offline', 1, {
-    upgrade(db) {
+  dbInstance = await openDB<DriverPayDB>('driverpay-offline', DB_VERSION, {
+    upgrade(db, oldVersion) {
       // Store for pending operations (to sync when online)
       if (!db.objectStoreNames.contains('pendingOperations')) {
         const pendingStore = db.createObjectStore('pendingOperations', { keyPath: 'id' });
@@ -55,6 +77,14 @@ export async function getDB(): Promise<IDBPDatabase<DriverPayDB>> {
       // Store for sync metadata
       if (!db.objectStoreNames.contains('syncMetadata')) {
         db.createObjectStore('syncMetadata', { keyPath: 'key' });
+      }
+
+      // Store for guest mode data (added in version 2)
+      if (oldVersion < 2 && !db.objectStoreNames.contains('guestData')) {
+        const guestStore = db.createObjectStore('guestData', { keyPath: 'id' });
+        guestStore.createIndex('by-type', 'type');
+        guestStore.createIndex('by-date', 'date');
+        guestStore.createIndex('by-createdAt', 'created_at');
       }
     },
   });
@@ -183,4 +213,109 @@ export async function getSyncMetadata(key: string): Promise<unknown> {
   const db = await getDB();
   const item = await db.get('syncMetadata', key);
   return item?.value;
+}
+
+// ==========================================
+// Guest Mode Functions
+// ==========================================
+
+const GUEST_DATA_EXPIRY_DAYS = 7;
+
+/**
+ * Generate a unique ID for guest entries
+ */
+function generateGuestId(): string {
+  return `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Add a guest entry to IndexedDB
+ */
+export async function addGuestEntry(entry: Omit<GuestEntry, 'id' | 'created_at'>): Promise<string> {
+  const db = await getDB();
+  const id = generateGuestId();
+  
+  const fullEntry: GuestEntry = {
+    ...entry,
+    id,
+    created_at: Date.now(),
+  };
+  
+  await db.put('guestData', fullEntry);
+  
+  // Update last activity timestamp
+  await setSyncMetadata('guest_last_activity', Date.now());
+  
+  return id;
+}
+
+/**
+ * Get all guest entries
+ */
+export async function getGuestEntries(): Promise<GuestEntry[]> {
+  const db = await getDB();
+  return db.getAllFromIndex('guestData', 'by-createdAt');
+}
+
+/**
+ * Get guest entries by type (earning, expense, shift)
+ */
+export async function getGuestEntriesByType(type: GuestEntry['type']): Promise<GuestEntry[]> {
+  const db = await getDB();
+  return db.getAllFromIndex('guestData', 'by-type', type);
+}
+
+/**
+ * Get the count of guest entries
+ */
+export async function getGuestEntryCount(): Promise<number> {
+  const db = await getDB();
+  return db.count('guestData');
+}
+
+/**
+ * Delete a specific guest entry
+ */
+export async function deleteGuestEntry(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('guestData', id);
+}
+
+/**
+ * Clear all guest data
+ */
+export async function clearGuestData(): Promise<void> {
+  const db = await getDB();
+  await db.clear('guestData');
+  await setSyncMetadata('guest_last_activity', null);
+}
+
+/**
+ * Check if guest data has expired (7 days of inactivity)
+ */
+export async function isGuestDataExpired(): Promise<boolean> {
+  const lastActivity = await getSyncMetadata('guest_last_activity') as number | null;
+  
+  if (!lastActivity) return false;
+  
+  const expiryTime = GUEST_DATA_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+  return Date.now() - lastActivity > expiryTime;
+}
+
+/**
+ * Clean up expired guest data
+ */
+export async function cleanupExpiredGuestData(): Promise<void> {
+  const isExpired = await isGuestDataExpired();
+  if (isExpired) {
+    await clearGuestData();
+  }
+}
+
+/**
+ * Check if there's any guest data stored
+ */
+export async function hasGuestData(): Promise<boolean> {
+  const count = await getGuestEntryCount();
+  return count > 0;
 }

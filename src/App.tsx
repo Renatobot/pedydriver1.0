@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { GuidedTourProvider } from "@/contexts/GuidedTourContext";
+import { GuestModeProvider } from "@/contexts/GuestModeContext";
 import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
@@ -16,6 +17,7 @@ import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
 // Lazy load all pages for better code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Auth = lazy(() => import("./pages/Auth"));
+const Demo = lazy(() => import("./pages/Demo"));
 
 // Lazy load non-critical pages
 const Add = lazy(() => import("./pages/Add"));
@@ -99,6 +101,7 @@ function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/landing" element={<Landing />} />
+        <Route path="/demo" element={<Demo />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
@@ -136,13 +139,15 @@ const App = () => {
             <SyncProvider>
               <SubscriptionProvider>
                 <GuidedTourProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <SyncStatusIndicator />
-                    <PWAUpdatePrompt />
-                    <AppRoutes />
-                  </TooltipProvider>
+                  <GuestModeProvider>
+                    <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <SyncStatusIndicator />
+                      <PWAUpdatePrompt />
+                      <AppRoutes />
+                    </TooltipProvider>
+                  </GuestModeProvider>
                 </GuidedTourProvider>
               </SubscriptionProvider>
             </SyncProvider>

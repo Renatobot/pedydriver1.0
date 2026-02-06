@@ -35,12 +35,12 @@ export function HeroSection() {
         
         {/* CTA */}
         <div className="space-y-3 pt-4">
-          <Link to="/auth" onClick={handleCTAClick}>
+          <Link to="/demo" onClick={handleCTAClick}>
             <Button size="lg" className="bg-gradient-profit hover:opacity-90 text-lg px-8 py-6 h-auto touch-feedback">
-              Começar agora — é grátis
+              Testar grátis agora
             </Button>
           </Link>
-          <p className="text-sm text-muted-foreground">Sem cartão. Cancele quando quiser.</p>
+          <p className="text-sm text-muted-foreground">Sem cadastro. Sem cartão. Experimente em 30 segundos.</p>
         </div>
       </div>
     </section>

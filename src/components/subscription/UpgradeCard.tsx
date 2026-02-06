@@ -39,7 +39,7 @@ export function UpgradeCard({ feature, compact = false, className }: UpgradeCard
               {featureName ? `Desbloqueie ${featureName}` : 'Plano PRO'}
             </h3>
             <p className="text-sm text-muted-foreground">
-              Descubra onde vale a pena rodar e pare de perder tempo.
+              Convide amigos e ganhe 7 dias grátis!
             </p>
           </div>
 
