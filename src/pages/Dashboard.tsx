@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Clock, Navigation, Banknote, CreditCard, Hash, Play, Info, Layers, RefreshCw } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfitCard } from '@/components/dashboard/ProfitCard';
 import { MetricCard } from '@/components/dashboard/MetricCard';
@@ -30,14 +29,13 @@ import { useActiveShift } from '@/hooks/useActiveShift';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { Button } from '@/components/ui/button';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
-import { PageLoader } from '@/components/ui/splash-screen';
 import { format } from 'date-fns';
 import logoWebp from '@/assets/logo-optimized.webp';
 
 const RECURRING_PROCESSED_KEY = 'recurring_expenses_last_processed';
 
 export default function Dashboard() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user } = useAuth();
   const [range, setRange] = useState<DateRange>('day');
   const [showStartShiftModal, setShowStartShiftModal] = useState(false);
   const { 
@@ -76,15 +74,6 @@ export default function Dashboard() {
     await processRecurring.mutateAsync();
     await refetch();
   }, [refetch, processRecurring]);
-
-  // Redirect admins to /admin - wait for role check to complete
-  if (loading) {
-    return <PageLoader />;
-  }
-  
-  if (isAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
 
   return (
     <>
