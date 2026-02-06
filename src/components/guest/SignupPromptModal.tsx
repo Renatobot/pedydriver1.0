@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Rocket, Check, ArrowRight, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const FREE_FEATURES = [
   '30 registros por mês',
@@ -27,8 +29,17 @@ const PRO_FEATURES = [
 export function SignupPromptModal() {
   const navigate = useNavigate();
   const { showSignupModal, setShowSignupModal, signupModalReason, guestEntryCount } = useGuestMode();
+  const { trackDemoSignupTriggered, trackDemoSignupClicked } = useAnalytics();
+
+  // Track when modal opens
+  useEffect(() => {
+    if (showSignupModal) {
+      trackDemoSignupTriggered(signupModalReason || 'manual');
+    }
+  }, [showSignupModal, signupModalReason, trackDemoSignupTriggered]);
 
   const handleSignup = () => {
+    trackDemoSignupClicked();
     setShowSignupModal(false);
     navigate('/auth?signup=true', { state: { fromDemo: true } });
   };
