@@ -58,6 +58,26 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Protected route that also blocks admins from accessing user app
+function UserOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return <PageLoader />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect admins to admin panel
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 // Smart public route - redirects logged-in users based on their role
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, isAdmin } = useAuth();
@@ -83,14 +103,14 @@ function AppRoutes() {
         <Route path="/terms" element={<TermsOfUse />} />
         <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/quick" element={<ProtectedRoute><QuickEntry /></ProtectedRoute>} />
-        <Route path="/add" element={<ProtectedRoute><Add /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
+        <Route path="/" element={<UserOnlyRoute><Dashboard /></UserOnlyRoute>} />
+        <Route path="/quick" element={<UserOnlyRoute><QuickEntry /></UserOnlyRoute>} />
+        <Route path="/add" element={<UserOnlyRoute><Add /></UserOnlyRoute>} />
+        <Route path="/reports" element={<UserOnlyRoute><Reports /></UserOnlyRoute>} />
+        <Route path="/history" element={<UserOnlyRoute><History /></UserOnlyRoute>} />
+        <Route path="/achievements" element={<UserOnlyRoute><Achievements /></UserOnlyRoute>} />
+        <Route path="/settings" element={<UserOnlyRoute><Settings /></UserOnlyRoute>} />
+        <Route path="/upgrade" element={<UserOnlyRoute><Upgrade /></UserOnlyRoute>} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         {/* Admin Routes - protection handled by AdminLayout */}
         <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
