@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   GuestEntry, 
@@ -30,6 +30,10 @@ interface GuestModeContextValue {
   setShowSignupModal: (show: boolean) => void;
   triggerSignupModal: (reason?: string) => void;
   signupModalReason: string;
+  // New metrics for conversion optimization
+  totalEarnings: number;
+  totalExpenses: number;
+  netProfit: number;
 }
 
 const GuestModeContext = createContext<GuestModeContextValue | null>(null);
@@ -48,6 +52,21 @@ export function GuestModeProvider({ children }: { children: ReactNode }) {
 
   // Determine if user is in guest mode (on /demo route)
   const isGuest = location.pathname === '/demo';
+
+  // Calculate totals from guest entries
+  const { totalEarnings, totalExpenses, netProfit } = useMemo(() => {
+    const earnings = guestEntries
+      .filter(e => e.type === 'earning')
+      .reduce((sum, e) => sum + e.amount, 0);
+    const expenses = guestEntries
+      .filter(e => e.type === 'expense')
+      .reduce((sum, e) => sum + e.amount, 0);
+    return {
+      totalEarnings: earnings,
+      totalExpenses: expenses,
+      netProfit: earnings - expenses,
+    };
+  }, [guestEntries]);
 
   // Cleanup expired guest data on mount
   useEffect(() => {
@@ -209,6 +228,9 @@ export function GuestModeProvider({ children }: { children: ReactNode }) {
         setShowSignupModal,
         triggerSignupModal,
         signupModalReason,
+        totalEarnings,
+        totalExpenses,
+        netProfit,
       }}
     >
       {children}
