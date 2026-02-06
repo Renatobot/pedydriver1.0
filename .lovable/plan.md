@@ -1,229 +1,187 @@
 
-# Plano: Modo Visitante com Persistência Local
+# Plano: Otimização de Conversão do Modo Visitante
 
-## ✅ Status: IMPLEMENTADO
+## Problema Identificado
 
-## Objetivo
-Permitir que visitantes experimentem o app sem cadastro, salvando dados localmente, e solicitar criação de conta apenas quando tentarem salvar definitivamente ou acessar funcionalidades que requerem autenticação.
+Baseado nos dados de analytics:
+- **0 visitas em /demo** (o fluxo Product-Led não está sendo utilizado)
+- **82 visitas em /auth** (visitantes vão direto para cadastro)
+- **7 tentativas de signup, 0 concluídos** (alta fricção no cadastro)
+- **CTR do banner: 1.2%** (banner atual não é persuasivo)
 
----
-
-## Visão Geral do Fluxo
-
-```text
-Landing Page → CTA "Testar Grátis"
-       ↓
-   /demo (Modo Visitante)
-       ↓
-  Uso local (IndexedDB)
-       ↓
-  Tenta salvar/histórico/relatórios
-       ↓
-  Modal de Cadastro Amigável
-       ↓
-  Cadastro → Migração de dados → App completo
-```
+A causa raiz: o **CTA do Header** leva para `/auth?signup` enquanto deveria levar para `/demo`, criando um funil fragmentado.
 
 ---
 
 ## O que será implementado
 
-### 1. Nova rota /demo (Modo Visitante)
-- Acesso público direto da Landing Page
-- Badge "Modo Visitante" fixo no topo
-- Formulário de entrada rápida funcional (simulação de corrida)
-- Dados salvos APENAS no IndexedDB local (sem user_id)
-- Métricas calculadas em tempo real (R$/km, R$/hora, lucro líquido)
+### 1. Unificar CTAs para /demo
+Alterar o botão do Header para direcionar visitantes à experiência de demonstração antes do cadastro.
 
-### 2. Contexto GuestModeContext
-Novo contexto para gerenciar o estado de visitante:
-- `isGuest: boolean` — indica se está em modo visitante
-- `guestEntries: GuestEntry[]` — dados locais do visitante
-- `addGuestEntry()` — salva entrada no IndexedDB
-- `getGuestEntries()` — recupera entradas locais
-- `migrateToUser()` — migra dados para conta após cadastro
-- `clearGuestData()` — limpa dados locais
+### 2. Popup de Urgência após 2 Registros (DemoProgressNudge)
+Quando o visitante registrar 2+ entradas, exibir um popup:
+- Mostra o valor total registrado (ex: "R$ 150 em ganhos")
+- Cria senso de valor sem interromper
+- CTA: "Salvar meus dados" / "Continuar testando"
+- Aparece apenas 1x por sessão
 
-### 3. Persistência local dedicada (IndexedDB)
-Nova store `guestData` no offlineDB.ts:
-- Armazena ganhos, gastos e turnos do visitante
-- Dados marcados com `isGuest: true`
-- Expira após 7 dias sem uso
-- Migração automática para backend ao criar conta
+### 3. Banner Melhorado com Métricas em Tempo Real
+Atualizar o GuestModeBanner para mostrar:
+- Total de ganhos registrados (R$ X)
+- Indicador de dados temporários
+- CTA mais urgente: "Criar conta grátis"
 
-### 4. Gatilhos para solicitar cadastro
-Modal amigável aparece quando visitante tenta:
-- Acessar /history (Histórico)
-- Acessar /reports (Relatórios semanais/mensais)
-- Acessar /settings (Configurações)
-- Clicar em "Salvar e acompanhar evolução"
+### 4. Modal de Cadastro com Resumo Financeiro
+Melhorar o SignupPromptModal para exibir:
+- Resumo dos dados: "R$ X em ganhos, R$ Y em gastos"
+- Lucro calculado que será salvo
+- Mensagem de urgência: "Não perca seus registros"
 
-### 5. Modal de Cadastro (SignupPromptModal)
-Design amigável com:
-- Ícone motivacional
-- Texto: "Crie sua conta grátis para salvar seus dados, acompanhar sua evolução e descobrir onde está seu lucro de verdade."
-- Botão principal: "Criar conta grátis"
-- Texto secundário: "Leva 1 minuto • Sem cartão"
-- Link discreto: "Já tenho conta → Entrar"
+### 5. Detecção de Intenção de Saída (Exit Intent)
+Quando o visitante tentar sair da página /demo:
+- Desktop: mouse se move para fora da janela
+- Mobile: botão "voltar" ou tab switching
+- Exibe modal: "Quer salvar seus R$ X antes de ir?"
 
-### 6. Transparência sobre recursos pagos
-Nos componentes bloqueados do plano gratuito:
-- Preview esmaecido com blur (já existe via FeatureGate)
-- Ícone de cadeado (já existe)
-- Texto atualizado: "Recurso disponível no plano Pro. Você pode testar grátis por 7 dias após receber um link de indicação."
+### 6. Social Proof no Demo
+Adicionar na página de demonstração:
+- Contagem de motoristas ativos
+- Validação social discreta
 
-### 7. Ajustes na página de Login (/auth)
-- Botão "Criar conta grátis" visualmente maior e mais destacado
-- Manter banner de conversão no topo
-- Ao clicar no banner → scroll automático + foco no formulário (já implementado)
-
-### 8. Resumo pré-cadastro
-Antes de finalizar o cadastro, pequeno resumo:
-- O que está incluso no plano gratuito (30 registros/mês, 1 plataforma, histórico 7 dias)
-- O que é exclusivo do Pro (sem limites, relatórios avançados, etc.)
-- Linguagem simples e direta
+### 7. Novos Eventos de Analytics
+Rastrear interações para medir o impacto:
+- `demo_nudge_shown` / `demo_nudge_clicked` / `demo_nudge_dismissed`
+- `demo_exit_intent_shown` / `demo_exit_intent_clicked`
 
 ---
 
-## Arquivos a criar
+## Arquivos a Criar
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `src/contexts/GuestModeContext.tsx` | Contexto para gerenciar estado de visitante |
-| `src/pages/Demo.tsx` | Página de demonstração pública |
-| `src/components/guest/GuestModeBanner.tsx` | Badge "Modo Visitante" |
-| `src/components/guest/SignupPromptModal.tsx` | Modal amigável de cadastro |
-| `src/components/guest/DemoQuickEntry.tsx` | Formulário simplificado para visitantes |
-| `src/components/guest/GuestMetrics.tsx` | Métricas calculadas localmente |
-| `src/components/auth/PlanSummary.tsx` | Resumo dos planos antes do cadastro |
+| `src/components/guest/DemoProgressNudge.tsx` | Popup de urgência após 2 registros |
+| `src/components/guest/DemoExitIntent.tsx` | Modal de intenção de saída |
+| `src/components/guest/DemoSocialProof.tsx` | Badge de social proof |
 
 ---
 
-## Arquivos a modificar
+## Arquivos a Modificar
 
 | Arquivo | Modificação |
 |---------|-------------|
-| `src/App.tsx` | Adicionar rota /demo pública |
-| `src/lib/offlineDB.ts` | Adicionar store `guestData` com funções dedicadas |
-| `src/components/landing/HeroSection.tsx` | CTA "Testar grátis" aponta para /demo |
-| `src/components/landing/FinalCTA.tsx` | CTA secundário para /demo |
-| `src/pages/Auth.tsx` | Adicionar PlanSummary antes do botão de cadastro |
-| `src/components/subscription/FeatureGate.tsx` | Ajustar texto sobre trial de indicação |
-| `src/components/subscription/UpgradeCard.tsx` | Ajustar mensagem sobre trial |
+| `src/components/landing/LandingHeader.tsx` | CTA leva para `/demo` em vez de `/auth` |
+| `src/components/guest/GuestModeBanner.tsx` | Exibir total de ganhos e CTA mais urgente |
+| `src/components/guest/SignupPromptModal.tsx` | Adicionar resumo financeiro e urgência |
+| `src/pages/Demo.tsx` | Integrar nudge, exit intent e social proof |
+| `src/contexts/GuestModeContext.tsx` | Adicionar cálculo de totais (totalEarnings, totalExpenses) |
+| `src/hooks/useAnalytics.tsx` | Novos eventos de tracking |
 
 ---
 
 ## Detalhes Técnicos
 
-### Estrutura de dados do visitante (IndexedDB)
-
-```typescript
-interface GuestEntry {
-  id: string;           // UUID temporário
-  type: 'earning' | 'expense' | 'shift';
-  amount: number;
-  km?: number;
-  minutes?: number;
-  platform_name: string;  // Nome da plataforma (não ID)
-  date: string;
-  created_at: number;     // timestamp
-}
-```
-
-### Migração de dados ao cadastrar
-
-```typescript
-async function migrateGuestData(userId: string) {
-  const entries = await getGuestEntries();
-  
-  for (const entry of entries) {
-    // Busca ou cria a plataforma pelo nome
-    const platform = await findOrCreatePlatform(entry.platform_name);
-    
-    // Insere no Supabase com o user_id real
-    await supabase.from('earnings').insert({
-      ...entry,
-      user_id: userId,
-      platform_id: platform.id,
-    });
-  }
-  
-  // Limpa dados locais
-  await clearGuestData();
-}
-```
-
-### Fluxo de cadastro com migração
+### LandingHeader.tsx - Mudança do CTA
 
 ```text
-1. Visitante preenche dados em /demo
-2. Dados salvos no IndexedDB (guestData)
-3. Visitante clica em "Salvar evolução" ou tenta acessar /history
-4. Modal SignupPromptModal aparece
-5. Visitante clica "Criar conta grátis"
-6. Redirecionado para /auth com state { fromDemo: true }
-7. Após cadastro bem-sucedido:
-   a. migrateGuestData() é chamado
-   b. Dados são transferidos para o Supabase
-   c. IndexedDB é limpo
-   d. Usuário redirecionado para Dashboard
-8. Toast: "Seus dados foram salvos! 🎉"
+Antes:  <Link to="/auth?signup" ...>
+Depois: <Link to="/demo" ...>
+```
+
+### GuestModeBanner.tsx - Layout Melhorado
+
+```text
+┌─────────────────────────────────────────────┐
+│ ⏱️ Dados temporários │ R$ 150 │ [Criar conta grátis] │
+└─────────────────────────────────────────────┘
+```
+
+### DemoProgressNudge.tsx - Lógica de Trigger
+
+```text
+- Trigger: guestEntryCount >= 2 && !hasShownNudge
+- Salva no sessionStorage para não repetir
+- Desaparece após 10s ou interação
+- Tracking: demo_nudge_shown, demo_nudge_clicked
+```
+
+### DemoExitIntent.tsx - Detecção de Saída
+
+```text
+Desktop:
+- mouseout quando Y < 0 (mouse saindo pela parte superior)
+- Só dispara se guestEntryCount > 0
+
+Mobile:
+- visibilitychange event (quando troca de aba)
+- beforeunload (quando tenta fechar)
+```
+
+### Novos Métodos no GuestModeContext
+
+```typescript
+interface GuestModeContextValue {
+  // ... existentes
+  totalEarnings: number;    // Soma dos ganhos
+  totalExpenses: number;    // Soma dos gastos
+  netProfit: number;        // Lucro líquido
+}
 ```
 
 ---
 
 ## Textos e Mensagens
 
-### Modal de Cadastro
+### DemoProgressNudge
 ```text
-Título: "Crie sua conta grátis"
-Subtítulo: "Salve seus dados, acompanhe sua evolução e descubra onde está seu lucro de verdade."
-Botão: "Criar conta grátis"
-Microtexto: "Leva 1 minuto • Sem cartão"
-Link: "Já tenho conta → Entrar"
+Título: "Você já registrou R$ X!"
+Subtítulo: "Salve seus dados em 30 segundos"
+CTA Primário: "Salvar meus dados"
+CTA Secundário: "Continuar testando"
 ```
 
-### Recursos bloqueados (atualizado)
+### DemoExitIntent
 ```text
-"Recurso disponível no plano Pro.
-Convide amigos e ganhe 7 dias grátis!"
+Título: "Quer salvar seus R$ X?"
+Subtítulo: "Seus registros serão perdidos se você sair"
+CTA: "Salvar agora"
+Link: "Não, pode perder"
 ```
 
-### Resumo pré-cadastro
+### GuestModeBanner (atualizado)
 ```text
-Plano Gratuito inclui:
-✓ 30 registros por mês
-✓ 1 plataforma
-✓ Histórico dos últimos 7 dias
-✓ Cálculo de lucro real
-
-Plano PRO desbloqueia:
-✓ Registros ilimitados
-✓ Todas as plataformas
-✓ Histórico completo
-✓ Relatórios avançados
-✓ Melhores horários para trabalhar
+"⏱️ Dados temporários • R$ X registrado • [Criar conta grátis]"
 ```
 
 ---
 
-## Considerações de Segurança
+## Ordem de Implementação
 
-1. **Dados locais são efêmeros** — expiram após 7 dias sem uso
-2. **Migração segura** — validação do user_id antes de inserir
-3. **Sem fingerprint para visitantes** — fingerprint só usado após cadastro (indicação)
-4. **Dados nunca sobrescrevem** — migração verifica duplicatas por data/valor
+1. Alterar `LandingHeader.tsx` (CTA para /demo)
+2. Adicionar totais ao `GuestModeContext.tsx`
+3. Atualizar `GuestModeBanner.tsx` com métricas
+4. Criar `DemoProgressNudge.tsx`
+5. Criar `DemoExitIntent.tsx`
+6. Atualizar `SignupPromptModal.tsx` com resumo
+7. Criar `DemoSocialProof.tsx`
+8. Integrar tudo no `Demo.tsx`
+9. Adicionar eventos no `useAnalytics.tsx`
 
 ---
 
-## Ordem de implementação
+## Métricas de Sucesso Esperadas
 
-1. Atualizar `offlineDB.ts` com store de visitante
-2. Criar `GuestModeContext.tsx`
-3. Criar página `/demo` com entrada rápida
-4. Criar `SignupPromptModal` e `GuestModeBanner`
-5. Atualizar Landing Page CTAs
-6. Implementar lógica de migração no Auth
-7. Atualizar textos do FeatureGate/UpgradeCard
-8. Adicionar PlanSummary na página de cadastro
-9. Testes end-to-end do fluxo completo
+| Métrica | Atual | Meta |
+|---------|-------|------|
+| Visitas em /demo | 0 | 50%+ das visitas landing |
+| Registros no demo | 0 | 2+ por sessão |
+| Demo → Signup rate | 0% | 10%+ |
+| Signup completion | 0% | 30%+ |
+
+---
+
+## Considerações UX
+
+- Popups aparecem no máximo 1x por sessão
+- Valor primeiro: deixar experimentar antes de pedir cadastro
+- Mobile-first: todos os componentes touch-friendly
+- Urgência sutil: mostrar que dados são temporários sem assustar
