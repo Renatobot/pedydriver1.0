@@ -1,9 +1,16 @@
 import { Eye, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export function GuestModeBanner() {
   const { triggerSignupModal, guestEntryCount } = useGuestMode();
+  const { trackDemoCTAClick } = useAnalytics();
+
+  const handleSaveClick = () => {
+    trackDemoCTAClick('banner_save_data');
+    triggerSignupModal('Clicou em salvar dados');
+  };
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white shadow-lg">
@@ -26,7 +33,7 @@ export function GuestModeBanner() {
           size="sm"
           variant="secondary"
           className="bg-white text-amber-600 hover:bg-white/90 font-semibold text-xs h-8 px-3 flex-shrink-0"
-          onClick={() => triggerSignupModal()}
+          onClick={handleSaveClick}
         >
           <Sparkles className="w-3 h-3 mr-1.5" />
           Salvar dados

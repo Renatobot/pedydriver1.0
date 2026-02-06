@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useGuestMode } from '@/contexts/GuestModeContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -20,6 +21,7 @@ const QUICK_AMOUNTS = [20, 50, 100, 150];
 
 export function DemoQuickEntry() {
   const { addGuestEntry, triggerSignupModal } = useGuestMode();
+  const { trackDemoEntryAdded } = useAnalytics();
   const [selectedPlatform, setSelectedPlatform] = useState<string>('Uber');
   const [amount, setAmount] = useState<string>('');
   const [km, setKm] = useState<string>('');
@@ -51,6 +53,9 @@ export function DemoQuickEntry() {
         platform_name: selectedPlatform,
         date: format(new Date(), 'yyyy-MM-dd'),
       });
+
+      // Track earning added
+      trackDemoEntryAdded('earning', { amount: numAmount, platform: selectedPlatform });
 
       // Show success animation
       setShowSuccess(true);

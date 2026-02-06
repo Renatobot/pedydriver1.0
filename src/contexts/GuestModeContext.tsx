@@ -13,6 +13,7 @@ import {
 } from '@/lib/offlineDB';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface GuestModeContextValue {
   isGuest: boolean;
@@ -43,6 +44,7 @@ export function GuestModeProvider({ children }: { children: ReactNode }) {
   const [signupModalReason, setSignupModalReason] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
+  const { trackDemoDataMigrated } = useAnalytics();
 
   // Determine if user is in guest mode (on /demo route)
   const isGuest = location.pathname === '/demo';
@@ -172,6 +174,9 @@ export function GuestModeProvider({ children }: { children: ReactNode }) {
 
       // Clear guest data after successful migration
       await clearGuestData();
+      
+      // Track migration event
+      trackDemoDataMigrated(entries.length);
       
       toast.success('Seus dados foram salvos! 🎉', {
         description: `${entries.length} registro(s) migrado(s) para sua conta.`,

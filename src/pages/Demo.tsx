@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, Fuel, Wrench, Coffee, MoreHorizontal } from 'lucide-react';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,10 +31,16 @@ const EXPENSE_CATEGORIES = [
 
 export default function Demo() {
   const { addGuestEntry } = useGuestMode();
+  const { trackDemoPageView, trackDemoEntryAdded } = useAnalytics();
   const [expenseAmount, setExpenseAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('combustivel');
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Track page view on mount
+  useEffect(() => {
+    trackDemoPageView();
+  }, [trackDemoPageView]);
 
   const handleAddExpense = async () => {
     const amount = parseFloat(expenseAmount);
@@ -51,6 +58,9 @@ export default function Demo() {
         platform_name: 'Geral',
         date: format(new Date(), 'yyyy-MM-dd'),
       });
+      
+      // Track expense added
+      trackDemoEntryAdded('expense', { amount, category: selectedCategory });
       
       toast.success('Gasto registrado!');
       setExpenseAmount('');

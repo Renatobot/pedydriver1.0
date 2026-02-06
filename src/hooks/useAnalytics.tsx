@@ -152,6 +152,42 @@ export function useAnalytics() {
     trackEvent('section_view', page, { section });
   }, [trackEvent]);
 
+  // ===== Guest Mode / Demo Events =====
+
+  // Track demo page view
+  const trackDemoPageView = useCallback(() => {
+    trackEvent('demo_page_view', '/demo');
+  }, [trackEvent]);
+
+  // Track demo entry added (earning or expense)
+  const trackDemoEntryAdded = useCallback((entryType: 'earning' | 'expense', metadata: {
+    amount: number;
+    platform?: string;
+    category?: string;
+  }) => {
+    trackEvent('demo_entry_added', '/demo', { entry_type: entryType, ...metadata });
+  }, [trackEvent]);
+
+  // Track demo signup triggered (modal opened)
+  const trackDemoSignupTriggered = useCallback((trigger: string) => {
+    trackEvent('demo_signup_triggered', '/demo', { trigger });
+  }, [trackEvent]);
+
+  // Track demo signup clicked (user clicked create account)
+  const trackDemoSignupClicked = useCallback(() => {
+    trackEvent('demo_signup_clicked', '/demo');
+  }, [trackEvent]);
+
+  // Track demo data migration
+  const trackDemoDataMigrated = useCallback((entryCount: number) => {
+    trackEvent('demo_data_migrated', '/auth', { entry_count: entryCount });
+  }, [trackEvent]);
+
+  // Track demo CTA click (save data button)
+  const trackDemoCTAClick = useCallback((ctaType: string) => {
+    trackEvent('demo_cta_click', '/demo', { cta_type: ctaType });
+  }, [trackEvent]);
+
   return {
     sessionId: sessionId.current,
     deviceType: deviceType.current,
@@ -168,5 +204,12 @@ export function useAnalytics() {
     trackSignupComplete,
     trackSectionView,
     hasTrackedPageView,
+    // Demo/Guest mode tracking
+    trackDemoPageView,
+    trackDemoEntryAdded,
+    trackDemoSignupTriggered,
+    trackDemoSignupClicked,
+    trackDemoDataMigrated,
+    trackDemoCTAClick,
   };
 }
