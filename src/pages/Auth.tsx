@@ -82,7 +82,7 @@ const translateAuthError = (message: string): string => {
   return message; // Retorna original se não encontrar tradução
 };
 
-const FIRST_VISIT_KEY = 'pedy_has_visited_auth';
+// Removed FIRST_VISIT_KEY - banner now always shows for non-logged users
 
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup' | 'phone'>('login');
@@ -90,8 +90,7 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState(false);
-  const [showFirstVisitBanner, setShowFirstVisitBanner] = useState(false);
+  const [showFirstVisitBanner, setShowFirstVisitBanner] = useState(true); // Always show initially
   const { signIn, signUp, user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -116,18 +115,10 @@ export default function Auth() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const { registerPendingReferral, fingerprint } = useReferral();
 
-  // Detect first visit and URL params for mode
+  // Detect URL params for mode selection
   useEffect(() => {
-    const hasVisited = localStorage.getItem(FIRST_VISIT_KEY);
     const signupParam = searchParams.get('signup');
     const loginParam = searchParams.get('login');
-
-    // First visit: always show the banner (even if we deep-link to signup)
-    if (!hasVisited) {
-      setIsFirstVisit(true);
-      setShowFirstVisitBanner(true);
-      trackEvent('first_visit_banner_shown', '/auth');
-    }
 
     // URL params take priority for mode selection
     if (signupParam !== null) {
@@ -136,9 +127,6 @@ export default function Auth() {
     } else if (loginParam !== null) {
       setMode('login');
     }
-
-    // Mark as visited
-    localStorage.setItem(FIRST_VISIT_KEY, 'true');
   }, [searchParams, trackEvent]);
 
   // Track page view once
