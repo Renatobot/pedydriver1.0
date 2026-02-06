@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, User, Eye, EyeOff, Phone, Gift, Sparkles, X } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Phone, Gift, Rocket, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,8 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import logo3d from '@/assets/logo-optimized.webp';
 
 const REFERRAL_CODE_KEY = 'pedy_referral_code';
+const BANNER_DISMISS_KEY = 'pedy_auth_banner_dismissed';
+const BANNER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
@@ -82,7 +84,21 @@ const translateAuthError = (message: string): string => {
   return message; // Retorna original se não encontrar tradução
 };
 
-// Removed FIRST_VISIT_KEY - banner now always shows for non-logged users
+// Check if banner should show (respects 24h cooldown after dismiss)
+const shouldShowBanner = (): boolean => {
+  try {
+    const dismissedAt = localStorage.getItem(BANNER_DISMISS_KEY);
+    if (!dismissedAt) return true;
+    
+    const timestamp = parseInt(dismissedAt, 10);
+    if (isNaN(timestamp)) return true;
+    
+    // Show banner again if 24h have passed
+    return Date.now() - timestamp > BANNER_COOLDOWN_MS;
+  } catch {
+    return true;
+  }
+};
 
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup' | 'phone'>('login');
@@ -90,10 +106,15 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState(false);
-  const [showFirstVisitBanner, setShowFirstVisitBanner] = useState(true); // Always show initially
+  const [showConversionBanner, setShowConversionBanner] = useState(shouldShowBanner);
+  const [showFormHighlight, setShowFormHighlight] = useState(false);
   const { signIn, signUp, user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Refs for scroll + focus behavior
+  const signupFormRef = useRef<HTMLFormElement>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   
   // Analytics tracking
   const { 
@@ -109,11 +130,20 @@ export default function Auth() {
   } = useAnalytics();
   const formStarted = useRef(false);
   const focusedFields = useRef<Set<string>>(new Set());
+  const bannerViewTracked = useRef(false);
   
   // Detect referral code from URL
   const referralCodeFromUrl = useReferralCodeFromUrl();
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const { registerPendingReferral, fingerprint } = useReferral();
+
+  // Track banner view once when visible
+  useEffect(() => {
+    if (showConversionBanner && !bannerViewTracked.current && !referralCode) {
+      trackEvent('auth_banner_view', '/auth');
+      bannerViewTracked.current = true;
+    }
+  }, [showConversionBanner, referralCode, trackEvent]);
 
   // Detect URL params for mode selection
   useEffect(() => {
@@ -156,7 +186,7 @@ export default function Auth() {
       localStorage.setItem(REFERRAL_CODE_KEY, code);
       // Switch to signup mode when coming from referral link
       setMode('signup');
-      setShowFirstVisitBanner(false); // Hide banner when coming from referral
+      setShowConversionBanner(false); // Hide banner when coming from referral
     } else {
       // Check if there's a stored code
       const storedCode = localStorage.getItem(REFERRAL_CODE_KEY);
@@ -166,11 +196,37 @@ export default function Auth() {
     }
   }, [searchParams]);
 
-  const handleFirstVisitCTA = () => {
-    setMode('signup');
-    setShowFirstVisitBanner(false);
-    trackEvent('first_visit_banner_click', '/auth');
+  // Handle banner click - switch to signup, scroll to form, focus first field
+  const handleBannerClick = () => {
+    // Track analytics
+    trackEvent('auth_banner_click', '/auth');
     trackModeSwitch('signup');
+    
+    // Switch to signup mode
+    setMode('signup');
+    
+    // Small delay to let React update the DOM
+    setTimeout(() => {
+      // Scroll to form
+      signupFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      
+      // Focus first input after scroll
+      setTimeout(() => {
+        firstInputRef.current?.focus();
+        
+        // Highlight form temporarily
+        setShowFormHighlight(true);
+        setTimeout(() => setShowFormHighlight(false), 1500);
+      }, 300);
+    }, 50);
+  };
+
+  // Handle banner dismiss - save to localStorage with timestamp
+  const handleBannerDismiss = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering banner click
+    trackEvent('auth_banner_dismissed', '/auth');
+    localStorage.setItem(BANNER_DISMISS_KEY, Date.now().toString());
+    setShowConversionBanner(false);
   };
 
   // Register pending referral after successful signup (does NOT grant bonus immediately)
@@ -276,6 +332,53 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 safe-top safe-bottom">
+      {/* Conversion Banner - Shows for non-referral visitors, respects 24h cooldown */}
+      {showConversionBanner && mode !== 'phone' && !referralCode && (
+        <div 
+          onClick={handleBannerClick}
+          className="w-full max-w-xs sm:max-w-sm mb-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 border border-primary/40 animate-fade-in cursor-pointer relative group hover:border-primary/60 transition-colors"
+        >
+          {/* Close button */}
+          <button 
+            onClick={handleBannerDismiss}
+            className="absolute top-3 right-3 p-1.5 text-muted-foreground hover:text-foreground hover:bg-background/50 rounded-full transition-colors z-10"
+            aria-label="Fechar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          
+          <div className="flex items-start gap-3 sm:gap-4">
+            {/* Icon */}
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-profit flex items-center justify-center flex-shrink-0 shadow-lg">
+              <Rocket className="w-6 h-6 sm:w-7 sm:h-7 text-primary-foreground" />
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 pr-6">
+              <h3 className="text-base sm:text-lg font-bold text-foreground">
+                🎉 Primeira vez aqui, motorista?
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Crie sua conta grátis e descubra seu lucro real hoje.
+              </p>
+              
+              {/* CTA Button */}
+              <Button 
+                size="default"
+                className="mt-4 w-full bg-gradient-profit hover:opacity-90 text-sm sm:text-base font-bold h-11 sm:h-12 shadow-md group-hover:shadow-lg transition-shadow"
+              >
+                Criar conta grátis
+              </Button>
+              
+              {/* Microtexto */}
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Sem cartão • Leva 1 minuto
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Referral Banner */}
       {referralCode && (
         <div className="w-full max-w-xs sm:max-w-sm mb-4 p-3 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 animate-fade-in">
@@ -293,37 +396,6 @@ export default function Auth() {
           </Badge>
         </div>
       )}
-
-       {/* First Visit Banner - Only shows for new visitors (login or signup), and not on phone login */}
-       {showFirstVisitBanner && mode !== 'phone' && !referralCode && (
-         <div className="w-full max-w-xs sm:max-w-sm mb-4 p-4 rounded-xl bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border border-primary/30 animate-fade-in relative">
-           <button 
-             onClick={() => setShowFirstVisitBanner(false)}
-             className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
-             aria-label="Fechar"
-           >
-             <X className="w-4 h-4" />
-           </button>
-           <div className="flex items-start gap-3">
-             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-               <Sparkles className="w-5 h-5 text-primary" />
-             </div>
-             <div className="flex-1 pr-4">
-               <p className="text-sm font-semibold text-foreground">🎉 Primeira vez aqui?</p>
-               <p className="text-xs text-muted-foreground mt-0.5">
-                 Crie sua conta grátis em segundos e comece a controlar seus ganhos!
-               </p>
-               <Button 
-                 size="sm" 
-                 onClick={handleFirstVisitCTA}
-                 className="mt-3 w-full bg-gradient-profit hover:opacity-90 text-sm font-semibold h-9"
-               >
-                 {mode === 'signup' ? 'Continuar Cadastro' : 'Criar Conta Agora'}
-               </Button>
-             </div>
-           </div>
-         </div>
-       )}
 
       {/* Logo */}
       <div className="mb-6 sm:mb-8 text-center">
@@ -370,7 +442,10 @@ export default function Auth() {
       </div>
 
       {/* Form Container */}
-      <div className="w-full max-w-xs sm:max-w-sm bg-card rounded-2xl p-4 sm:p-6 border border-border/50 animate-fade-in">
+      <div className={cn(
+        "w-full max-w-xs sm:max-w-sm bg-card rounded-2xl p-4 sm:p-6 border border-border/50 animate-fade-in transition-all duration-300",
+        showFormHighlight && "form-highlight"
+      )}>
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
             <p className="text-xs sm:text-sm text-destructive">{error}</p>
@@ -439,12 +514,13 @@ export default function Auth() {
         )}
 
         {mode === 'signup' && (
-          <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-3 sm:space-y-4">
+          <form ref={signupFormRef} onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-3 sm:space-y-4">
             <div className="space-y-1.5 sm:space-y-2">
               <Label className="text-sm sm:text-base">Nome</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                 <Input
+                  ref={firstInputRef}
                   type="text"
                   placeholder="Seu nome"
                   className="pl-9 sm:pl-10 h-11 sm:h-12 text-sm sm:text-base"
