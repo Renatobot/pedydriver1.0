@@ -1,140 +1,158 @@
 
-# Plano: Melhorar Visibilidade do Cadastro
-
-## Diagnóstico
-
-Com base nos dados de analytics, identifiquei que:
-
-1. **93% dos visitantes ficam no modo "Login"** - Não percebem que precisam clicar em "Criar Conta"
-2. **O botão do header é pequeno** - Não há tracking, mas provavelmente pouco clicado
-3. **A landing page tem poucos acessos** - Maioria vai direto para /auth
-
----
-
-## Melhorias Propostas
-
-### 1. Página de Auth - Destaque para Novos Usuários
-
-**Antes:** Toggle neutro com "Entrar" selecionado por padrão
-
-**Depois:**
-- Adicionar um card destacado acima do toggle para novos visitantes
-- Texto: "Primeiro acesso? Crie sua conta grátis em 30 segundos"
-- Botão visual direcionando para o modo "Criar Conta"
-- Detecção de novo visitante via localStorage
-
-### 2. Header do Landing - CTA Mais Visível
-
-**Antes:** Botão pequeno "Começar grátis" no canto
-
-**Depois:**
-- Adicionar tracking de clique no botão do header
-- Botão com animação sutil de pulso quando scrollado
-- Aumentar levemente o tamanho em mobile
-
-### 3. Detecção Inteligente de Modo
-
-**Lógica:**
-- Se URL tem `?ref=` (indicação) → Abre em "Criar Conta"
-- Se URL tem `?signup` → Abre em "Criar Conta"
-- Se URL tem `?login` → Abre em "Entrar"
-- Se é primeiro acesso (sem histórico) → Mostra card de destaque
-
-### 4. Banner de Primeiro Acesso na Auth
-
-```text
-┌─────────────────────────────────────────────┐
-│  🎉 Primeira vez aqui?                      │
-│  Crie sua conta grátis em segundos          │
-│  [Criar Conta Agora]                        │
-└─────────────────────────────────────────────┘
-```
-
-- Aparece apenas para visitantes sem sessão anterior
-- Dismiss permanente após clicar ou fechar
-- Direciona para o toggle de "Criar Conta"
-
-### 5. Analytics Adicionais
-
-- Track clique no CTA do header
-- Track impressões do banner de primeiro acesso
-- Track se usuário veio com parâmetro ?signup
-
----
-
-## Arquivos que serão modificados
-
-```
-src/pages/Auth.tsx                    - Banner de primeiro acesso + lógica de modo
-src/components/landing/LandingHeader.tsx - Track CTA + animação
-```
-
----
-
-## Implementação Técnica
-
-### Auth.tsx - Novo Banner
-
-```tsx
-// Detectar primeiro acesso
-const [isFirstVisit, setIsFirstVisit] = useState(false);
-
-useEffect(() => {
-  const hasVisited = localStorage.getItem('pedy_has_visited');
-  if (!hasVisited) {
-    setIsFirstVisit(true);
-    localStorage.setItem('pedy_has_visited', 'true');
-  }
-}, []);
-
-// Detectar parâmetro ?signup na URL
-useEffect(() => {
-  if (searchParams.get('signup') !== null) {
-    setMode('signup');
-  }
-}, [searchParams]);
-
-// Banner de primeiro acesso
-{isFirstVisit && mode === 'login' && (
-  <div className="card-destaque">
-    <p>🎉 Primeira vez aqui?</p>
-    <Button onClick={() => setMode('signup')}>
-      Criar Conta Agora
-    </Button>
-  </div>
-)}
-```
-
-### LandingHeader.tsx - CTA Melhorado
-
-```tsx
-// Adicionar analytics
-const { trackCTAClick } = useAnalytics();
-
-// Classe com animação quando scrollado
-className={cn(
-  "transition-all duration-300",
-  scrolled && "animate-pulse-subtle shadow-lg"
-)}
-
-onClick={() => trackCTAClick('header_cta', '/landing')}
-```
-
----
-
-## Resultado Esperado
-
-| Métrica | Antes | Depois |
-|---------|-------|--------|
-| Cliques em "Criar Conta" | 7.7% | ~40% |
-| Início de cadastro | 7.7% | ~35% |
-| Conclusão de cadastro | 0% | ~15-20% |
-
----
+# Plano: Banner de Conversao - "Primeira vez aqui, motorista?"
 
 ## Resumo
 
-1. Banner de destaque para novos visitantes
-2. Parâmetro ?signup para links de marketing
-3. CTA do header com tracking + animação
-4. Detecção inteligente de primeiro acesso
+Substituir o banner atual de primeiro acesso por um novo banner maior, mais impactante e com comportamento avancado que direciona o usuario para o cadastro com scroll suave e foco automatico no formulario.
+
+---
+
+## O que sera implementado
+
+### 1. Novo Banner Visual
+
+**Posicao:** Acima do logo, no topo da pagina de login
+
+**Design:**
+- Fundo com gradiente verde sutil + borda verde
+- Icone de foguete/estrela a esquerda
+- Card inteiro clicavel (nao so o botao)
+- Botao X para fechar no canto superior direito
+- 100% responsivo (otimizado para mobile)
+
+**Textos exatos:**
+- Titulo: "Primeira vez aqui, motorista?"
+- Subtitulo: "Crie sua conta gratis e descubra seu lucro real hoje."
+- Botao: "Criar conta gratis"
+- Microtexto: "Sem cartao - Leva 1 minuto"
+
+### 2. Comportamento do Clique
+
+Quando o usuario clicar no banner ou no botao:
+
+1. Trocar para a aba "Criar Conta"
+2. Scroll suave ate o formulario de cadastro
+3. Focar no primeiro campo (Nome)
+4. Highlight temporario com borda verde por 1.5 segundos
+5. Registrar evento de analytics
+
+### 3. Logica de Exibicao com Cooldown
+
+- Banner aparece por padrao para usuarios nao logados
+- Ao fechar (X), salvar timestamp no localStorage
+- Nao reexibir por 24 horas apos fechar
+- Se 24h passaram, mostrar novamente
+
+### 4. Eventos de Analytics
+
+Novos eventos a serem registrados:
+
+```text
+auth_banner_view        - Quando o banner aparece na tela
+auth_banner_click       - Quando usuario clica no banner/botao  
+auth_banner_dismissed   - Quando usuario fecha o banner (X)
+```
+
+Eventos existentes que serao reutilizados:
+- `auth_tab_switched_to_signup` (via trackModeSwitch)
+- `signup_form_started` (via trackFormStart existente)
+- `signup_submitted` (via trackFormSubmit existente)
+
+---
+
+## Alteracoes Tecnicas
+
+### Arquivo: src/pages/Auth.tsx
+
+**Adicionar:**
+- Constante `BANNER_DISMISS_KEY` para localStorage
+- Constante `BANNER_COOLDOWN_MS` = 24 horas
+- Ref `signupFormRef` para o container do formulario
+- Ref `firstInputRef` para o campo Nome
+- Estado `showFormHighlight` para animacao de destaque
+- Funcao `shouldShowBanner()` que verifica cooldown de 24h
+- Funcao `handleBannerDismiss()` que salva timestamp e fecha
+- Funcao `handleBannerClick()` com comportamento completo
+
+**Modificar:**
+- Banner existente sera substituido pelo novo design
+- Adicionar `ref={signupFormRef}` no container do formulario de signup
+- Adicionar `ref={firstInputRef}` no Input de Nome
+
+### Arquivo: src/index.css
+
+**Adicionar:**
+- Keyframe `highlight-pulse` para animacao de borda verde
+- Classe `.form-highlight` com borda verde animada
+
+---
+
+## Estrutura do Novo Banner
+
+```text
++----------------------------------------------------------+
+|  [X]                                                      |
+|                                                           |
+|  [ICONE]   Primeira vez aqui, motorista?                 |
+|            Crie sua conta gratis e descubra seu          |
+|            lucro real hoje.                               |
+|                                                           |
+|            [====== Criar conta gratis ======]            |
+|                                                           |
+|            Sem cartao - Leva 1 minuto                    |
++----------------------------------------------------------+
+```
+
+---
+
+## Fluxo de Usuario
+
+```text
+Usuario abre /auth
+       |
+       v
+Banner visivel? ----[Nao]----> Mostra login normal
+       |
+      [Sim]
+       |
+       v
++------------------+
+| Banner aparece   |
+| (auth_banner_view)|
++------------------+
+       |
+   Clica no X?
+      /    \
+    Sim     Nao
+     |       |
+     v       v
+Fecha banner   Clica no banner
+Salva 24h      (auth_banner_click)
+cooldown            |
+                    v
+           Troca para "Criar Conta"
+           Scroll suave ate formulario
+           Foco no campo Nome
+           Highlight verde 1.5s
+                    |
+                    v
+           Usuario preenche cadastro
+```
+
+---
+
+## Verificacao de Qualidade
+
+Criterios que serao atendidos:
+
+- Banner aparece no topo ao abrir /auth
+- Card inteiro e clicavel
+- Ao clicar, muda para "Criar Conta" automaticamente
+- Scroll suave ate o formulario
+- Campo Nome recebe foco
+- Borda verde aparece brevemente
+- Fechar (X) oculta por 24 horas
+- Funciona perfeitamente no mobile
+- Eventos aparecem no console/analytics
+- Nao altera logica de login/cadastro existente
+- Mantem "Esqueci minha senha" e tabs atuais
