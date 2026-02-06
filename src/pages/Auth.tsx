@@ -121,20 +121,22 @@ export default function Auth() {
     const hasVisited = localStorage.getItem(FIRST_VISIT_KEY);
     const signupParam = searchParams.get('signup');
     const loginParam = searchParams.get('login');
-    
-    // URL params take priority
+
+    // First visit: always show the banner (even if we deep-link to signup)
+    if (!hasVisited) {
+      setIsFirstVisit(true);
+      setShowFirstVisitBanner(true);
+      trackEvent('first_visit_banner_shown', '/auth');
+    }
+
+    // URL params take priority for mode selection
     if (signupParam !== null) {
       setMode('signup');
       trackEvent('url_param_signup', '/auth');
     } else if (loginParam !== null) {
       setMode('login');
-    } else if (!hasVisited) {
-      // First visit - show banner
-      setIsFirstVisit(true);
-      setShowFirstVisitBanner(true);
-      trackEvent('first_visit_banner_shown', '/auth');
     }
-    
+
     // Mark as visited
     localStorage.setItem(FIRST_VISIT_KEY, 'true');
   }, [searchParams, trackEvent]);
@@ -304,36 +306,36 @@ export default function Auth() {
         </div>
       )}
 
-      {/* First Visit Banner - Only shows for new visitors in login mode */}
-      {showFirstVisitBanner && mode === 'login' && !referralCode && (
-        <div className="w-full max-w-xs sm:max-w-sm mb-4 p-4 rounded-xl bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border border-primary/30 animate-fade-in relative">
-          <button 
-            onClick={() => setShowFirstVisitBanner(false)}
-            className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Fechar"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 pr-4">
-              <p className="text-sm font-semibold text-foreground">🎉 Primeira vez aqui?</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Crie sua conta grátis em segundos e comece a controlar seus ganhos!
-              </p>
-              <Button 
-                size="sm" 
-                onClick={handleFirstVisitCTA}
-                className="mt-3 w-full bg-gradient-profit hover:opacity-90 text-sm font-semibold h-9"
-              >
-                Criar Conta Agora
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+       {/* First Visit Banner - Only shows for new visitors (login or signup), and not on phone login */}
+       {showFirstVisitBanner && mode !== 'phone' && !referralCode && (
+         <div className="w-full max-w-xs sm:max-w-sm mb-4 p-4 rounded-xl bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border border-primary/30 animate-fade-in relative">
+           <button 
+             onClick={() => setShowFirstVisitBanner(false)}
+             className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+             aria-label="Fechar"
+           >
+             <X className="w-4 h-4" />
+           </button>
+           <div className="flex items-start gap-3">
+             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+               <Sparkles className="w-5 h-5 text-primary" />
+             </div>
+             <div className="flex-1 pr-4">
+               <p className="text-sm font-semibold text-foreground">🎉 Primeira vez aqui?</p>
+               <p className="text-xs text-muted-foreground mt-0.5">
+                 Crie sua conta grátis em segundos e comece a controlar seus ganhos!
+               </p>
+               <Button 
+                 size="sm" 
+                 onClick={handleFirstVisitCTA}
+                 className="mt-3 w-full bg-gradient-profit hover:opacity-90 text-sm font-semibold h-9"
+               >
+                 {mode === 'signup' ? 'Continuar Cadastro' : 'Criar Conta Agora'}
+               </Button>
+             </div>
+           </div>
+         </div>
+       )}
 
       {/* Logo */}
       <div className="mb-6 sm:mb-8 text-center">
