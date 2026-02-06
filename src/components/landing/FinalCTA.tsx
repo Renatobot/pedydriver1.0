@@ -2,8 +2,15 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Rocket } from 'lucide-react';
 import { ACTIVE_USERS_COUNT } from '@/lib/constants';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export function FinalCTA() {
+  const { trackCTAClick } = useAnalytics();
+
+  const handleCTAClick = () => {
+    trackCTAClick('final_cta', '/landing');
+  };
+
   return (
     <section className="px-4 py-16 sm:py-24 bg-gradient-to-b from-transparent via-primary/5 to-primary/10">
       <div className="max-w-2xl mx-auto text-center space-y-6">
@@ -18,7 +25,7 @@ export function FinalCTA() {
         </p>
         
         <div className="space-y-3">
-          <Link to="/auth">
+          <Link to="/auth" onClick={handleCTAClick}>
             <Button size="lg" className="bg-gradient-profit hover:opacity-90 text-lg px-10 py-6 h-auto touch-feedback">
               Criar minha conta grátis
             </Button>

@@ -142,6 +142,39 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          page: string
+          referrer: string | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          page: string
+          referrer?: string | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          page?: string
+          referrer?: string | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       community_stats: {
         Row: {
           avg: number | null
@@ -1324,6 +1357,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_analytics_errors: { Args: { _days?: number }; Returns: Json }
+      get_analytics_funnel: { Args: { _days?: number }; Returns: Json }
+      get_analytics_sessions: {
+        Args: { _filter?: string; _limit?: number }
+        Returns: Json
+      }
+      get_analytics_summary: { Args: never; Returns: Json }
       get_average_fuel_price: {
         Args: {
           _city?: string
