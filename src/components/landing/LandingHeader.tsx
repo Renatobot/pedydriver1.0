@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import logo from '@/assets/logo-optimized.webp';
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
+  const { trackCTAClick } = useAnalytics();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,6 +17,10 @@ export function LandingHeader() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleCTAClick = () => {
+    trackCTAClick('header_cta', '/landing');
+  };
 
   return (
     <header 
@@ -32,15 +38,16 @@ export function LandingHeader() {
           <span className="font-bold text-lg">PEDY Driver</span>
         </Link>
         
-        {/* CTA - Enhanced when scrolled */}
-        <Link to="/auth">
+        {/* CTA - Enhanced when scrolled with pulse animation */}
+        <Link to="/auth?signup" onClick={handleCTAClick}>
           <Button 
             size="sm" 
             className={cn(
-              "transition-all duration-300",
+              "transition-all duration-300 font-semibold",
               scrolled 
-                ? "bg-gradient-profit hover:opacity-90 shadow-md shadow-primary/25 scale-105" 
-                : "bg-gradient-profit hover:opacity-90"
+                ? "bg-gradient-profit hover:opacity-90 shadow-lg shadow-primary/30 scale-105 animate-[pulse_2s_ease-in-out_infinite]" 
+                : "bg-gradient-profit hover:opacity-90",
+              "sm:text-sm sm:px-4 sm:py-2"
             )}
           >
             Começar grátis

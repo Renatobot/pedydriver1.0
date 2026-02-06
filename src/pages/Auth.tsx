@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, User, Eye, EyeOff, Phone, Gift } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Phone, Gift, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,12 +82,16 @@ const translateAuthError = (message: string): string => {
   return message; // Retorna original se não encontrar tradução
 };
 
+const FIRST_VISIT_KEY = 'pedy_has_visited_auth';
+
 export default function Auth() {
   const [mode, setMode] = useState<'login' | 'signup' | 'phone'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingRedirect, setPendingRedirect] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [showFirstVisitBanner, setShowFirstVisitBanner] = useState(false);
   const { signIn, signUp, user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -101,6 +105,7 @@ export default function Auth() {
     trackFormSubmit, 
     trackSignupError, 
     trackSignupComplete,
+    trackEvent,
     hasTrackedPageView 
   } = useAnalytics();
   const formStarted = useRef(false);
@@ -110,6 +115,29 @@ export default function Auth() {
   const referralCodeFromUrl = useReferralCodeFromUrl();
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const { registerPendingReferral, fingerprint } = useReferral();
+
+  // Detect first visit and URL params for mode
+  useEffect(() => {
+    const hasVisited = localStorage.getItem(FIRST_VISIT_KEY);
+    const signupParam = searchParams.get('signup');
+    const loginParam = searchParams.get('login');
+    
+    // URL params take priority
+    if (signupParam !== null) {
+      setMode('signup');
+      trackEvent('url_param_signup', '/auth');
+    } else if (loginParam !== null) {
+      setMode('login');
+    } else if (!hasVisited) {
+      // First visit - show banner
+      setIsFirstVisit(true);
+      setShowFirstVisitBanner(true);
+      trackEvent('first_visit_banner_shown', '/auth');
+    }
+    
+    // Mark as visited
+    localStorage.setItem(FIRST_VISIT_KEY, 'true');
+  }, [searchParams, trackEvent]);
 
   // Track page view once
   useEffect(() => {
@@ -138,6 +166,7 @@ export default function Auth() {
       localStorage.setItem(REFERRAL_CODE_KEY, code);
       // Switch to signup mode when coming from referral link
       setMode('signup');
+      setShowFirstVisitBanner(false); // Hide banner when coming from referral
     } else {
       // Check if there's a stored code
       const storedCode = localStorage.getItem(REFERRAL_CODE_KEY);
@@ -146,6 +175,13 @@ export default function Auth() {
       }
     }
   }, [searchParams]);
+
+  const handleFirstVisitCTA = () => {
+    setMode('signup');
+    setShowFirstVisitBanner(false);
+    trackEvent('first_visit_banner_click', '/auth');
+    trackModeSwitch('signup');
+  };
 
   // Register pending referral after successful signup (does NOT grant bonus immediately)
   useEffect(() => {
@@ -265,6 +301,37 @@ export default function Auth() {
           <Badge variant="outline" className="mt-2 text-xs">
             Código: {referralCode}
           </Badge>
+        </div>
+      )}
+
+      {/* First Visit Banner - Only shows for new visitors in login mode */}
+      {showFirstVisitBanner && mode === 'login' && !referralCode && (
+        <div className="w-full max-w-xs sm:max-w-sm mb-4 p-4 rounded-xl bg-gradient-to-r from-primary/15 via-primary/10 to-primary/5 border border-primary/30 animate-fade-in relative">
+          <button 
+            onClick={() => setShowFirstVisitBanner(false)}
+            className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Fechar"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 pr-4">
+              <p className="text-sm font-semibold text-foreground">🎉 Primeira vez aqui?</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Crie sua conta grátis em segundos e comece a controlar seus ganhos!
+              </p>
+              <Button 
+                size="sm" 
+                onClick={handleFirstVisitCTA}
+                className="mt-3 w-full bg-gradient-profit hover:opacity-90 text-sm font-semibold h-9"
+              >
+                Criar Conta Agora
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
