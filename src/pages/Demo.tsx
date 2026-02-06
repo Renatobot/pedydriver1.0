@@ -1,18 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, CheckCircle, Minus, Fuel, Wrench, Coffee, MoreHorizontal, ArrowLeft } from 'lucide-react';
+import { Zap, CheckCircle } from 'lucide-react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
 import { GuestModeBanner } from '@/components/guest/GuestModeBanner';
 import { SignupPromptModal } from '@/components/guest/SignupPromptModal';
 import { DemoProgressNudge } from '@/components/guest/DemoProgressNudge';
@@ -25,33 +15,20 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const EXPENSE_CATEGORIES = [
-  { id: 'combustivel', name: 'Combustível', icon: Fuel, color: 'bg-orange-500' },
-  { id: 'manutencao', name: 'Manutenção', icon: Wrench, color: 'bg-blue-500' },
-  { id: 'alimentacao', name: 'Alimentação', icon: Coffee, color: 'bg-yellow-500' },
-  { id: 'outros', name: 'Outros', icon: MoreHorizontal, color: 'bg-gray-500' },
-];
-
 // Default cost per km for demo (same as app default)
 const DEFAULT_COST_PER_KM = 0.5;
 
 export default function Demo() {
-  const { addGuestEntry, guestEntries } = useGuestMode();
+  const { addGuestEntry } = useGuestMode();
   const { trackDemoPageView, trackDemoEntryAdded } = useAnalytics();
   
   // Form state
   const [value, setValue] = useState('');
   const [km, setKm] = useState('');
   const [minutes, setMinutes] = useState('');
-  const [platformName, setPlatformName] = useState('Uber');
+  const [platformName, setPlatformName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  
-  // Expense sheet state
-  const [expenseAmount, setExpenseAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('combustivel');
-  const [isExpenseOpen, setIsExpenseOpen] = useState(false);
-  const [isExpenseSubmitting, setIsExpenseSubmitting] = useState(false);
 
   // Track page view on mount
   useEffect(() => {
@@ -122,35 +99,6 @@ export default function Demo() {
     }
   }, [value, km, minutes, platformName, addGuestEntry, trackDemoEntryAdded]);
 
-  const handleAddExpense = async () => {
-    const amount = parseFloat(expenseAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Digite um valor válido');
-      return;
-    }
-
-    setIsExpenseSubmitting(true);
-    try {
-      await addGuestEntry({
-        type: 'expense',
-        amount,
-        category: selectedCategory,
-        platform_name: 'Geral',
-        date: format(new Date(), 'yyyy-MM-dd'),
-      });
-      
-      trackDemoEntryAdded('expense', { amount, category: selectedCategory });
-      
-      toast.success('Gasto registrado!');
-      setExpenseAmount('');
-      setIsExpenseOpen(false);
-    } catch (error) {
-      toast.error('Erro ao registrar');
-    } finally {
-      setIsExpenseSubmitting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background pb-safe">
       {/* Guest mode banner */}
@@ -167,24 +115,18 @@ export default function Demo() {
 
       {/* Content with top padding for banner */}
       <div className="pt-12 p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto scroll-momentum">
-        {/* Header - matching QuickEntry style */}
+        {/* Header - matching QuickEntry style exactly */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <Link 
-            to="/landing" 
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 hover:bg-secondary/80 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-lg sm:text-xl font-bold text-foreground">Entrada Rápida</h1>
-            <p className="text-muted-foreground text-xs sm:text-sm">Registre e analise instantaneamente</p>
-          </div>
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-profit flex items-center justify-center flex-shrink-0">
             <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold text-foreground">Entrada Rápida</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm">Registre e analise instantaneamente</p>
+          </div>
         </div>
 
-        {/* Social proof */}
+        {/* Social proof - subtle, non-intrusive */}
         <DemoSocialProof />
 
         {/* Quick Metrics Display - Real-time */}
@@ -248,75 +190,6 @@ export default function Demo() {
             onSave={handleSave}
           />
         </div>
-
-        {/* Add expense button */}
-        <Sheet open={isExpenseOpen} onOpenChange={setIsExpenseOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="w-full h-11 sm:h-12">
-              <Minus className="w-4 h-4 mr-2 text-destructive" />
-              Adicionar gasto
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto max-h-[80vh]">
-            <SheetHeader>
-              <SheetTitle>Registrar Gasto</SheetTitle>
-            </SheetHeader>
-            
-            <div className="py-4 space-y-4">
-              {/* Category selector */}
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {EXPENSE_CATEGORIES.map((cat) => {
-                    const Icon = cat.icon;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat.id)}
-                        className={cn(
-                          'flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all',
-                          selectedCategory === cat.id
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border bg-secondary/50'
-                        )}
-                      >
-                        <div className={cn('w-8 h-8 rounded-full flex items-center justify-center', cat.color)}>
-                          <Icon className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-2xs font-medium">{cat.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Amount input */}
-              <div className="space-y-2">
-                <Label>Valor</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={expenseAmount}
-                  onChange={(e) => setExpenseAmount(e.target.value)}
-                  className="h-12 text-lg font-semibold text-center"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-
-              {/* Submit button */}
-              <Button
-                className="w-full h-12"
-                onClick={handleAddExpense}
-                disabled={isExpenseSubmitting || !expenseAmount}
-              >
-                {isExpenseSubmitting ? 'Salvando...' : 'Registrar gasto'}
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
 
         {/* Tips */}
         <div className="text-center text-2xs sm:text-xs text-muted-foreground">
