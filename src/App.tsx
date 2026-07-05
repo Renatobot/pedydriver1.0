@@ -13,6 +13,7 @@ import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load all pages for better code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -134,29 +135,31 @@ function AppRoutes() {
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <SyncProvider>
-              <SubscriptionProvider>
-                <GuidedTourProvider>
-                  <GuestModeProvider>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <SyncStatusIndicator />
-                      <PWAUpdatePrompt />
-                      <AppRoutes />
-                    </TooltipProvider>
-                  </GuestModeProvider>
-                </GuidedTourProvider>
-              </SubscriptionProvider>
-            </SyncProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <SyncProvider>
+                <SubscriptionProvider>
+                  <GuidedTourProvider>
+                    <GuestModeProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <SyncStatusIndicator />
+                        <PWAUpdatePrompt />
+                        <AppRoutes />
+                      </TooltipProvider>
+                    </GuestModeProvider>
+                  </GuidedTourProvider>
+                </SubscriptionProvider>
+              </SyncProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
