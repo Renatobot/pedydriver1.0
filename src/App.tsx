@@ -135,29 +135,31 @@ function AppRoutes() {
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <SyncProvider>
-              <SubscriptionProvider>
-                <GuidedTourProvider>
-                  <GuestModeProvider>
-                    <TooltipProvider>
-                      <Toaster />
-                      <Sonner />
-                      <SyncStatusIndicator />
-                      <PWAUpdatePrompt />
-                      <AppRoutes />
-                    </TooltipProvider>
-                  </GuestModeProvider>
-                </GuidedTourProvider>
-              </SubscriptionProvider>
-            </SyncProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <SyncProvider>
+                <SubscriptionProvider>
+                  <GuidedTourProvider>
+                    <GuestModeProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <Sonner />
+                        <SyncStatusIndicator />
+                        <PWAUpdatePrompt />
+                        <AppRoutes />
+                      </TooltipProvider>
+                    </GuestModeProvider>
+                  </GuidedTourProvider>
+                </SubscriptionProvider>
+              </SyncProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
