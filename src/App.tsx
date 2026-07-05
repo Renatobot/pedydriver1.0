@@ -13,6 +13,7 @@ import { SyncStatusIndicator } from "@/components/layout/SyncStatusIndicator";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageLoader } from "@/components/ui/splash-screen";
 import { PWAUpdatePrompt } from "@/components/pwa/PWAUpdatePrompt";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy load all pages for better code splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
